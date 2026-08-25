@@ -1,0 +1,382 @@
+/* App Layout Styles */
+
+.app-root {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--bg-app);
+}
+
+/* ==========================================================================
+   Header & Toolbar
+   ========================================================================== */
+
+.app-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+  z-index: 100;
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  padding-right: 8px;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.brand-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-primary);
+}
+
+.brand-name {
+  letter-spacing: -0.01em;
+}
+
+.doc-title-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.doc-title-input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 8px;
+  width: 140px;
+  transition: all var(--transition-fast);
+}
+
+.doc-title-input:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.doc-title-input:focus {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+  outline: none;
+  box-shadow: var(--accent-glow);
+  width: 200px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.action-btn:active {
+  background: var(--bg-surface-active);
+}
+
+.action-btn-danger:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  border-color: rgba(242, 85, 90, 0.2);
+}
+
+/* ==========================================================================
+   Linear Segmented Control (Top-Right Layout Switcher)
+   ========================================================================== */
+
+.segmented-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+.segmented-indicator {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / 3);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: calc(var(--radius-md) - 2px);
+  box-shadow: var(--shadow-sm);
+  transition: transform 180ms var(--ease-linear), width 180ms var(--ease-linear);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.segment-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-radius: calc(var(--radius-md) - 2px);
+  transition: color var(--transition-fast);
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.segment-btn:hover {
+  color: var(--text-primary);
+}
+
+.segment-btn.active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Workspace & Panes
+   ========================================================================== */
+
+.workspace {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  height: calc(100vh - var(--header-height) - var(--statusbar-height));
+  overflow: hidden;
+  position: relative;
+}
+
+.editor-pane, .preview-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--bg-surface);
+}
+
+.editor-pane {
+  width: 50%;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.preview-pane {
+  width: 50%;
+  background-color: var(--bg-app);
+}
+
+/* Pane Header */
+.pane-header {
+  height: var(--pane-header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  user-select: none;
+  font-size: 12px;
+}
+
+.pane-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pane-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pane-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.pane-btn:hover, .pane-btn.active {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+  border-color: var(--border-medium);
+}
+
+.render-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.render-indicator .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 6px var(--color-success);
+  transition: background-color var(--transition-fast);
+}
+
+.render-indicator.rendering .status-dot {
+  background: var(--color-warning);
+  box-shadow: 0 0 6px var(--color-warning);
+}
+
+.render-indicator.error .status-dot {
+  background: var(--color-danger);
+  box-shadow: 0 0 6px var(--color-danger);
+}
+
+/* Resizer Divider */
+.pane-resizer {
+  width: 9px;
+  margin-left: -5px;
+  margin-right: -4px;
+  height: 100%;
+  cursor: col-resize;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
+}
+
+.resizer-handle {
+  width: 1px;
+  height: 100%;
+  background-color: var(--border-subtle);
+  transition: background-color var(--transition-fast), width var(--transition-fast);
+}
+
+.pane-resizer:hover .resizer-handle,
+.pane-resizer.resizing .resizer-handle {
+  background-color: var(--accent-primary);
+  width: 2px;
+  box-shadow: 0 0 8px var(--accent-primary);
+}
+
+/* Workspace Layout Modes */
+.workspace[data-layout="editor"] .editor-pane {
+  width: 100% !important;
+  border-right: none;
+}
+.workspace[data-layout="editor"] .pane-resizer,
+.workspace[data-layout="editor"] .preview-pane {
+  display: none !important;
+}
+
+.workspace[data-layout="preview"] .preview-pane {
+  width: 100% !important;
+}
+.workspace[data-layout="preview"] .pane-resizer,
+.workspace[data-layout="preview"] .editor-pane {
+  display: none !important;
+}
+
+/* ==========================================================================
+   Status Bar
+   ========================================================================== */
+
+.app-statusbar {
+  height: var(--statusbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  user-select: none;
+  z-index: 100;
+}
+
+.status-left, .status-center, .status-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-divider {
+  color: var(--border-medium);
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-success);
+  background: var(--color-success-bg);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+}
+
+.status-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.status-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.status-btn.active {
+  color: var(--accent-primary);
+}

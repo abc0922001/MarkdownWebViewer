@@ -1,0 +1,67 @@
+/* Linear Design System Tokens */
+:root {
+  /* Surface & Background Colors */
+  --bg-app: #08090A;
+  --bg-surface: #0E1015;
+  --bg-surface-elevated: #15181E;
+  --bg-surface-hover: #1C2028;
+  --bg-surface-active: #242934;
+  --bg-overlay: rgba(8, 9, 10, 0.75);
+
+  /* Linear Signature Borders */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --border-focus: #5E6AD2;
+  --border-focus-glow: rgba(94, 106, 210, 0.35);
+
+  /* Text Colors */
+  --text-primary: #F7F8F8;
+  --text-secondary: #8A8F98;
+  --text-tertiary: #5B6069;
+  --text-disabled: #43474F;
+  --text-inverse: #08090A;
+
+  /* Accent Colors (Linear Purple-Blue) */
+  --accent-primary: #5E6AD2;
+  --accent-hover: #6E7AE2;
+  --accent-active: #4F5AB8;
+  --accent-surface: rgba(94, 106, 210, 0.12);
+  --accent-glow: 0 0 16px rgba(94, 106, 210, 0.35);
+
+  /* Status Colors */
+  --color-success: #4EBE82;
+  --color-success-bg: rgba(78, 190, 130, 0.12);
+  --color-warning: #F5A623;
+  --color-warning-bg: rgba(245, 166, 35, 0.12);
+  --color-danger: #F2555A;
+  --color-danger-bg: rgba(242, 85, 90, 0.12);
+  --color-info: #3B82F6;
+  --color-info-bg: rgba(59, 130, 246, 0.12);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-subtle);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border-medium);
+  --shadow-dropdown: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border-medium);
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 9999px;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas, monospace;
+
+  /* Animations & Transitions */
+  --ease-linear: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 120ms var(--ease-linear);
+  --transition-normal: 200ms var(--ease-linear);
+
+  /* Layout Constants */
+  --header-height: 52px;
+  --statusbar-height: 32px;
+  --pane-header-height: 38px;
+}

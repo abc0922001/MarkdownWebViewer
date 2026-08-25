@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Markdown & Mermaid Web Viewer</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235E6AD2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/layout.css" />
+    <link rel="stylesheet" href="/src/styles/editor.css" />
+    <link rel="stylesheet" href="/src/styles/preview.css" />
+    <link rel="stylesheet" href="/src/styles/dropdown.css" />
+    <link rel="stylesheet" href="/src/styles/print.css" />
+  </head>
+  <body>
+    <div id="app" class="app-root">
+      <!-- 頂部工具列 (Top Toolbar) -->
+      <header class="app-header">
+        <div class="header-left">
+          <div class="brand">
+            <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+            <span class="brand-name">Markdown Viewer</span>
+          </div>
+
+          <div class="doc-title-wrapper">
+            <input type="text" id="doc-title-input" class="doc-title-input" value="Untitled.md" spellcheck="false" title="點擊修改檔案名稱" />
+          </div>
+
+          <div class="header-actions">
+            <button id="btn-sample" class="action-btn" title="載入範例模板">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <span>範例</span>
+            </button>
+            <button id="btn-import" class="action-btn" title="開啟本機 Markdown 檔案">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <span>開啟</span>
+            </button>
+            <input type="file" id="file-input" accept=".md,.markdown,.txt" style="display: none;" />
+            <button id="btn-copy" class="action-btn" title="複製 Markdown 原始碼">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>複製</span>
+            </button>
+            <button id="btn-clear" class="action-btn action-btn-danger" title="清空編輯器">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              <span>清空</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- 匯出下拉選單 -->
+          <div class="dropdown-wrapper">
+            <button id="btn-export-dropdown" class="btn-primary" aria-expanded="false">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>匯出檔案</span>
+              <svg class="chevron-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="export-menu" class="dropdown-menu" hidden>
+              <button class="dropdown-item" data-export="md">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <div class="item-text">
+                  <span class="item-title">匯出 Markdown (.md)</span>
+                  <span class="item-desc">標準純文字格式，適用各編輯器</span>
+                </div>
+              </button>
+              <button class="dropdown-item" data-export="html">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                <div class="item-text">
+                  <span class="item-title">匯出 HTML (.html)</span>
+                  <span class="item-desc">獨立自給單一檔案，含樣式與向量圖</span>
+                </div>
+              </button>
+              <button class="dropdown-item" data-export="pdf">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <div class="item-text">
+                  <span class="item-title">列印 / 匯出 PDF (.pdf)</span>
+                  <span class="item-desc">高解析列印級無損排版</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 右上角三態切換按鈕 (Linear Segmented Control) -->
+          <div class="segmented-control" role="group" aria-label="Layout Switcher">
+            <div class="segmented-indicator" id="segmented-indicator"></div>
+            <button id="btn-layout-editor" class="segment-btn" data-layout="editor" title="純編輯模式 (快捷鍵: Alt+1)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              <span>純編輯</span>
+            </button>
+            <button id="btn-layout-split" class="segment-btn active" data-layout="split" title="雙欄對照模式 (快捷鍵: Alt+2)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="3" x2="12" y2="21"></line></svg>
+              <span>雙欄對照</span>
+            </button>
+            <button id="btn-layout-preview" class="segment-btn" data-layout="preview" title="純瀏覽模式 (快捷鍵: Alt+3)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <span>純瀏覽</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- 主工作區 (Workspace) -->
+      <main id="app-workspace" class="workspace" data-layout="split">
+        <!-- 編輯區 (Editor Pane) -->
+        <section id="editor-pane" class="editor-pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+              <span>Markdown 原始碼</span>
+            </div>
+            <div class="pane-actions">
+              <button id="btn-editor-wrap" class="pane-btn active" title="自動換行切換">自動換行</button>
+            </div>
+          </div>
+          <div id="codemirror-mount" class="editor-mount"></div>
+        </section>
+
+        <!-- 拖曳分隔條 (Divider Resizer) -->
+        <div id="pane-resizer" class="pane-resizer" title="拖曳調整左右欄寬度">
+          <div class="resizer-handle"></div>
+        </div>
+
+        <!-- 預覽區 (Preview Pane) -->
+        <section id="preview-pane" class="preview-pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              <span>即時預覽</span>
+            </div>
+            <div class="pane-actions">
+              <span id="render-indicator" class="render-indicator" title="渲染狀態">
+                <span class="status-dot"></span>
+                <span class="status-text">已同步</span>
+              </span>
+            </div>
+          </div>
+          <div id="preview-scroll-container" class="preview-scroll-container">
+            <article id="preview-content" class="markdown-body"></article>
+          </div>
+        </section>
+      </main>
+
+      <!-- 底部狀態列 (Status Bar) -->
+      <footer id="app-statusbar" class="app-statusbar">
+        <div class="status-left">
+          <span class="status-item" id="stat-lines">0 行</span>
+          <span class="status-divider">/</span>
+          <span class="status-item" id="stat-words">0 字</span>
+          <span class="status-divider">/</span>
+          <span class="status-item" id="stat-chars">0 字元</span>
+          <span class="status-divider">/</span>
+          <span class="status-item" id="stat-cursor">行 1, 欄 1</span>
+        </div>
+
+        <div class="status-center">
+          <span class="status-badge" title="本應用採用純記憶體生命週期，關閉分頁或重整將立即抹除，零本機殘留">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <span>無痕暫態模式 (Zero-Persistence)</span>
+          </span>
+        </div>
+
+        <div class="status-right">
+          <button id="btn-toggle-sync-scroll" class="status-btn active" title="切換雙向等比滾動同步">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 11 12 6 17 11"></polyline><polyline points="17 13 12 18 7 13"></polyline></svg>
+            <span>滾動同步：開</span>
+          </button>
+          <span class="status-item">UTF-8</span>
+        </div>
+      </footer>
+
+      <!-- 提示訊息 Toast 容器 -->
+      <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
