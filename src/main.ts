@@ -1,3 +1,11 @@
+import './styles/tokens.css';
+import './styles/base.css';
+import './styles/layout.css';
+import './styles/editor.css';
+import './styles/preview.css';
+import './styles/dropdown.css';
+import './styles/print.css';
+
 import { MarkdownEditor } from './editor/codemirror';
 import { renderMarkdownToHtml } from './renderer/markdown';
 import { renderMermaidDiagrams } from './renderer/mermaid';
