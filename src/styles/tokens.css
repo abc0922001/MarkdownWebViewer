@@ -1,66 +1,68 @@
-/* Linear Design System Tokens */
+/* Linear Design System Tokens (Aligned strictly with DESIGN.md) */
 :root {
-  /* Surface & Background Colors */
-  --bg-app: #08090A;
-  --bg-surface: #0E1015;
-  --bg-surface-elevated: #15181E;
-  --bg-surface-hover: #1C2028;
-  --bg-surface-active: #242934;
-  --bg-overlay: rgba(8, 9, 10, 0.75);
+  /* Surface & Canvas Ladder (DESIGN.md) */
+  --bg-app: #010102;              /* {colors.canvas} - Near-pure black with faint blue tint */
+  --bg-surface: #0F1011;          /* {colors.surface-1} - Feature cards, panels, editor */
+  --bg-surface-elevated: #141516; /* {colors.surface-2} - Lifted cards, selected states, toolbar */
+  --bg-surface-hover: #18191A;    /* {colors.surface-3} - Sub-nav, hover states */
+  --bg-surface-active: #191A1B;   /* {colors.surface-4} - Deepest lifted surface */
+  --bg-overlay: rgba(0, 0, 0, 0.8);/* {colors.semantic-overlay} */
 
-  /* Linear Signature Borders */
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-medium: rgba(255, 255, 255, 0.12);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --border-focus: #5E6AD2;
-  --border-focus-glow: rgba(94, 106, 210, 0.35);
+  /* Hairlines & Borders (DESIGN.md) */
+  --border-subtle: #23252A;       /* {colors.hairline} - 1px borders on cards and dividers */
+  --border-medium: #34343A;       /* {colors.hairline-strong} - Stronger borders, inputs */
+  --border-strong: #3E3E44;       /* {colors.hairline-tertiary} - Tertiary borders */
+  --border-focus: #5E69D1;        /* {colors.primary-focus} - Focus ring tint */
+  --border-focus-glow: rgba(94, 105, 209, 0.45);
 
-  /* Text Colors */
-  --text-primary: #F7F8F8;
-  --text-secondary: #8A8F98;
-  --text-tertiary: #5B6069;
-  --text-disabled: #43474F;
-  --text-inverse: #08090A;
+  /* Typography & Inks (DESIGN.md) */
+  --text-primary: #F7F8F8;        /* {colors.ink} - Headlines and emphasized body type */
+  --text-secondary: #D0D6E0;      /* {colors.ink-muted} - Secondary type, meta info */
+  --text-tertiary: #8A8F98;       /* {colors.ink-subtle} - Deselected tabs, footer columns */
+  --text-disabled: #62666D;       /* {colors.ink-tertiary} - Disabled, footnotes */
+  --text-inverse: #000000;        /* {colors.inverse-ink} */
 
-  /* Accent Colors (Linear Purple-Blue) */
-  --accent-primary: #5E6AD2;
-  --accent-hover: #6E7AE2;
-  --accent-active: #4F5AB8;
-  --accent-surface: rgba(94, 106, 210, 0.12);
+  /* Lavender-Blue Brand Accent (DESIGN.md) */
+  --accent-primary: #5E6AD2;      /* {colors.primary} - Signature Linear lavender accent */
+  --accent-hover: #828FFF;        /* {colors.primary-hover} - Lighter lavender on hover */
+  --accent-active: #5E69D1;       /* {colors.primary-focus} - Active / pressed */
+  --accent-surface: rgba(94, 106, 210, 0.14);
   --accent-glow: 0 0 16px rgba(94, 106, 210, 0.35);
 
-  /* Status Colors */
-  --color-success: #4EBE82;
-  --color-success-bg: rgba(78, 190, 130, 0.12);
+  /* Semantic Colors (DESIGN.md) */
+  --color-success: #27A644;       /* {colors.semantic-success} */
+  --color-success-bg: rgba(39, 166, 68, 0.14);
   --color-warning: #F5A623;
   --color-warning-bg: rgba(245, 166, 35, 0.12);
   --color-danger: #F2555A;
   --color-danger-bg: rgba(242, 85, 90, 0.12);
-  --color-info: #3B82F6;
-  --color-info-bg: rgba(59, 130, 246, 0.12);
+  --color-info: #5E6AD2;
+  --color-info-bg: rgba(94, 106, 210, 0.12);
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-subtle);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border-medium);
-  --shadow-dropdown: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border-medium);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border-subtle);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border-medium);
+  --shadow-dropdown: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border-medium);
 
-  /* Border Radius */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-pill: 9999px;
+  /* Rounded Scale (DESIGN.md) */
+  --radius-xs: 4px;               /* {rounded.xs} - Small chips, status badges */
+  --radius-sm: 6px;               /* {rounded.sm} - Inline tags */
+  --radius-md: 8px;               /* {rounded.md} - All buttons, form inputs */
+  --radius-lg: 12px;              /* {rounded.lg} - Pricing cards, feature cards, dropdowns */
+  --radius-xl: 16px;              /* {rounded.xl} - Product screenshot panels */
+  --radius-pill: 9999px;          /* {rounded.pill} - Pricing tab toggles, status pills */
 
-  /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas, monospace;
+  /* Typography Stacks */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, Consolas, monospace;
 
-  /* Animations & Transitions */
+  /* Transitions */
   --ease-linear: cubic-bezier(0.16, 1, 0.3, 1);
   --transition-fast: 120ms var(--ease-linear);
   --transition-normal: 200ms var(--ease-linear);
 
-  /* Layout Constants */
+  /* Layout Dimensions */
   --header-height: 52px;
   --statusbar-height: 32px;
   --pane-header-height: 38px;
