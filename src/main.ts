@@ -18,6 +18,7 @@ import { exportPdf } from './exporter/pdf-exporter';
 import { SAMPLE_MARKDOWN } from './utils/sample';
 import { debounce } from './utils/debounce';
 import { showToast } from './utils/toast';
+import { fixMarkdownFormatting } from './utils/formatter';
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const previewScrollContainer = document.getElementById('preview-scroll-container')!;
   const renderIndicator = document.getElementById('render-indicator')!;
   const docTitleInput = document.getElementById('doc-title-input') as HTMLInputElement;
+  const btnFix = document.getElementById('btn-fix')!;
   const btnSample = document.getElementById('btn-sample')!;
   const btnImport = document.getElementById('btn-import')!;
   const fileInput = document.getElementById('file-input') as HTMLInputElement;
@@ -105,6 +107,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial render
   doRender(SAMPLE_MARKDOWN);
+
+  // Auto-Fix Formatting Action
+  const handleAutoFix = () => {
+    const currentText = editor.getValue();
+    if (!currentText.trim()) {
+      showToast('編輯器為空，無須修正', 'info');
+      return;
+    }
+
+    const { formatted, changed, fixesSummary } = fixMarkdownFormatting(currentText);
+    if (changed) {
+      editor.setValue(formatted);
+      doRender(formatted);
+      const summaryMsg = fixesSummary.length > 0 ? fixesSummary.join('、') : '排版格式';
+      showToast(`✨ 已完成自動修正：${summaryMsg}`, 'success', 3000);
+    } else {
+      showToast('排版格式皆正確，無須調整', 'info');
+    }
+  };
+
+  btnFix.addEventListener('click', handleAutoFix);
+
+  // Global Keyboard Shortcut: Alt+F for Auto-Fix
+  window.addEventListener('keydown', (e) => {
+    if (e.altKey && (e.key === 'f' || e.key === 'F')) {
+      e.preventDefault();
+      handleAutoFix();
+    }
+  });
 
   // Topbar Actions
   btnSample.addEventListener('click', () => {
