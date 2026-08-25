@@ -1,6 +1,7 @@
 /* Linear Design System Tokens (Aligned strictly with DESIGN.md) */
-:root {
-  /* Surface & Canvas Ladder (DESIGN.md) */
+
+:root, html.dark {
+  /* Surface & Canvas Ladder (DESIGN.md Dark) */
   --bg-app: #010102;              /* {colors.canvas} - Near-pure black with faint blue tint */
   --bg-surface: #0F1011;          /* {colors.surface-1} - Feature cards, panels, editor */
   --bg-surface-elevated: #141516; /* {colors.surface-2} - Lifted cards, selected states, toolbar */
@@ -8,14 +9,14 @@
   --bg-surface-active: #191A1B;   /* {colors.surface-4} - Deepest lifted surface */
   --bg-overlay: rgba(0, 0, 0, 0.8);/* {colors.semantic-overlay} */
 
-  /* Hairlines & Borders (DESIGN.md) */
+  /* Hairlines & Borders (DESIGN.md Dark) */
   --border-subtle: #23252A;       /* {colors.hairline} - 1px borders on cards and dividers */
   --border-medium: #34343A;       /* {colors.hairline-strong} - Stronger borders, inputs */
   --border-strong: #3E3E44;       /* {colors.hairline-tertiary} - Tertiary borders */
   --border-focus: #5E69D1;        /* {colors.primary-focus} - Focus ring tint */
   --border-focus-glow: rgba(94, 105, 209, 0.45);
 
-  /* Typography & Inks (DESIGN.md) */
+  /* Typography & Inks (DESIGN.md Dark) */
   --text-primary: #F7F8F8;        /* {colors.ink} - Headlines and emphasized body type */
   --text-secondary: #D0D6E0;      /* {colors.ink-muted} - Secondary type, meta info */
   --text-tertiary: #8A8F98;       /* {colors.ink-subtle} - Deselected tabs, footer columns */
@@ -46,12 +47,12 @@
   --shadow-dropdown: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border-medium);
 
   /* Rounded Scale (DESIGN.md) */
-  --radius-xs: 4px;               /* {rounded.xs} - Small chips, status badges */
-  --radius-sm: 6px;               /* {rounded.sm} - Inline tags */
-  --radius-md: 8px;               /* {rounded.md} - All buttons, form inputs */
-  --radius-lg: 12px;              /* {rounded.lg} - Pricing cards, feature cards, dropdowns */
-  --radius-xl: 16px;              /* {rounded.xl} - Product screenshot panels */
-  --radius-pill: 9999px;          /* {rounded.pill} - Pricing tab toggles, status pills */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
 
   /* Typography Stacks */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
@@ -66,4 +67,52 @@
   --header-height: 52px;
   --statusbar-height: 32px;
   --pane-header-height: 38px;
+}
+
+/* Light Theme Variables */
+html.light {
+  /* Surface & Canvas Ladder (DESIGN.md Light / Inverse) */
+  --bg-app: #FFFFFF;              /* {colors.inverse-canvas} - Pure white */
+  --bg-surface: #F5F6F7;          /* {colors.inverse-surface-1} - Subtle off-white surface */
+  --bg-surface-elevated: #EBECEE; /* {colors.inverse-surface-2} - Elevated surface */
+  --bg-surface-hover: #E2E4E7;    /* Surface hover */
+  --bg-surface-active: #D9DCDF;   /* Surface active */
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Hairlines & Borders (DESIGN.md Light) */
+  --border-subtle: #E5E7EB;       /* Subtle border */
+  --border-medium: #D1D5DB;       /* Medium border */
+  --border-strong: #9CA3AF;       /* Strong border */
+  --border-focus: #5E69D1;
+  --border-focus-glow: rgba(94, 105, 209, 0.25);
+
+  /* Typography & Inks (DESIGN.md Light) */
+  --text-primary: #08090A;        /* Deep ink black */
+  --text-secondary: #4B5563;      /* Muted gray */
+  --text-tertiary: #6B7280;       /* Subtle gray */
+  --text-disabled: #9CA3AF;       /* Disabled gray */
+  --text-inverse: #FFFFFF;
+
+  /* Lavender-Blue Brand Accent (DESIGN.md) */
+  --accent-primary: #5E6AD2;
+  --accent-hover: #4F5AB8;
+  --accent-active: #434D9E;
+  --accent-surface: rgba(94, 106, 210, 0.08);
+  --accent-glow: 0 0 12px rgba(94, 106, 210, 0.25);
+
+  /* Semantic Colors */
+  --color-success: #15803D;
+  --color-success-bg: rgba(21, 128, 61, 0.1);
+  --color-warning: #B45309;
+  --color-warning-bg: rgba(180, 83, 9, 0.1);
+  --color-danger: #DC2626;
+  --color-danger-bg: rgba(220, 38, 38, 0.1);
+  --color-info: #5E6AD2;
+  --color-info-bg: rgba(94, 106, 210, 0.08);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--border-subtle);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--border-medium);
+  --shadow-dropdown: 0 16px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-medium);
 }

@@ -8,7 +8,7 @@ import './styles/print.css';
 
 import { MarkdownEditor } from './editor/codemirror';
 import { renderMarkdownToHtml } from './renderer/markdown';
-import { renderMermaidDiagrams } from './renderer/mermaid';
+import { renderMermaidDiagrams, setMermaidTheme } from './renderer/mermaid';
 import { LayoutSwitcher } from './layout/switcher';
 import { PaneResizer } from './layout/resizer';
 import { SyncScrollManager } from './layout/sync-scroll';
@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExportDropdown = document.getElementById('btn-export-dropdown')!;
   const exportMenu = document.getElementById('export-menu')!;
   const dropdownWrapper = btnExportDropdown.closest('.dropdown-wrapper')!;
+  const btnThemeToggle = document.getElementById('btn-theme-toggle')!;
+  const themeIconMoon = document.getElementById('theme-icon-moon')!;
+  const themeIconSun = document.getElementById('theme-icon-sun')!;
 
   // Status bar elements
   const statLines = document.getElementById('stat-lines')!;
@@ -44,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const statChars = document.getElementById('stat-chars')!;
   const statCursor = document.getElementById('stat-cursor')!;
 
+  let currentTheme: 'dark' | 'light' = 'dark';
   let isEdited = false;
 
   // Update Status Bar Metrics
@@ -134,6 +138,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.altKey && (e.key === 'f' || e.key === 'F')) {
       e.preventDefault();
       handleAutoFix();
+    }
+  });
+
+  // Theme Toggle Action
+  const toggleTheme = () => {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.className = currentTheme;
+    editor.setTheme(currentTheme);
+    setMermaidTheme(currentTheme);
+
+    if (currentTheme === 'light') {
+      themeIconMoon.style.display = 'none';
+      themeIconSun.style.display = 'block';
+      showToast('☀️ 已切換為淺色主題', 'info');
+    } else {
+      themeIconMoon.style.display = 'block';
+      themeIconSun.style.display = 'none';
+      showToast('🌙 已切換為深色主題', 'info');
+    }
+
+    // Re-render to update Mermaid SVGs and markdown colors
+    doRender(editor.getValue());
+  };
+
+  btnThemeToggle.addEventListener('click', toggleTheme);
+
+  // Global Keyboard Shortcut: Alt+T for Theme Toggle
+  window.addEventListener('keydown', (e) => {
+    if (e.altKey && (e.key === 't' || e.key === 'T')) {
+      e.preventDefault();
+      toggleTheme();
     }
   });
 

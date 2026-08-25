@@ -184,7 +184,7 @@
   padding: 0;
   background: transparent;
   border: none;
-  color: #ECEFF4;
+  color: var(--text-primary);
 }
 
 /* Highlight.js Linear Dark Palette */
@@ -195,6 +195,21 @@
 .hljs-variable, .hljs-punctuation { color: #D8DEE9; }
 .hljs-title, .hljs-title.function_, .hljs-attr { color: #88C0D0; }
 .hljs-symbol, .hljs-bullet { color: #EBCB8B; }
+
+/* Highlight.js Linear Light Palette */
+html.light .hljs-keyword, html.light .hljs-selector-tag, html.light .hljs-subst { color: #D73A49; font-weight: 500; }
+html.light .hljs-string, html.light .hljs-title.class_, html.light .hljs-section, html.light .hljs-attribute, html.light .hljs-literal, html.light .hljs-template-tag, html.light .hljs-template-variable, html.light .hljs-type, html.light .hljs-addition { color: #22863A; }
+html.light .hljs-comment, html.light .hljs-quote, html.light .hljs-deletion, html.light .hljs-meta { color: #6A737D; font-style: italic; }
+html.light .hljs-number, html.light .hljs-regexp, html.light .hljs-link { color: #005CC5; }
+html.light .hljs-variable, html.light .hljs-punctuation { color: #24292E; }
+html.light .hljs-title, html.light .hljs-title.function_, html.light .hljs-attr { color: #6F42C1; }
+html.light .hljs-symbol, html.light .hljs-bullet { color: #E36209; }
+
+html.light .markdown-body code:not(pre code) {
+  background-color: #EAECEF;
+  border-color: #D1D5DB;
+  color: #1F2328;
+}
 
 /* Mermaid Diagrams Container */
 .mermaid-wrapper {

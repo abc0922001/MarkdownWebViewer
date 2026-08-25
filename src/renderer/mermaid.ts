@@ -1,34 +1,70 @@
 let mermaidModule: typeof import('mermaid').default | null = null;
 let currentRenderToken = 0;
+let currentTheme: 'dark' | 'light' = 'dark';
+
+function getMermaidConfig(theme: 'dark' | 'light') {
+  if (theme === 'light') {
+    return {
+      startOnLoad: false,
+      theme: 'default' as const,
+      securityLevel: 'loose' as const,
+      fontFamily: 'Inter, sans-serif',
+      themeVariables: {
+        darkMode: false,
+        background: '#F5F6F7',
+        primaryColor: '#5E6AD2',
+        primaryTextColor: '#08090A',
+        primaryBorderColor: '#5E6AD2',
+        lineColor: '#4B5563',
+        secondaryColor: '#EBECEE',
+        tertiaryColor: '#FFFFFF',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '13px',
+      },
+    };
+  }
+
+  return {
+    startOnLoad: false,
+    theme: 'dark' as const,
+    securityLevel: 'loose' as const,
+    fontFamily: 'Inter, sans-serif',
+    themeVariables: {
+      darkMode: true,
+      background: '#0F1011',
+      primaryColor: '#5E6AD2',
+      primaryTextColor: '#F7F8F8',
+      primaryBorderColor: '#5E6AD2',
+      lineColor: '#8A8F98',
+      secondaryColor: '#141516',
+      tertiaryColor: '#010102',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '13px',
+    },
+  };
+}
 
 /**
- * Lazily loads the Mermaid.js library
+ * Lazily loads and initializes the Mermaid.js library
  */
 async function getMermaid() {
   if (!mermaidModule) {
     const imported = await import('mermaid');
     const mermaid = imported.default;
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'dark',
-      securityLevel: 'loose',
-      fontFamily: 'Inter, sans-serif',
-      themeVariables: {
-        darkMode: true,
-        background: '#0E1015',
-        primaryColor: '#5E6AD2',
-        primaryTextColor: '#F7F8F8',
-        primaryBorderColor: '#5E6AD2',
-        lineColor: '#8A8F98',
-        secondaryColor: '#16181D',
-        tertiaryColor: '#08090A',
-        fontFamily: 'Inter, sans-serif',
-        fontSize: '13px',
-      },
-    });
+    mermaid.initialize(getMermaidConfig(currentTheme));
     mermaidModule = mermaid;
   }
   return mermaidModule;
+}
+
+/**
+ * Set Mermaid theme (light/dark) and re-initialize configuration
+ */
+export function setMermaidTheme(theme: 'dark' | 'light'): void {
+  currentTheme = theme;
+  if (mermaidModule) {
+    mermaidModule.initialize(getMermaidConfig(theme));
+  }
 }
 
 /**
@@ -59,7 +95,6 @@ export async function renderMermaidDiagrams(container: HTMLElement): Promise<boo
       const uniqueId = `mermaid-svg-${Date.now()}-${i}`;
 
       try {
-        // Validate syntax first if supported or directly render
         const { svg } = await mermaid.render(uniqueId, rawCode.trim());
         if (token !== currentRenderToken) return true;
 

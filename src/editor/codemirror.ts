@@ -14,7 +14,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { markdown } from '@codemirror/lang-markdown';
 import { bracketMatching, indentOnInput } from '@codemirror/language';
 import { oneDarkHighlightStyle } from '@codemirror/theme-one-dark';
-import { syntaxHighlighting } from '@codemirror/language';
+import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 
 export interface EditorCallbacks {
   onChange: (content: string) => void;
@@ -24,41 +24,75 @@ export interface EditorCallbacks {
 export class MarkdownEditor {
   private view: EditorView;
   private wrapCompartment = new Compartment();
+  private themeCompartment = new Compartment();
+  private syntaxCompartment = new Compartment();
   private isWordWrapEnabled = true;
 
-  constructor(container: HTMLElement, initialContent: string, callbacks: EditorCallbacks) {
-    const linearTheme = EditorView.theme({
-      '&': {
-        color: '#F7F8F8',
-        backgroundColor: '#0E1015',
-        height: '100%',
-      },
-      '.cm-content': {
-        fontFamily: "'JetBrains Mono', monospace",
-        fontSize: '13.5px',
-        lineHeight: '1.65',
-        caretColor: '#5E6AD2',
-      },
-      '&.cm-focused .cm-cursor': {
-        borderLeftColor: '#5E6AD2',
-      },
-      '&.cm-focused .cm-selectionBackground, ::selection': {
-        backgroundColor: 'rgba(94, 106, 210, 0.35)',
-      },
-      '.cm-gutters': {
-        backgroundColor: '#0E1015',
-        color: '#5B6069',
-        borderRight: '1px solid rgba(255, 255, 255, 0.07)',
-      },
-      '.cm-activeLine': {
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-      },
-      '.cm-activeLineGutter': {
-        backgroundColor: 'transparent',
-        color: '#F7F8F8',
-      },
-    }, { dark: true });
+  private linearDarkTheme = EditorView.theme({
+    '&': {
+      color: '#F7F8F8',
+      backgroundColor: 'var(--bg-surface)',
+      height: '100%',
+    },
+    '.cm-content': {
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: '13.5px',
+      lineHeight: '1.65',
+      caretColor: '#5E6AD2',
+    },
+    '&.cm-focused .cm-cursor': {
+      borderLeftColor: '#5E6AD2',
+    },
+    '&.cm-focused .cm-selectionBackground, ::selection': {
+      backgroundColor: 'rgba(94, 106, 210, 0.35)',
+    },
+    '.cm-gutters': {
+      backgroundColor: 'var(--bg-surface)',
+      color: 'var(--text-disabled)',
+      borderRight: '1px solid var(--border-subtle)',
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'transparent',
+      color: 'var(--text-primary)',
+    },
+  }, { dark: true });
 
+  private linearLightTheme = EditorView.theme({
+    '&': {
+      color: '#08090A',
+      backgroundColor: 'var(--bg-surface)',
+      height: '100%',
+    },
+    '.cm-content': {
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: '13.5px',
+      lineHeight: '1.65',
+      caretColor: '#5E6AD2',
+    },
+    '&.cm-focused .cm-cursor': {
+      borderLeftColor: '#5E6AD2',
+    },
+    '&.cm-focused .cm-selectionBackground, ::selection': {
+      backgroundColor: 'rgba(94, 106, 210, 0.2)',
+    },
+    '.cm-gutters': {
+      backgroundColor: 'var(--bg-surface)',
+      color: 'var(--text-tertiary)',
+      borderRight: '1px solid var(--border-subtle)',
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'transparent',
+      color: 'var(--text-primary)',
+    },
+  }, { dark: false });
+
+  constructor(container: HTMLElement, initialContent: string, callbacks: EditorCallbacks, initialTheme: 'dark' | 'light' = 'dark') {
     const updateListener = EditorView.updateListener.of((update: ViewUpdate) => {
       if (update.docChanged) {
         callbacks.onChange(update.state.doc.toString());
@@ -92,6 +126,7 @@ export class MarkdownEditor {
       },
     });
 
+    const isDark = initialTheme === 'dark';
     const startState = EditorState.create({
       doc: initialContent,
       extensions: [
@@ -105,8 +140,12 @@ export class MarkdownEditor {
         bracketMatching(),
         highlightActiveLine(),
         markdown(),
-        syntaxHighlighting(oneDarkHighlightStyle, { fallback: true }),
-        linearTheme,
+        this.syntaxCompartment.of(
+          isDark
+            ? syntaxHighlighting(oneDarkHighlightStyle, { fallback: true })
+            : syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+        ),
+        this.themeCompartment.of(isDark ? this.linearDarkTheme : this.linearLightTheme),
         this.wrapCompartment.of(EditorView.lineWrapping),
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         updateListener,
@@ -117,6 +156,20 @@ export class MarkdownEditor {
     this.view = new EditorView({
       state: startState,
       parent: container,
+    });
+  }
+
+  public setTheme(theme: 'dark' | 'light'): void {
+    const isDark = theme === 'dark';
+    this.view.dispatch({
+      effects: [
+        this.themeCompartment.reconfigure(isDark ? this.linearDarkTheme : this.linearLightTheme),
+        this.syntaxCompartment.reconfigure(
+          isDark
+            ? syntaxHighlighting(oneDarkHighlightStyle, { fallback: true })
+            : syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+        ),
+      ],
     });
   }
 
