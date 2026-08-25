@@ -31,6 +31,10 @@ button {
   outline: none;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 8px;

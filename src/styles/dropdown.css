@@ -48,11 +48,19 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-dropdown);
   padding: 6px;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 2px;
   z-index: 1000;
+}
+
+.dropdown-wrapper.open .dropdown-menu {
+  display: flex;
   animation: dropdown-pop 140ms var(--ease-linear);
+}
+
+.dropdown-menu[hidden] {
+  display: none !important;
 }
 
 .dropdown-item {
