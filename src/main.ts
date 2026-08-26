@@ -71,12 +71,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Asynchronous Markdown + Mermaid Rendering Pipeline
   const doRender = async (markdownText: string) => {
+    // If content is empty, avoid heavy parsing and show a lightweight placeholder.
+    if (!markdownText || !markdownText.trim()) {
+      previewContent.innerHTML = '<div class="empty-placeholder">開始輸入 Markdown 內容...</div>';
+      setRenderState('synced');
+      updateMetrics();
+      return;
+    }
+
     setRenderState('rendering');
     try {
       const html = renderMarkdownToHtml(markdownText);
       previewContent.innerHTML = html;
 
-      // Render Mermaid diagrams
+      // Render Mermaid diagrams (mermaid module is loaded lazily inside)
       const mermaidSuccess = await renderMermaidDiagrams(previewContent);
       setRenderState(mermaidSuccess ? 'synced' : 'error');
     } catch (err) {
@@ -92,7 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 120);
 
   // Initialize CodeMirror 6 Editor
-  const editor = new MarkdownEditor(editorMount, SAMPLE_MARKDOWN, {
+  // NOTE: For cold-start performance we DO NOT populate the editor with the large SAMPLE_MARKDOWN by default.
+  const editor = new MarkdownEditor(editorMount, '', {
     onChange: (content) => {
       isEdited = true;
       debouncedRender(content);
@@ -109,8 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Synchronized Scrolling
   new SyncScrollManager(editor.getScrollElement(), previewScrollContainer);
 
-  // Initial render
-  doRender(SAMPLE_MARKDOWN);
+  // Initial render: show placeholder for empty editor to avoid heavy startup work
+  if (editor.getValue().trim().length === 0) {
+    previewContent.innerHTML = '<div class="empty-placeholder">開始輸入 Markdown 內容...</div>';
+    setRenderState('synced');
+  } else {
+    // Defensive: if the editor somehow contains content, render it as usual
+    doRender(editor.getValue());
+  }
 
   // Auto-Fix Formatting Action
   const handleAutoFix = () => {
@@ -174,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Topbar Actions
   btnSample.addEventListener('click', () => {
+    // Load the large sample only on explicit user action (improves cold start performance)
     editor.setValue(SAMPLE_MARKDOWN);
     docTitleInput.value = 'Untitled.md';
     doRender(SAMPLE_MARKDOWN);
