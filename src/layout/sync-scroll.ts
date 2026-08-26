@@ -1,11 +1,29 @@
+/**
+ * 雙向等比滾動同步管理員。
+ *
+ * 負責協調編輯器與預覽區之滾動位置，計算當前可滾動高度比例（Scroll Ratio）進行等比映射，
+ * 並透過雙向互斥標記（Mutual Exclusion Flag）搭配 requestAnimationFrame，防止滾動事件形成循環震顫。
+ */
 export class SyncScrollManager {
+  /** 編輯器滾動容器元素 */
   private editorScroller: HTMLElement;
+  /** 預覽區滾動容器元素 */
   private previewScroller: HTMLElement;
+  /** 當前滾動同步功能啟用狀態 */
   private isEnabled = true;
+  /** 編輯器觸發滾動中互斥鎖，防止預覽區反向觸發 */
   private isEditorScrolling = false;
+  /** 預覽區觸發滾動中互斥鎖，防止編輯器反向觸發 */
   private isPreviewScrolling = false;
+  /** 工具列滾動同步切換按鈕元素 */
   private toggleButton: HTMLElement | null;
 
+  /**
+   * 初始化雙向滾動同步管理員。
+   *
+   * @param editorScroller 編輯器滾動容器 DOM 節點
+   * @param previewScroller 預覽區滾動容器 DOM 節點
+   */
   constructor(editorScroller: HTMLElement, previewScroller: HTMLElement) {
     this.editorScroller = editorScroller;
     this.previewScroller = previewScroller;
@@ -14,8 +32,11 @@ export class SyncScrollManager {
     this.initEvents();
   }
 
+  /**
+   * 註冊編輯器與預覽區之滾動監聽事件及工具列切換按鈕點擊事件。
+   */
   private initEvents(): void {
-    // Editor scroll listener
+    // 編輯器滾動監聽器
     this.editorScroller.addEventListener('scroll', () => {
       if (!this.isEnabled || this.isPreviewScrolling) return;
 
@@ -27,12 +48,13 @@ export class SyncScrollManager {
         this.previewScroller.scrollTop = ratio * previewMaxScroll;
       }
 
+      // 於下一幀渲染後解除互斥鎖
       window.requestAnimationFrame(() => {
         this.isEditorScrolling = false;
       });
     }, { passive: true });
 
-    // Preview scroll listener
+    // 預覽區滾動監聽器
     this.previewScroller.addEventListener('scroll', () => {
       if (!this.isEnabled || this.isEditorScrolling) return;
 
@@ -44,12 +66,13 @@ export class SyncScrollManager {
         this.editorScroller.scrollTop = ratio * editorMaxScroll;
       }
 
+      // 於下一幀渲染後解除互斥鎖
       window.requestAnimationFrame(() => {
         this.isPreviewScrolling = false;
       });
     }, { passive: true });
 
-    // Toggle button listener
+    // 工具列切換按鈕監聽器
     if (this.toggleButton) {
       this.toggleButton.addEventListener('click', () => {
         this.toggle();
@@ -57,6 +80,12 @@ export class SyncScrollManager {
     }
   }
 
+  /**
+   * 切換或明確設定雙向滾動同步狀態，並同步更新 UI 按鈕外觀與無障礙文字。
+   *
+   * @param enabled 選填之明確啟用狀態；若未傳入則切換當前反向狀態
+   * @returns 切換後之滾動同步啟用狀態
+   */
   public toggle(enabled?: boolean): boolean {
     this.isEnabled = enabled !== undefined ? enabled : !this.isEnabled;
     if (this.toggleButton) {
