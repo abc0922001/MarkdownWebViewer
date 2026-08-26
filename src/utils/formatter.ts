@@ -28,6 +28,13 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     fixes.push('清除隱形零寬字元與非標準空格');
   }
 
+  // 2.5 Fix bold formatting (trim inner spaces, remove empty bold markers, add CJK spacing)
+  const beforeBold = text;
+  text = fixBoldFormatting(text);
+  if (text !== beforeBold) {
+    fixes.push('修正粗體標籤排版與空格問題');
+  }
+
   // 3. Repair Tables (Stitch broken table rows, remove orphan pipes and internal blank lines)
   const { result: tableFixedText, fixedCount: tableFixedCount } = repairMarkdownTables(text);
   if (tableFixedCount > 0) {
@@ -74,6 +81,34 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     changed,
     fixesSummary: fixes,
   };
+}
+
+/**
+ * 修正 Markdown 文本中的粗體排版與空格問題
+ */
+export function fixBoldFormatting(text: string): string {
+  let result = text;
+
+  // 1. Remove empty bold tags (e.g. **** or **   **)
+  result = result.replace(/\*\*\s*\*\*/g, '');
+
+  // 2. Trim spaces inside bold markers
+  // "** text **" -> "**text**"
+  result = result.replace(/\*\*\s+([^\*\n]+?)\s+\*\*/g, '**$1**');
+  result = result.replace(/\*\*\s+([^\*\n]+?)\*\*/g, '**$1**');
+  result = result.replace(/\*\*([^\*\n]+?)\s+\*\*/g, '**$1**');
+
+  // 3. Add space between CJK (Chinese/Japanese/Korean) and bolded latin/number runs
+  // CJK + **latin** -> CJK + ' ' + **latin**
+  result = result.replace(/([\u4e00-\u9fa5\u3040-\u30ff])\*\*([A-Za-z0-9_#+\-@\s]+?)\*\*/g, '$1 **$2**');
+  // **latin** + CJK -> **latin** + ' ' + CJK
+  result = result.replace(/\*\*([A-Za-z0-9_#+\-@\s]+?)\*\*([\u4e00-\u9fa5\u3040-\u30ff])/g, '**$1** $2');
+
+  // 4. Normalize accidental extra spaces around bold markers
+  result = result.replace(/ {2,}\*\*/g, ' **');
+  result = result.replace(/\*\* {2,}/g, '** ');
+
+  return result;
 }
 
 /**
