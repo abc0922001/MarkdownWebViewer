@@ -1,5 +1,11 @@
 /**
- * Toast Notification Utility
+ * 顯示非侵入式輕量通知（Toast）。
+ *
+ * 動態建立通知 DOM 節點並注入指定容器，在達指定停留時間後執行淡出動畫並自 DOM 移除。
+ *
+ * @param message 欲顯示的通知訊息內文
+ * @param type 通知類型，影響圖示與視覺主題配色（'success' | 'error' | 'info'）
+ * @param duration 訊息停留之毫秒數，預設為 2500 毫秒
  */
 export function showToast(message: string, type: 'success' | 'error' | 'info' = 'info', duration = 2500): void {
   const container = document.getElementById('toast-container');
@@ -20,9 +26,11 @@ export function showToast(message: string, type: 'success' | 'error' | 'info' = 
   toast.innerHTML = `${iconSvg}<span>${message}</span>`;
   container.appendChild(toast);
 
+  // 停留時間結束後觸發 CSS 退場轉場動畫，並於動畫完畢後自 DOM 樹移除
   setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transform = 'translateY(8px) scale(0.95)';
+    // 配合 CSS 轉場時間（180ms）延遲移除節點
     setTimeout(() => toast.remove(), 180);
   }, duration);
 }
