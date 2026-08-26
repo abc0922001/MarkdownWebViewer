@@ -6,14 +6,23 @@ import './styles/preview.css';
 import './styles/dropdown.css';
 import './styles/print.css';
 
-
+/** 快取之 Markdown 渲染模組 Promise 實例，用於模組延遲載入 */
 let markdownRendererPromise: Promise<typeof import('./renderer/markdown')> | null = null;
+
+/**
+ * 按需非同步載入 Markdown 解析渲染引擎（包含 markdown-it、Highlight.js 與 DOMPurify）。
+ *
+ * 避免首屏同步載入大型解析套件，提升初始頁面渲染速度。
+ *
+ * @returns Markdown 解析模組之 Promise
+ */
 function getMarkdownRenderer() {
   if (!markdownRendererPromise) {
     markdownRendererPromise = import('./renderer/markdown');
   }
   return markdownRendererPromise;
 }
+
 import { LayoutSwitcher } from './layout/switcher';
 import { PaneResizer } from './layout/resizer';
 import { SyncScrollManager } from './layout/sync-scroll';
@@ -25,8 +34,11 @@ import { debounce } from './utils/debounce';
 import { showToast } from './utils/toast';
 import { fixMarkdownFormatting } from './utils/formatter';
 
+/**
+ * 應用程式進入點，於 DOMContentLoaded 完成後初始化全站介面與各功能模組。
+ */
 document.addEventListener('DOMContentLoaded', () => {
-  // DOM Elements
+  // 取得關鍵介面 DOM 節點
   const editorMount = document.getElementById('codemirror-mount')!;
   const previewContent = document.getElementById('preview-content')!;
   const previewScrollContainer = document.getElementById('preview-scroll-container')!;
@@ -46,21 +58,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeIconMoon = document.getElementById('theme-icon-moon')!;
   const themeIconSun = document.getElementById('theme-icon-sun')!;
 
-  // Status bar elements
+  // 狀態列統計元素
   const statLines = document.getElementById('stat-lines')!;
   const statWords = document.getElementById('stat-words')!;
   const statChars = document.getElementById('stat-chars')!;
   const statCursor = document.getElementById('stat-cursor')!;
 
+  /** 當前全站視覺主題（'dark' | 'light'） */
   let currentTheme: 'dark' | 'light' = 'dark';
+  /** 是否存在未匯出之修改標記 */
   let isEdited = false;
+  /** CodeMirror 6 實例（未延遲載入完成前為 null） */
   let editorInstance: any = null;
+  /** 在編輯器完成非同步初始化前暫存之文本內容 */
   let pendingContent: string | null = null;
 
+  /**
+   * 取得當前編輯器內容；若編輯器尚未完成初始化則回傳暫存字串。
+   *
+   * @returns 當前文件內容
+   */
   const getEditorValue = (): string => {
     return editorInstance ? editorInstance.getValue() : (pendingContent ?? '');
   };
 
+  /**
+   * 設定編輯器內容；若編輯器尚未就緒則觸發延遲載入並寫入暫存變數。
+   *
+   * @param text 欲寫入之 Markdown 內容
+   */
   const setEditorValue = (text: string): void => {
     loadCodeMirror();
     if (editorInstance) {
@@ -70,7 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Update Status Bar Metrics
+  /**
+   * 更新狀態列的文件統計數據（行數、單字數、字元數）。
+   */
   const updateMetrics = () => {
     if (!editorInstance) {
       statLines.textContent = '0 行';
@@ -84,7 +112,11 @@ document.addEventListener('DOMContentLoaded', () => {
     statChars.textContent = `${chars} 字元`;
   };
 
-  // Set rendering indicator state
+  /**
+   * 更新右下角渲染狀態指示燈之外觀與文字。
+   *
+   * @param state 渲染狀態（'rendering' | 'synced' | 'error'）
+   */
   const setRenderState = (state: 'rendering' | 'synced' | 'error') => {
     renderIndicator.className = `render-indicator ${state}`;
     const textEl = renderIndicator.querySelector('.status-text');
@@ -95,9 +127,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Asynchronous Markdown + Mermaid Rendering Pipeline
+  /**
+   * 非同步執行 Markdown 解析與 Mermaid 圖表繪製管線。
+   *
+   * @param markdownText 待轉譯之 Markdown 原始文字
+   */
   const doRender = async (markdownText: string) => {
-    // If content is empty, avoid heavy parsing and show a lightweight placeholder.
+    // 內容為空時直接呈現預設佔位提示，避免耗損解析資源
     if (!markdownText || !markdownText.trim()) {
       previewContent.innerHTML = '<div class="empty-placeholder">開始輸入 Markdown 內容...</div>';
       setRenderState('synced');
@@ -111,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const html = renderMarkdownToHtml(markdownText);
       previewContent.innerHTML = html;
 
-      // Render Mermaid diagrams dynamically only when mermaid blocks are present
+      // 僅於解析結果中包含 Mermaid 圖表時才動態載入並渲染向量圖表
       let mermaidSuccess = true;
       if (previewContent.querySelector('.mermaid-diagram')) {
         const { renderMermaidDiagrams } = await import('./renderer/mermaid');
@@ -125,16 +161,22 @@ document.addEventListener('DOMContentLoaded', () => {
     updateMetrics();
   };
 
-  // Debounced render (120ms) for ultra-fast typing response
+  /**
+   * 具備 120ms 防抖排程之渲染函式，確保連續打字時介面流暢不卡頓。
+   */
   const debouncedRender = debounce((content: string) => {
     doRender(content);
   }, 120);
 
-  // Initialize Layout Switcher & Resizer
+  // 初始化版面佈局切換器與分隔條拖曳調整器
   const layoutSwitcher = new LayoutSwitcher();
   new PaneResizer();
 
   let isEditorLoading = false;
+
+  /**
+   * 延遲載入 CodeMirror 6 編輯器核心及其相依套件。
+   */
   const loadCodeMirror = () => {
     if (editorInstance || isEditorLoading) return;
     isEditorLoading = true;
@@ -154,7 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // Mount CodeMirror on first user interaction or after 3.5s idle
+  /**
+   * 於使用者首次產生互動操作或經過 3.5 秒閒置後掛載編輯器。
+   */
   const triggerLoad = () => {
     loadCodeMirror();
     window.removeEventListener('pointerdown', triggerLoad);
@@ -165,11 +209,13 @@ document.addEventListener('DOMContentLoaded', () => {
   editorMount.addEventListener('click', triggerLoad);
   setTimeout(triggerLoad, 3500);
 
-  // Initial placeholder already in static HTML
+  // 初始化靜態 HTML 預設狀態
   setRenderState('synced');
   updateMetrics();
 
-  // Prefetch markdown renderer on first user intent (touch, key, hover) or after 4s idle
+  /**
+   * 於使用者首次操作或閒置 4 秒後預先擷取 Markdown 解析模組。
+   */
   const prefetchRenderer = () => {
     getMarkdownRenderer();
     window.removeEventListener('pointerdown', prefetchRenderer);
@@ -179,7 +225,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('keydown', prefetchRenderer, { once: true, passive: true });
   setTimeout(prefetchRenderer, 4000);
 
-  // Auto-Fix Formatting Action
+  /**
+   * 執行 Markdown 自動排版修正流程。
+   */
   const handleAutoFix = () => {
     const currentText = getEditorValue();
     if (!currentText.trim()) {
@@ -200,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnFix.addEventListener('click', handleAutoFix);
 
-  // Global Keyboard Shortcut: Alt+F for Auto-Fix
+  // 全域快捷鍵：Alt+F 執行智慧自動修正
   window.addEventListener('keydown', (e) => {
     if (e.altKey && (e.key === 'f' || e.key === 'F')) {
       e.preventDefault();
@@ -208,7 +256,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Theme Toggle Action
+  /**
+   * 切換淺色與深色主題，同步重繪 CodeMirror、Mermaid 與介面圖示。
+   */
   const toggleTheme = () => {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.className = currentTheme;
@@ -227,13 +277,13 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('🌙 已切換為深色主題', 'info');
     }
 
-    // Re-render to update Mermaid SVGs and markdown colors
+    // 重新渲染以更新 Mermaid 向量樣式與語法顏色
     doRender(getEditorValue());
   };
 
   btnThemeToggle.addEventListener('click', toggleTheme);
 
-  // Global Keyboard Shortcut: Alt+T for Theme Toggle
+  // 全域快捷鍵：Alt+T 切換色彩主題
   window.addEventListener('keydown', (e) => {
     if (e.altKey && (e.key === 't' || e.key === 'T')) {
       e.preventDefault();
@@ -241,15 +291,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Topbar Actions
+  // 工具列按鈕操作：載入範例模板
   btnSample.addEventListener('click', () => {
-    // Load the large sample only on explicit user action (improves cold start performance)
     setEditorValue(SAMPLE_MARKDOWN);
     docTitleInput.value = 'Untitled.md';
     doRender(SAMPLE_MARKDOWN);
     showToast('已載入範例模板', 'info');
   });
 
+  // 工具列按鈕操作：開啟本機檔案
   btnImport.addEventListener('click', () => {
     fileInput.click();
   });
@@ -269,10 +319,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
       reader.readAsText(file);
-      target.value = ''; // Reset input
+      target.value = ''; // 重置 input 供下次選取相同檔名
     }
   });
 
+  // 工具列按鈕操作：複製 Markdown 內容至剪貼簿
   btnCopy.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(getEditorValue());
@@ -282,12 +333,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // 工具列按鈕操作：清空編輯器
   btnClear.addEventListener('click', () => {
     setEditorValue('');
     doRender('');
     showToast('已清空編輯器內容', 'info');
   });
 
+  // 工具列按鈕操作：切換自動折行
   btnEditorWrap.addEventListener('click', () => {
     if (editorInstance) {
       const isWrapped = editorInstance.toggleWrap();
@@ -296,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Export Dropdown
+  // 匯出下拉選單展開與收合控制
   btnExportDropdown.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = dropdownWrapper.classList.toggle('open');
@@ -304,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnExportDropdown.setAttribute('aria-expanded', String(isOpen));
   });
 
+  // 點擊下拉選單外部自動關閉
   document.addEventListener('click', (e) => {
     if (!dropdownWrapper.contains(e.target as Node)) {
       dropdownWrapper.classList.remove('open');
@@ -312,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Export actions
+  // 匯出格式選擇監聽（.md / .html / .pdf）
   exportMenu.querySelectorAll<HTMLButtonElement>('.dropdown-item').forEach((item) => {
     item.addEventListener('click', () => {
       const type = item.dataset.export;
@@ -327,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         exportHtml(previewContent, filename);
         showToast('已成功匯出獨立 HTML 檔案', 'success');
       } else if (type === 'pdf') {
-        // Switch to preview/split if currently in editor only mode for printing
+        // 若處於純編輯模式，切換為雙欄以確保列印預覽區域正確呈現在 DOM 樹中
         const currentMode = layoutSwitcher.getMode();
         if (currentMode === 'editor') {
           layoutSwitcher.setMode('split');
@@ -338,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Zero-Persistence Protection (beforeunload)
+  // 無痕暫態保護（Zero-Persistence）：離開或重新整理頁面前提示防誤觸
   window.addEventListener('beforeunload', (e) => {
     if (isEdited && getEditorValue().trim().length > 0) {
       e.preventDefault();
