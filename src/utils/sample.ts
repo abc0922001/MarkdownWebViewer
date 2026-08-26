@@ -1,5 +1,8 @@
 /**
- * Default Rich Demo Markdown Template
+ * 預設展示 Markdown 模板內容。
+ *
+ * 包含 GFM 任務清單、Mermaid 流程圖與時序圖、多語言程式碼區塊、技術選型表格與 GitHub 警示區塊（Callouts），
+ * 供使用者於首次載入或點擊「範例」按鈕時作為功能展示與格式驗證基準。
  */
 export const SAMPLE_MARKDOWN = `# Markdown & Mermaid Web Viewer
 
