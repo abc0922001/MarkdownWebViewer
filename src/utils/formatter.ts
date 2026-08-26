@@ -101,6 +101,7 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
  * 修正 Markdown 文本中的粗體排版與邊界空格問題。
  *
  * 處理空粗體標記、清除標記內部首尾多餘空格，並在中日韓文字（CJK）與粗體英數字邊界處插入標準半形空格。
+ * 限制僅比對行內水平空白（[ \t]），防止跨行誤配導致段落換行遭吞噬合併。
  *
  * @param text 待處理的文字內容
  * @returns 修正粗體排版後的文字內容
@@ -108,23 +109,23 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
 export function fixBoldFormatting(text: string): string {
   let result = text;
 
-  // 1. 清除無實質內文之空粗體標記（如 **** 或 **   **）
-  result = result.replace(/\*\*\s*\*\*/g, '');
+  // 1. 清除無實質內文之空粗體標記（如 **** 或 **   **，僅限行內水平空白）
+  result = result.replace(/\*\*[ \t]*\*\*/g, '');
 
-  // 2. 修剪粗體標記內部多餘的首尾空白，防止語法解析失效（如 "** 內文 **" 轉為 "**內文**"）
-  result = result.replace(/\*\*\s+([^\*\n]+?)\s+\*\*/g, '**$1**');
-  result = result.replace(/\*\*\s+([^\*\n]+?)\*\*/g, '**$1**');
-  result = result.replace(/\*\*([^\*\n]+?)\s+\*\*/g, '**$1**');
+  // 2. 修剪粗體標記內部多餘的首尾空白，防止語法解析失效（如 "** 內文 **" 轉為 "**內文**"，僅限行內水平空白）
+  result = result.replace(/\*\*[ \t]+([^*\r\n]+?)[ \t]+\*\*/g, '**$1**');
+  result = result.replace(/\*\*[ \t]+([^*\r\n]+?)\*\*/g, '**$1**');
+  result = result.replace(/\*\*([^*\r\n]+?)[ \t]+\*\*/g, '**$1**');
 
-  // 3. 在中日韓文字（CJK）與粗體英數字之間補入半形空格以優化排版可讀性
+  // 3. 在中日韓文字（CJK）與粗體英數字之間補入半形空格以優化排版可讀性（僅限行內字元）
   // CJK + **英數** -> CJK + 空格 + **英數**
-  result = result.replace(/([\u4e00-\u9fa5\u3040-\u30ff])\*\*([A-Za-z0-9_#+\-@\s]+?)\*\*/g, '$1 **$2**');
+  result = result.replace(/([\u4e00-\u9fa5\u3040-\u30ff])\*\*([A-Za-z0-9_#+\-@ \t]+?)\*\*/g, '$1 **$2**');
   // **英數** + CJK -> **英數** + 空格 + CJK
-  result = result.replace(/\*\*([A-Za-z0-9_#+\-@\s]+?)\*\*([\u4e00-\u9fa5\u3040-\u30ff])/g, '**$1** $2');
+  result = result.replace(/\*\*([A-Za-z0-9_#+\-@ \t]+?)\*\*([\u4e00-\u9fa5\u3040-\u30ff])/g, '**$1** $2');
 
-  // 4. 正規化粗體外側連續多個空格為單一空格
-  result = result.replace(/ {2,}\*\*/g, ' **');
-  result = result.replace(/\*\* {2,}/g, '** ');
+  // 4. 正規化粗體外側連續多個空格為單一空格（僅限行內水平空白）
+  result = result.replace(/[ \t]{2,}\*\*/g, ' **');
+  result = result.replace(/\*\*[ \t]{2,}/g, '** ');
 
   return result;
 }
