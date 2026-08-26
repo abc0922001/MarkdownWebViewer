@@ -98,36 +98,152 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
 }
 
 /**
+ * 掃描字串中所有未被反斜線轉義的連續星號序列。
+ *
+ * @param text 待掃描的文字內容
+ * @returns 星號序列的位置與長度清單
+ */
+function findAsteriskRuns(text: string): { index: number; length: number }[] {
+  const runs: { index: number; length: number }[] = [];
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] === '*') {
+      let backslashes = 0;
+      for (let b = i - 1; b >= 0 && text[b] === '\\'; b--) {
+        backslashes++;
+      }
+      if (backslashes % 2 === 1) {
+        i++;
+        continue;
+      }
+      const start = i;
+      while (i < text.length && text[i] === '*') {
+        i++;
+      }
+      runs.push({ index: start, length: i - start });
+    } else {
+      i++;
+    }
+  }
+  return runs;
+}
+
+/**
+ * 修正單行文字中的粗體標記排版，包含消除標記內首尾空白、移除空粗體標記以及優化中英文字界空格。
+ *
+ * @param line 待處理的單行文字
+ * @returns 修正粗體排版後的單行文字
+ */
+function fixBoldInLine(line: string): string {
+  // 若該行為 Markdown 水平分隔線（如 *** 或 * * *），直接保留不更動
+  if (/^\s*(\*\s*){3,}$/.test(line)) return line;
+
+  // 保護行內程式碼區塊（`...`），避免更改程式碼內容中的星號
+  const codeSpans: string[] = [];
+  const textWithoutCode = line.replace(/(`+)([\s\S]*?)\1/g, (match) => {
+    codeSpans.push(match);
+    return `\x00CODE_${codeSpans.length - 1}\x00`;
+  });
+
+  const runs = findAsteriskRuns(textWithoutCode);
+  if (runs.length < 2) return line;
+
+  let result = '';
+  let lastIndex = 0;
+  let r = 0;
+
+  while (r < runs.length) {
+    const openRun = runs[r];
+    // 單一星號為清單項目或斜體標記，略過
+    if (openRun.length === 1) {
+      r++;
+      continue;
+    }
+
+    // 四個以上星號為無效空粗體（****），直接移除
+    if (openRun.length === 4) {
+      result += textWithoutCode.slice(lastIndex, openRun.index);
+      lastIndex = openRun.index + openRun.length;
+      r++;
+      continue;
+    }
+
+    // 向後尋找配對的閉合星號序列（長度 >= 2）
+    let closeRunIdx = -1;
+    for (let nextR = r + 1; nextR < runs.length; nextR++) {
+      if (runs[nextR].length >= 2) {
+        closeRunIdx = nextR;
+        break;
+      }
+    }
+
+    if (closeRunIdx === -1) {
+      break;
+    }
+
+    const closeRun = runs[closeRunIdx];
+    result += textWithoutCode.slice(lastIndex, openRun.index);
+
+    // 支援粗斜體（***）標記：外層保留單一斜體星號
+    const isTripleOpen = openRun.length === 3;
+    const isTripleClose = closeRun.length === 3;
+    const outerOpen = isTripleOpen ? '*' : '';
+    const outerClose = isTripleClose ? '*' : '';
+
+    const content = textWithoutCode.slice(openRun.index + openRun.length, closeRun.index);
+
+    // 若標記內部皆為空白字元（如 ** **），視為空粗體清除
+    if (content.trim() === '') {
+      lastIndex = closeRun.index + closeRun.length;
+      r = closeRunIdx + 1;
+      continue;
+    }
+
+    // 將粗體內部首尾多餘的空白移至粗體外側
+    const leadingSpace = content.match(/^[ \t]+/)?.[0] || '';
+    const trailingSpace = content.match(/[ \t]+$/)?.[0] || '';
+    const trimmed = content.slice(leadingSpace.length, content.length - trailingSpace.length);
+
+    // 若粗體為純英數或常見符號，且相鄰字元為 CJK 中日文字，則於外側補入排版空格
+    const isAlphanumeric = /^[A-Za-z0-9_#+\-@\s]+$/.test(trimmed.trim()) && /[A-Za-z0-9]/.test(trimmed);
+    const prevChar = (result + outerOpen).length > 0 ? (result + outerOpen)[(result + outerOpen).length - 1] : '';
+    const nextChar = closeRun.index + closeRun.length < textWithoutCode.length ? textWithoutCode[closeRun.index + closeRun.length] : '';
+
+    const isCJK = (ch: string) => /[\u4e00-\u9fa5\u3040-\u30ff]/.test(ch);
+
+    let prefixSpace = leadingSpace;
+    let suffixSpace = trailingSpace;
+
+    if (isAlphanumeric) {
+      if (isCJK(prevChar) && !prefixSpace && !result.endsWith(' ')) {
+        prefixSpace = ' ';
+      }
+      if (isCJK(nextChar) && !suffixSpace && !textWithoutCode.slice(closeRun.index + closeRun.length).startsWith(' ')) {
+        suffixSpace = ' ';
+      }
+    }
+
+    result += `${prefixSpace}${outerOpen}**${trimmed}**${outerClose}${suffixSpace}`;
+    lastIndex = closeRun.index + closeRun.length;
+    r = closeRunIdx + 1;
+  }
+
+  result += textWithoutCode.slice(lastIndex);
+  result = result.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);
+  return result;
+}
+
+/**
  * 修正 Markdown 文本中的粗體排版與邊界空格問題。
  *
- * 處理空粗體標記、清除標記內部首尾多餘空格，並在中日韓文字（CJK）與粗體英數字邊界處插入標準半形空格。
- * 限制僅比對行內水平空白（[ \t]），防止跨行誤配導致段落換行遭吞噬合併。
+ * 逐行嚴格配對成對的粗體星號標記，修剪標記內部首尾多餘空白並移至外側、清除空粗體標記，
+ * 同時保護行內程式碼不受干擾，避免跨標籤誤配導致一般文字被轉為粗體。
  *
  * @param text 待處理的文字內容
  * @returns 修正粗體排版後的文字內容
  */
 export function fixBoldFormatting(text: string): string {
-  let result = text;
-
-  // 1. 清除無實質內文之空粗體標記（如 **** 或 **   **，僅限行內水平空白）
-  result = result.replace(/\*\*[ \t]*\*\*/g, '');
-
-  // 2. 修剪粗體標記內部多餘的首尾空白，防止語法解析失效（如 "** 內文 **" 轉為 "**內文**"，僅限行內水平空白）
-  result = result.replace(/\*\*[ \t]+([^*\r\n]+?)[ \t]+\*\*/g, '**$1**');
-  result = result.replace(/\*\*[ \t]+([^*\r\n]+?)\*\*/g, '**$1**');
-  result = result.replace(/\*\*([^*\r\n]+?)[ \t]+\*\*/g, '**$1**');
-
-  // 3. 在中日韓文字（CJK）與粗體英數字之間補入半形空格以優化排版可讀性（僅限行內字元）
-  // CJK + **英數** -> CJK + 空格 + **英數**
-  result = result.replace(/([\u4e00-\u9fa5\u3040-\u30ff])\*\*([A-Za-z0-9_#+\-@ \t]+?)\*\*/g, '$1 **$2**');
-  // **英數** + CJK -> **英數** + 空格 + CJK
-  result = result.replace(/\*\*([A-Za-z0-9_#+\-@ \t]+?)\*\*([\u4e00-\u9fa5\u3040-\u30ff])/g, '**$1** $2');
-
-  // 4. 正規化粗體外側連續多個空格為單一空格（僅限行內水平空白）
-  result = result.replace(/[ \t]{2,}\*\*/g, ' **');
-  result = result.replace(/\*\*[ \t]{2,}/g, '** ');
-
-  return result;
+  return text.split('\n').map(fixBoldInLine).join('\n');
 }
 
 /**
@@ -167,13 +283,19 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
       if (separatorIndex !== -1) {
         // 確認偵測到表格結構，開始收集並修復所有資料行
         const tableRows: string[] = [];
-        let hadGlitches = false;
+        let hadGlitches = separatorIndex > i + 1;
 
         // 加入正規化後之標頭行
-        tableRows.push(normalizeTableRow(lines[i].trim()));
+        const origHeader = lines[i].trim();
+        const normHeader = normalizeTableRow(origHeader);
+        if (normHeader !== origHeader) hadGlitches = true;
+        tableRows.push(normHeader);
 
         // 加入正規化後之分隔線行
-        tableRows.push(normalizeTableSeparator(lines[separatorIndex].trim()));
+        const origSep = lines[separatorIndex].trim();
+        const normSep = normalizeTableSeparator(origSep);
+        if (normSep !== origSep) hadGlitches = true;
+        tableRows.push(normSep);
 
         let cursor = separatorIndex + 1;
 
@@ -217,6 +339,9 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
           // 檢查當前行是否為合法表格資料行
           if (isPotentialTableRow(curTrimmed) && !isHeaderOrHeading(curTrimmed)) {
             const normalizedRow = normalizeTableRow(curTrimmed);
+            if (normalizedRow !== curTrimmed) {
+              hadGlitches = true;
+            }
             tableRows.push(normalizedRow);
             cursor++;
           } else {
@@ -234,7 +359,7 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
         outputLines.push(...tableRows);
         outputLines.push(''); // 表格下方追加空行區隔
 
-        if (hadGlitches || cursor > separatorIndex + 1) {
+        if (hadGlitches) {
           fixedTables++;
         }
 
