@@ -1,10 +1,17 @@
 /**
- * Export self-contained standalone HTML file (.html)
+ * 匯出單一獨立自給之 HTML 檔案（.html）。
+ *
+ * 將當前預覽區渲染之 HTML 結構、已繪製之 Mermaid 向量圖形（SVG）與內嵌 CSS 樣式表封裝為單一靜態 HTML 文件，
+ * 無須依賴任何外部樣式表或 CDN 即可於離線環境完整呈現。
+ *
+ * @param previewElement 包含已渲染 Markdown 內容之預覽容器 DOM 節點
+ * @param title 文件標題與下載檔名基準，預設為 'Document'
  */
 export function exportHtml(previewElement: HTMLElement, title = 'Document'): void {
   const renderedContent = previewElement.innerHTML;
   const finalFilename = title.endsWith('.html') ? title : `${title.replace(/\.[^/.]+$/, '')}.html`;
 
+  // 組裝包含完整 Meta、內嵌深色主題 CSS 與預覽 DOM 的獨立 HTML 字串
   const standaloneHtml = `<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -129,9 +136,11 @@ export function exportHtml(previewElement: HTMLElement, title = 'Document'): voi
 </body>
 </html>`;
 
+  // 封裝為 text/html Blob 資料流並建立暫態 URL
   const blob = new Blob([standaloneHtml], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
 
+  // 建立暫態連結節點並自動觸發下載流程
   const link = document.createElement('a');
   link.href = url;
   link.download = finalFilename;
@@ -139,9 +148,16 @@ export function exportHtml(previewElement: HTMLElement, title = 'Document'): voi
   link.click();
   document.body.removeChild(link);
 
+  // 延遲釋放 Object URL 資源以確保瀏覽器順利完成讀取
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/**
+ * 對文字字串進行 HTML 特殊符號跳脫處理，防止字串注入破壞標籤結構。
+ *
+ * @param text 欲跳脫處理之純文字字串
+ * @returns 跳脫後的 HTML 安全字串
+ */
 function escapeHtml(text: string): string {
   const div = document.createElement('div');
   div.textContent = text;
