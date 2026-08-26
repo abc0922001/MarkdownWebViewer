@@ -130,6 +130,9 @@ export class MarkdownEditor {
     const startState = EditorState.create({
       doc: initialContent,
       extensions: [
+        EditorView.contentAttributes.of({
+          'aria-label': 'Markdown 編輯區',
+        }),
         lineNumbers(),
         highlightActiveLineGutter(),
         highlightSpecialChars(),

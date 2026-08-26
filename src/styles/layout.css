@@ -378,5 +378,5 @@
 }
 
 .status-btn.active {
-  color: var(--accent-primary);
+  color: var(--accent-contrast);
 }

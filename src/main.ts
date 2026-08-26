@@ -6,9 +6,14 @@ import './styles/preview.css';
 import './styles/dropdown.css';
 import './styles/print.css';
 
-import { MarkdownEditor } from './editor/codemirror';
-import { renderMarkdownToHtml } from './renderer/markdown';
-import { renderMermaidDiagrams, setMermaidTheme } from './renderer/mermaid';
+
+let markdownRendererPromise: Promise<typeof import('./renderer/markdown')> | null = null;
+function getMarkdownRenderer() {
+  if (!markdownRendererPromise) {
+    markdownRendererPromise = import('./renderer/markdown');
+  }
+  return markdownRendererPromise;
+}
 import { LayoutSwitcher } from './layout/switcher';
 import { PaneResizer } from './layout/resizer';
 import { SyncScrollManager } from './layout/sync-scroll';
@@ -49,10 +54,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentTheme: 'dark' | 'light' = 'dark';
   let isEdited = false;
+  let editorInstance: any = null;
+  let pendingContent: string | null = null;
+
+  const getEditorValue = (): string => {
+    return editorInstance ? editorInstance.getValue() : (pendingContent ?? '');
+  };
+
+  const setEditorValue = (text: string): void => {
+    loadCodeMirror();
+    if (editorInstance) {
+      editorInstance.setValue(text);
+    } else {
+      pendingContent = text;
+    }
+  };
 
   // Update Status Bar Metrics
   const updateMetrics = () => {
-    const { lines, words, chars } = editor.getMetrics();
+    if (!editorInstance) {
+      statLines.textContent = '0 行';
+      statWords.textContent = '0 字';
+      statChars.textContent = '0 字元';
+      return;
+    }
+    const { lines, words, chars } = editorInstance.getMetrics();
     statLines.textContent = `${lines} 行`;
     statWords.textContent = `${words} 字`;
     statChars.textContent = `${chars} 字元`;
@@ -81,11 +107,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setRenderState('rendering');
     try {
+      const { renderMarkdownToHtml } = await getMarkdownRenderer();
       const html = renderMarkdownToHtml(markdownText);
       previewContent.innerHTML = html;
 
-      // Render Mermaid diagrams (mermaid module is loaded lazily inside)
-      const mermaidSuccess = await renderMermaidDiagrams(previewContent);
+      // Render Mermaid diagrams dynamically only when mermaid blocks are present
+      let mermaidSuccess = true;
+      if (previewContent.querySelector('.mermaid-diagram')) {
+        const { renderMermaidDiagrams } = await import('./renderer/mermaid');
+        mermaidSuccess = await renderMermaidDiagrams(previewContent);
+      }
       setRenderState(mermaidSuccess ? 'synced' : 'error');
     } catch (err) {
       console.error('Rendering error:', err);
@@ -99,37 +130,58 @@ document.addEventListener('DOMContentLoaded', () => {
     doRender(content);
   }, 120);
 
-  // Initialize CodeMirror 6 Editor
-  // NOTE: For cold-start performance we DO NOT populate the editor with the large SAMPLE_MARKDOWN by default.
-  const editor = new MarkdownEditor(editorMount, '', {
-    onChange: (content) => {
-      isEdited = true;
-      debouncedRender(content);
-    },
-    onCursorActivity: (line, col) => {
-      statCursor.textContent = `行 ${line}, 欄 ${col}`;
-    },
-  });
-
   // Initialize Layout Switcher & Resizer
   const layoutSwitcher = new LayoutSwitcher();
   new PaneResizer();
 
-  // Initialize Synchronized Scrolling
-  new SyncScrollManager(editor.getScrollElement(), previewScrollContainer);
+  let isEditorLoading = false;
+  const loadCodeMirror = () => {
+    if (editorInstance || isEditorLoading) return;
+    isEditorLoading = true;
+    import('./editor/codemirror').then(({ MarkdownEditor }) => {
+      editorInstance = new MarkdownEditor(editorMount, pendingContent ?? '', {
+        onChange: (content) => {
+          isEdited = true;
+          debouncedRender(content);
+        },
+        onCursorActivity: (line, col) => {
+          statCursor.textContent = `行 ${line}, 欄 ${col}`;
+        },
+      }, currentTheme);
 
-  // Initial render: show placeholder for empty editor to avoid heavy startup work
-  if (editor.getValue().trim().length === 0) {
-    previewContent.innerHTML = '<div class="empty-placeholder">開始輸入 Markdown 內容...</div>';
-    setRenderState('synced');
-  } else {
-    // Defensive: if the editor somehow contains content, render it as usual
-    doRender(editor.getValue());
-  }
+      new SyncScrollManager(editorInstance.getScrollElement(), previewScrollContainer);
+      updateMetrics();
+    });
+  };
+
+  // Mount CodeMirror on first user interaction or after 3.5s idle
+  const triggerLoad = () => {
+    loadCodeMirror();
+    window.removeEventListener('pointerdown', triggerLoad);
+    window.removeEventListener('keydown', triggerLoad);
+  };
+  window.addEventListener('pointerdown', triggerLoad, { once: true, passive: true });
+  window.addEventListener('keydown', triggerLoad, { once: true, passive: true });
+  editorMount.addEventListener('click', triggerLoad);
+  setTimeout(triggerLoad, 3500);
+
+  // Initial placeholder already in static HTML
+  setRenderState('synced');
+  updateMetrics();
+
+  // Prefetch markdown renderer on first user intent (touch, key, hover) or after 4s idle
+  const prefetchRenderer = () => {
+    getMarkdownRenderer();
+    window.removeEventListener('pointerdown', prefetchRenderer);
+    window.removeEventListener('keydown', prefetchRenderer);
+  };
+  window.addEventListener('pointerdown', prefetchRenderer, { once: true, passive: true });
+  window.addEventListener('keydown', prefetchRenderer, { once: true, passive: true });
+  setTimeout(prefetchRenderer, 4000);
 
   // Auto-Fix Formatting Action
   const handleAutoFix = () => {
-    const currentText = editor.getValue();
+    const currentText = getEditorValue();
     if (!currentText.trim()) {
       showToast('編輯器為空，無須修正', 'info');
       return;
@@ -137,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const { formatted, changed, fixesSummary } = fixMarkdownFormatting(currentText);
     if (changed) {
-      editor.setValue(formatted);
+      setEditorValue(formatted);
       doRender(formatted);
       const summaryMsg = fixesSummary.length > 0 ? fixesSummary.join('、') : '排版格式';
       showToast(`✨ 已完成自動修正：${summaryMsg}`, 'success', 3000);
@@ -160,8 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleTheme = () => {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.className = currentTheme;
-    editor.setTheme(currentTheme);
-    setMermaidTheme(currentTheme);
+    if (editorInstance) editorInstance.setTheme(currentTheme);
+    if (previewContent.querySelector('.mermaid-diagram, svg[id^="mermaid-"]')) {
+      import('./renderer/mermaid').then(({ setMermaidTheme }) => setMermaidTheme(currentTheme));
+    }
 
     if (currentTheme === 'light') {
       themeIconMoon.style.display = 'none';
@@ -174,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Re-render to update Mermaid SVGs and markdown colors
-    doRender(editor.getValue());
+    doRender(getEditorValue());
   };
 
   btnThemeToggle.addEventListener('click', toggleTheme);
@@ -190,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Topbar Actions
   btnSample.addEventListener('click', () => {
     // Load the large sample only on explicit user action (improves cold start performance)
-    editor.setValue(SAMPLE_MARKDOWN);
+    setEditorValue(SAMPLE_MARKDOWN);
     docTitleInput.value = 'Untitled.md';
     doRender(SAMPLE_MARKDOWN);
     showToast('已載入範例模板', 'info');
@@ -209,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.onload = (event) => {
         const text = event.target?.result as string;
         if (typeof text === 'string') {
-          editor.setValue(text);
+          setEditorValue(text);
           doRender(text);
           showToast(`已成功開啟：${file.name}`, 'success');
         }
@@ -221,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnCopy.addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(editor.getValue());
+      await navigator.clipboard.writeText(getEditorValue());
       showToast('已複製 Markdown 原始碼至剪貼簿', 'success');
     } catch {
       showToast('複製失敗，請檢查權限', 'error');
@@ -229,15 +283,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnClear.addEventListener('click', () => {
-    editor.setValue('');
+    setEditorValue('');
     doRender('');
     showToast('已清空編輯器內容', 'info');
   });
 
   btnEditorWrap.addEventListener('click', () => {
-    const isWrapped = editor.toggleWrap();
-    btnEditorWrap.classList.toggle('active', isWrapped);
-    btnEditorWrap.textContent = isWrapped ? '自動換行' : '不換行';
+    if (editorInstance) {
+      const isWrapped = editorInstance.toggleWrap();
+      btnEditorWrap.classList.toggle('active', isWrapped);
+      btnEditorWrap.textContent = isWrapped ? '自動換行' : '不換行';
+    }
   });
 
   // Export Dropdown
@@ -265,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
       exportMenu.hidden = true;
 
       if (type === 'md') {
-        exportMarkdown(editor.getValue(), filename);
+        exportMarkdown(getEditorValue(), filename);
         showToast('已成功匯出 Markdown 檔案', 'success');
       } else if (type === 'html') {
         exportHtml(previewContent, filename);
@@ -284,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Zero-Persistence Protection (beforeunload)
   window.addEventListener('beforeunload', (e) => {
-    if (isEdited && editor.getValue().trim().length > 0) {
+    if (isEdited && getEditorValue().trim().length > 0) {
       e.preventDefault();
       e.returnValue = '您的內容尚未匯出，重新整理或離開將徹底抹除資料，確定要離開嗎？';
       return e.returnValue;

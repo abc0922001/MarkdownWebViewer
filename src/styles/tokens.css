@@ -27,6 +27,7 @@
   --accent-primary: #5E6AD2;      /* {colors.primary} - Signature Linear lavender accent */
   --accent-hover: #828FFF;        /* {colors.primary-hover} - Lighter lavender on hover */
   --accent-active: #5E69D1;       /* {colors.primary-focus} - Active / pressed */
+  --accent-contrast: #828FFF;     /* High-contrast lavender for text readability (WCAG AA > 4.5:1) */
   --accent-surface: rgba(94, 106, 210, 0.14);
   --accent-glow: 0 0 16px rgba(94, 106, 210, 0.35);
 
@@ -97,6 +98,7 @@ html.light {
   --accent-primary: #5E6AD2;
   --accent-hover: #4F5AB8;
   --accent-active: #434D9E;
+  --accent-contrast: #434D9E;     /* High-contrast lavender for light background (WCAG AA > 4.5:1) */
   --accent-surface: rgba(94, 106, 210, 0.08);
   --accent-glow: 0 0 12px rgba(94, 106, 210, 0.25);
 
