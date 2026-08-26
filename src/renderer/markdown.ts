@@ -1,6 +1,7 @@
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js/lib/common';
 import DOMPurify from 'dompurify';
+import { fixMathSymbols } from '../utils/formatter';
 
 /**
  * 對純文字字串進行 HTML 特殊符號轉義處理，防止 XSS 與破壞 HTML 結構。
@@ -97,7 +98,8 @@ function processAlerts(html: string): string {
  * @returns 消毒完畢之 HTML 字串
  */
 export function renderMarkdownToHtml(markdown: string): string {
-  const rawHtml = md.render(markdown);
+  const normalized = fixMathSymbols(markdown);
+  const rawHtml = md.render(normalized);
   const withAlerts = processAlerts(rawHtml);
 
   // 透過 DOMPurify 進行 XSS 防禦過濾，保留 SVG 圖形標籤與自訂屬性

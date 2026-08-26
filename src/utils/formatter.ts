@@ -42,6 +42,13 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     fixes.push('清除隱形零寬字元與非標準空格');
   }
 
+  // 2.2 修正 AI 複製之 LaTeX 數學與比較符號（例如：$\le$ 轉為 ≤、$\ge$ 轉為 ≥）
+  const beforeMath = text;
+  text = fixMathSymbols(text);
+  if (text !== beforeMath) {
+    fixes.push('校正數學與比較符號');
+  }
+
   // 2.5 修正粗體標記格式（去除內側空格、清除空粗體、補齊中英文字界空格）
   const beforeBold = text;
   text = fixBoldFormatting(text);
@@ -95,6 +102,69 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     changed,
     fixesSummary: fixes,
   };
+}
+
+/**
+ * 修正自 AI（如 Gemini、ChatGPT 等）複製內容中殘留的 LaTeX 數學與比較符號。
+ *
+ * 將常見的獨立 LaTeX 符號標記（如 $\le$、$\ge$、$\neq$ 等）轉換為標準 Unicode 符號（≤、≥、≠ 等）。
+ * 支援帶有 $ 標記（如 $\le$）、公式內部運算符號（如 $x \le y$ 轉為 $x ≤ y$）與不帶 $ 標記之獨立 LaTeX 巨集（如 \le 35）。
+ * 同時保護多行程式碼區塊（```...```）與行內程式碼（`...`），防止程式碼內容遭誤替換。
+ *
+ * @param text 待處理的文字內容
+ * @returns 轉換後的文字內容
+ */
+export function fixMathSymbols(text: string): string {
+  // 保護多行程式碼區塊與行內程式碼，避免替換程式碼內容
+  const codeSpans: string[] = [];
+  const textWithoutCode = text.replace(/(```[\s\S]*?```|`[^`\r\n]+`)/g, (match) => {
+    codeSpans.push(match);
+    return `\x00CODE_${codeSpans.length - 1}\x00`;
+  });
+
+  let result = textWithoutCode;
+
+  // 1. 替換帶有獨立 $ 標記的 LaTeX 符號（如 $\le$, $ \le $）
+  result = result
+    .replace(/\$\s*\\(?:le|leq)\s*\$/g, '≤')
+    .replace(/\$\s*\\(?:ge|geq)\s*\$/g, '≥')
+    .replace(/\$\s*\\(?:ne|neq)\s*\$/g, '≠')
+    .replace(/\$\s*\\approx\s*\$/g, '≈')
+    .replace(/\$\s*\\pm\s*\$/g, '±')
+    .replace(/\$\s*\\times\s*\$/g, '×')
+    .replace(/\$\s*\\div\s*\$/g, '÷')
+    .replace(/\$\s*\\(?:degree|circ)\s*\$/g, '°')
+    .replace(/\$\s*\\sim\s*\$/g, '~')
+    .replace(/\$\s*\\infty\s*\$/g, '∞');
+
+  // 2. 替換行內數學式 $...$ 內部的運算符號（如 $x \le y$ 轉為 $x ≤ y$）
+  result = result.replace(/\$([^$\r\n]+)\$/g, (_, inner) => {
+    const replaced = inner
+      .replace(/\\(?:le|leq)\b/g, '≤')
+      .replace(/\\(?:ge|geq)\b/g, '≥')
+      .replace(/\\(?:ne|neq)\b/g, '≠')
+      .replace(/\\approx\b/g, '≈')
+      .replace(/\\pm\b/g, '±')
+      .replace(/\\times\b/g, '×')
+      .replace(/\\div\b/g, '÷')
+      .replace(/\\degree\b/g, '°')
+      .replace(/\^\{\\circ\}|\^\\circ\b/g, '°');
+    return `$${replaced}$`;
+  });
+
+  // 3. 替換無 $ 標記但獨立出現的 LaTeX 符號（如 \le 35 轉為 ≤ 35）
+  result = result
+    .replace(/(?<![\\a-zA-Z])\\(?:le|leq)(?![a-zA-Z])/g, '≤')
+    .replace(/(?<![\\a-zA-Z])\\(?:ge|geq)(?![a-zA-Z])/g, '≥')
+    .replace(/(?<![\\a-zA-Z])\\(?:ne|neq)(?![a-zA-Z])/g, '≠')
+    .replace(/(?<![\\a-zA-Z])\\approx(?![a-zA-Z])/g, '≈')
+    .replace(/(?<![\\a-zA-Z])\\pm(?![a-zA-Z])/g, '±')
+    .replace(/(?<![\\a-zA-Z])\\times(?![a-zA-Z])/g, '×')
+    .replace(/(?<![\\a-zA-Z])\\div(?![a-zA-Z])/g, '÷');
+
+  // 還原程式碼區塊
+  result = result.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);
+  return result;
 }
 
 /**
