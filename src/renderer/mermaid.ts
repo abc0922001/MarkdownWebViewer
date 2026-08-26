@@ -1,7 +1,16 @@
+/** 快取之 Mermaid.js 動態匯入模組實例 */
 let mermaidModule: typeof import('mermaid').default | null = null;
+/** 渲染序號 Token，用於競態條件（Race Condition）防禦，防止過期的非同步回呼覆蓋最新內容 */
 let currentRenderToken = 0;
+/** 當前作用中之圖表色彩主題 */
 let currentTheme: 'dark' | 'light' = 'dark';
 
+/**
+ * 依據指定主題產生適配 Linear Design System 之 Mermaid 設定物件。
+ *
+ * @param theme 目標視覺主題（'dark' | 'light'）
+ * @returns Mermaid 初始化設定選項
+ */
 function getMermaidConfig(theme: 'dark' | 'light') {
   if (theme === 'light') {
     return {
@@ -45,7 +54,11 @@ function getMermaidConfig(theme: 'dark' | 'light') {
 }
 
 /**
- * Lazily loads and initializes the Mermaid.js library
+ * 延遲非同步載入 Mermaid.js 核心庫並套用主題初始化。
+ *
+ * 僅於首次偵測到圖表渲染需求時才載入模組，降低首屏 Bundle 載入體積。
+ *
+ * @returns 初始化完畢之 Mermaid 實例
  */
 async function getMermaid() {
   if (!mermaidModule) {
@@ -58,7 +71,9 @@ async function getMermaid() {
 }
 
 /**
- * Set Mermaid theme (light/dark) and re-initialize configuration
+ * 設定 Mermaid 向量圖表之渲染主題並重新配置核心引擎。
+ *
+ * @param theme 欲套用之視覺主題（'dark' | 'light'）
  */
 export function setMermaidTheme(theme: 'dark' | 'light'): void {
   currentTheme = theme;
@@ -68,7 +83,12 @@ export function setMermaidTheme(theme: 'dark' | 'light'): void {
 }
 
 /**
- * Render all .mermaid-diagram elements within the container
+ * 掃描並非同步渲染指定容器內之所有 Mermaid 圖表節點。
+ *
+ * 具備渲染 Token 防競態檢查、孤立錯誤節點自動清除與錯誤邊界（Error Boundary）提示機制。
+ *
+ * @param container 包含 `.mermaid-diagram` 節點之容器 DOM 元素
+ * @returns 全部圖表渲染成功回傳 true，若存在語法錯誤或異常則回傳 false
  */
 export async function renderMermaidDiagrams(container: HTMLElement): Promise<boolean> {
   const elements = container.querySelectorAll<HTMLElement>('.mermaid-diagram');
@@ -76,18 +96,19 @@ export async function renderMermaidDiagrams(container: HTMLElement): Promise<boo
     return true;
   }
 
+  // 累加渲染 Token，使後續輸入可立即使前次未完成之非同步流程作廢
   const token = ++currentRenderToken;
   let hasError = false;
 
   try {
     const mermaid = await getMermaid();
-    if (token !== currentRenderToken) return true; // Discard outdated render
+    if (token !== currentRenderToken) return true; // 捨棄過期之渲染請求
 
     for (let i = 0; i < elements.length; i++) {
       if (token !== currentRenderToken) return true;
 
       const element = elements[i];
-      // Get raw code from data-raw attribute
+      // 自 data-raw 屬性還原原始 Mermaid 語法字串
       const rawCode = element.dataset.raw ? decodeURIComponent(element.dataset.raw) : element.textContent || '';
 
       if (!rawCode.trim()) continue;
@@ -104,7 +125,7 @@ export async function renderMermaidDiagrams(container: HTMLElement): Promise<boo
         if (token !== currentRenderToken) return true;
         hasError = true;
         
-        // Clean up any stray error elements created by mermaid in body
+        // 清除 Mermaid 核心於 document.body 殘留之錯誤 DOM 節點
         const strayError = document.getElementById('d' + uniqueId);
         if (strayError) strayError.remove();
 
