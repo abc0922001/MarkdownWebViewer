@@ -5,6 +5,7 @@
   flex-direction: column;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background-color: var(--bg-app);
 }
@@ -25,10 +26,17 @@
   z-index: 100;
 }
 
-.header-left, .header-right {
+/* 桌面版預設：將 primary 與 secondary 行透過 display: contents 攤平為單行 */
+.header-row-primary,
+.header-row-secondary {
+  display: contents;
+}
+
+.brand-group {
   display: flex;
   align-items: center;
   gap: 12px;
+  order: 1;
 }
 
 .brand {
@@ -46,10 +54,12 @@
   width: 18px;
   height: 18px;
   color: var(--accent-primary);
+  flex-shrink: 0;
 }
 
 .brand-name {
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .doc-title-wrapper {
@@ -87,6 +97,17 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  order: 2;
+  margin-left: 12px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  order: 3;
+  margin-left: auto;
+  margin-right: 12px;
 }
 
 .action-btn {
@@ -131,6 +152,7 @@
   border-radius: var(--radius-md);
   padding: 2px;
   gap: 2px;
+  order: 4;
 }
 
 .segmented-indicator {
@@ -180,7 +202,7 @@
   flex: 1;
   display: flex;
   width: 100%;
-  height: calc(100vh - var(--header-height) - var(--statusbar-height));
+  min-height: 0;
   overflow: hidden;
   position: relative;
 }
@@ -380,3 +402,238 @@
 .status-btn.active {
   color: var(--accent-contrast);
 }
+
+/* ==========================================================================
+   Responsive Design (Mobile & Tablet Adaptation)
+   ========================================================================== */
+
+/* 平板與窄桌面過渡斷點 (769px ~ 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .brand-group {
+    gap: 8px;
+  }
+
+  .header-actions {
+    margin-left: 8px;
+    gap: 3px;
+  }
+
+  .header-actions .action-btn span {
+    display: none;
+  }
+
+  .header-actions .action-btn {
+    padding: 5px 7px;
+  }
+
+  .doc-title-input {
+    width: 110px;
+  }
+
+  .doc-title-input:focus {
+    width: 150px;
+  }
+}
+
+/* 行動裝置斷點 (<= 768px，特別適配 20:9 等長型高解析手機) */
+@media (max-width: 768px) {
+  .app-header {
+    height: auto;
+    min-height: 74px;
+    flex-direction: column;
+    padding: 6px 12px;
+    gap: 6px;
+  }
+
+  .header-row-primary,
+  .header-row-secondary {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .header-row-primary {
+    order: 1;
+  }
+
+  .header-row-secondary {
+    order: 2;
+  }
+
+  .brand-group {
+    order: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .brand {
+    padding-right: 6px;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .doc-title-wrapper {
+    flex: 1;
+    min-width: 60px;
+    max-width: 130px;
+  }
+
+  .doc-title-input {
+    width: 100%;
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+
+  .doc-title-input:focus {
+    width: 100%;
+  }
+
+  .segmented-control {
+    order: 2;
+    flex-shrink: 0;
+    padding: 2px;
+  }
+
+  .segment-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .header-actions {
+    order: 1;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-right: 4px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .header-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .header-actions .action-btn {
+    padding: 4px 7px;
+    font-size: 11px;
+    gap: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .header-controls {
+    order: 2;
+    margin-left: auto;
+    margin-right: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .header-controls .btn-primary {
+    padding: 4px 8px;
+    font-size: 11.5px;
+    gap: 4px;
+  }
+
+  .header-controls .theme-toggle-btn {
+    padding: 4px 7px;
+  }
+
+  /* 工作區在手機直向採上下堆疊或全螢幕單面板，杜絕左右 50% 擠壓破版 */
+  .workspace {
+    flex-direction: column;
+  }
+
+  .workspace .editor-pane,
+  .workspace .preview-pane {
+    width: 100% !important;
+  }
+
+  /* 雙欄對照在手機上採上下縱向排列，兼顧可讀性與即時預覽 */
+  .workspace[data-layout="split"] .editor-pane {
+    height: 50%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .workspace[data-layout="split"] .preview-pane {
+    height: 50%;
+  }
+
+  .workspace[data-layout="split"] .pane-resizer {
+    width: 100%;
+    height: 9px;
+    margin: -5px 0 -4px 0;
+    cursor: row-resize;
+  }
+
+  .workspace[data-layout="split"] .resizer-handle {
+    width: 100%;
+    height: 1px;
+  }
+
+  .workspace[data-layout="split"] .pane-resizer:hover .resizer-handle,
+  .workspace[data-layout="split"] .pane-resizer.resizing .resizer-handle {
+    height: 2px;
+    width: 100%;
+  }
+
+  /* 純編輯模式 */
+  .workspace[data-layout="editor"] .editor-pane {
+    height: 100% !important;
+    border-bottom: none;
+  }
+
+  /* 純瀏覽模式 */
+  .workspace[data-layout="preview"] .preview-pane {
+    height: 100% !important;
+  }
+
+  /* 預覽容器內距縮減，提供更多文字排版可讀面積 */
+  .preview-scroll-container {
+    padding: 16px 16px 60px 16px;
+  }
+
+  /* 狀態列精簡 */
+  .app-statusbar {
+    padding: 0 10px;
+    font-size: 10.5px;
+  }
+
+  .status-center {
+    display: none;
+  }
+
+  #stat-cursor {
+    display: none;
+  }
+
+  .status-left .status-divider:last-of-type {
+    display: none;
+  }
+}
+
+/* 極窄螢幕斷點 (< 480px) */
+@media (max-width: 480px) {
+  .brand-name {
+    display: none;
+  }
+
+  .brand {
+    border-right: none;
+    padding-right: 0;
+  }
+}
+

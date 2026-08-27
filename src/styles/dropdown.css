@@ -43,6 +43,7 @@
   top: calc(100% + 6px);
   right: 0;
   min-width: 240px;
+  max-width: calc(100vw - 24px);
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-lg);

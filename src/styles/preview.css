@@ -128,12 +128,14 @@
 /* Tables */
 .markdown-body table {
   width: 100%;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
   margin: 1.5em 0;
   font-size: 13.5px;
   background: var(--bg-surface);
   border-radius: var(--radius-md);
-  overflow: hidden;
   border: 1px solid var(--border-subtle);
 }
 
@@ -307,3 +309,39 @@ html.light .markdown-body code:not(pre code) {
 .markdown-alert.markdown-alert-caution .markdown-alert-title {
   color: var(--color-danger);
 }
+
+/* ==========================================================================
+   Mobile Preview Refinements
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .preview-scroll-container {
+    padding: 16px 16px 60px 16px;
+  }
+
+  .markdown-body {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .markdown-body h1 { font-size: 1.65em; }
+  .markdown-body h2 { font-size: 1.35em; }
+  .markdown-body h3 { font-size: 1.18em; }
+
+  .markdown-body pre {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .markdown-body th,
+  .markdown-body td {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .mermaid-wrapper {
+    padding: 12px;
+    margin: 1.25em 0;
+  }
+}
+
