@@ -320,7 +320,7 @@ export function fixBoldFormatting(text: string): string {
  * 表格結構修復與拼接演算法。
  *
  * 掃描並重組 Markdown 表格，自動忽略表格內部異常插入的空白行與孤立管線字元，
- * 並將分散的資料列合併為標準 GFM 表格區塊。
+ * 依據標頭與分隔線欄位數量自動縫合斷裂跨行的儲存格資料，並將分散的資料列合併為標準 GFM 表格區塊。
  *
  * @param content 待修復之 Markdown 內容
  * @returns 包含修復後內容與修復表格總數之物件
@@ -335,13 +335,13 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
     const line = lines[i];
     const trimmed = line.trim();
 
-    // 偵測潛在表格標頭行：包含管線符號且符合表格行基本結構
-    if (trimmed.startsWith('|') || (trimmed.includes('|') && isPotentialTableRow(trimmed))) {
+    // 偵測潛在表格標頭行：包含管線符號且非孤立管線行、非標題行與非區塊標籤
+    if (!isGlitchPipeLine(trimmed) && trimmed.includes('|') && isPotentialTableRow(trimmed) && !isHeaderOrHeading(trimmed)) {
       // 向前探查接下來數行中是否存在合法之分隔線（| --- | --- |）
       let separatorIndex = -1;
-      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+      for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
         const nextTrimmed = lines[j].trim();
-        if (!nextTrimmed) continue; // 略過標頭與分隔線之間的異常空白行
+        if (isGlitchPipeLine(nextTrimmed)) continue; // 略過標頭與分隔線之間的異常空白或孤立管線行
         if (isTableSeparator(nextTrimmed)) {
           separatorIndex = j;
           break;
@@ -353,50 +353,54 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
       if (separatorIndex !== -1) {
         // 確認偵測到表格結構，開始收集並修復所有資料行
         const tableRows: string[] = [];
-        let hadGlitches = separatorIndex > i + 1;
 
-        // 加入正規化後之標頭行
-        const origHeader = lines[i].trim();
-        const normHeader = normalizeTableRow(origHeader);
-        if (normHeader !== origHeader) hadGlitches = true;
-        tableRows.push(normHeader);
+        // 解析標頭與分隔線欄位
+        const headerCells = splitTableCells(lines[i]);
+        const sepCells = splitTableCells(lines[separatorIndex]);
+        const expectedCols = Math.max(headerCells.length, sepCells.length, 1);
 
-        // 加入正規化後之分隔線行
-        const origSep = lines[separatorIndex].trim();
-        const normSep = normalizeTableSeparator(origSep);
-        if (normSep !== origSep) hadGlitches = true;
-        tableRows.push(normSep);
+        // 補齊標頭與分隔線缺失之欄位
+        while (headerCells.length < expectedCols) headerCells.push('');
+        while (sepCells.length < expectedCols) sepCells.push('---');
+
+        // 標準化分隔線儲存格（確保至少 3 個短橫線，並保留對齊冒號）
+        const normalizedSepCells = sepCells.map((cell) => {
+          const c = cell.trim();
+          const leftColon = c.startsWith(':');
+          const rightColon = c.endsWith(':') && c.length > 1;
+          const dashes = c.replace(/:/g, '');
+          const minDashes = dashes.length >= 3 ? dashes : '---';
+          return `${leftColon ? ':' : ''}${minDashes}${rightColon ? ':' : ''}`;
+        });
+
+        tableRows.push(formatTableRow(headerCells));
+        tableRows.push(formatTableRow(normalizedSepCells));
 
         let cursor = separatorIndex + 1;
+        let currentCells: string[] = [];
+        let hadGlitches = separatorIndex > i + 1;
 
         // 逐行掃描後續表格資料列
         while (cursor < lines.length) {
-          const currentLine = lines[cursor];
-          const curTrimmed = currentLine.trim();
+          const curLine = lines[cursor];
+          const curTrimmed = curLine.trim();
 
-          // 偵測並過濾孤立管線行（例如 "|" 或 "|   |"）
-          if (curTrimmed === '|' || curTrimmed === '||' || /^\|\s*\|$/.test(curTrimmed)) {
-            hadGlitches = true;
-            cursor++;
-            continue;
-          }
-
-          // 處理表格內部空白行
-          if (curTrimmed === '') {
+          // 1. 空白行或孤立管線符號行處理
+          if (isGlitchPipeLine(curTrimmed)) {
             // 向前探查：若後續仍有有效表格資料行，則跳過此異常空行
-            let hasMoreTableRowAhead = false;
-            for (let k = cursor + 1; k < Math.min(cursor + 4, lines.length); k++) {
+            let hasMoreTableDataAhead = false;
+            for (let k = cursor + 1; k < Math.min(cursor + 6, lines.length); k++) {
               const lookahead = lines[k].trim();
-              if (!lookahead || lookahead === '|') continue;
-              if (isPotentialTableRow(lookahead) && !isHeaderOrHeading(lookahead)) {
-                hasMoreTableRowAhead = true;
+              if (isGlitchPipeLine(lookahead)) continue;
+              if (isPotentialTableRow(lookahead) && !isHeaderOrHeading(lookahead) && !isBlockBoundary(lookahead)) {
+                hasMoreTableDataAhead = true;
                 break;
               } else {
                 break;
               }
             }
 
-            if (hasMoreTableRowAhead) {
+            if (hasMoreTableDataAhead) {
               hadGlitches = true;
               cursor++;
               continue;
@@ -406,18 +410,59 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
             }
           }
 
-          // 檢查當前行是否為合法表格資料行
-          if (isPotentialTableRow(curTrimmed) && !isHeaderOrHeading(curTrimmed)) {
-            const normalizedRow = normalizeTableRow(curTrimmed);
-            if (normalizedRow !== curTrimmed) {
-              hadGlitches = true;
-            }
-            tableRows.push(normalizedRow);
-            cursor++;
-          } else {
-            // 讀取至非表格內容，結束當前表格收集
+          // 2. 區塊邊界檢查（標題、程式碼區塊、引號、分隔線等）
+          if (isHeaderOrHeading(curTrimmed) || isBlockBoundary(curTrimmed)) {
             break;
           }
+
+          // 3. 資料行處理
+          if (curTrimmed.includes('|')) {
+            const extracted = splitTableCells(curLine);
+            let justFlushed = false;
+
+            for (let eIdx = 0; eIdx < extracted.length; eIdx++) {
+              const cell = extracted[eIdx];
+              // 若剛完成上一列且此儲存格為雙管線 (||) 產生的空字串，則略過該黏合符號
+              if (justFlushed && cell === '' && currentCells.length === 0) {
+                justFlushed = false;
+                continue;
+              }
+              justFlushed = false;
+
+              currentCells.push(cell);
+              if (currentCells.length === expectedCols) {
+                tableRows.push(formatTableRow(currentCells));
+                currentCells = [];
+                justFlushed = true;
+              }
+            }
+            cursor++;
+          } else {
+            // 當前行不含管線符號
+            if (currentCells.length > 0 && currentCells.length < expectedCols) {
+              // 若當前資料列尚未補滿，將此行文字作為下一個儲存格填入
+              currentCells.push(curTrimmed);
+              hadGlitches = true;
+              if (currentCells.length === expectedCols) {
+                tableRows.push(formatTableRow(currentCells));
+                currentCells = [];
+              }
+              cursor++;
+            } else {
+              // 若無待補資料列且無管線符號，視為表格結束
+              break;
+            }
+          }
+        }
+
+        // 若掃描結束後仍有未閉合/未湊滿之資料列，補齊並輸出
+        if (currentCells.length > 0) {
+          hadGlitches = true;
+          while (currentCells.length < expectedCols) {
+            currentCells.push('');
+          }
+          tableRows.push(formatTableRow(currentCells));
+          currentCells = [];
         }
 
         // 確保表格上方具備適當之空行區隔
@@ -427,9 +472,16 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
 
         // 寫入完整連續表格資料行
         outputLines.push(...tableRows);
-        outputLines.push(''); // 表格下方追加空行區隔
 
-        if (hadGlitches) {
+        // 若表格後方非空白行且未達文末，追加空行區隔
+        if (cursor < lines.length && lines[cursor].trim() !== '') {
+          outputLines.push('');
+        }
+
+        // 比對原始片段與重構片段是否發生變更
+        const origFullSlice = lines.slice(i, cursor).join('\n');
+        const reconstructed = tableRows.join('\n');
+        if (origFullSlice !== reconstructed || hadGlitches) {
           fixedTables++;
         }
 
@@ -449,13 +501,29 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
 }
 
 /**
- * 驗證文字行是否符合 Markdown 表格分隔線語法結構（例如：`| --- | :---: | ---: |`）。
+ * 檢查字串是否為空行或僅包含管線符號與空白字元之無效行（例如：`|`、`||`、`|   |`）。
+ *
+ * @param line 待檢查之文字行
+ * @returns 若為無效管線行則回傳 true，否則回傳 false
+ */
+function isGlitchPipeLine(line: string): boolean {
+  const noPipes = line.replace(/\|/g, '').trim();
+  return noPipes.length === 0;
+}
+
+/**
+ * 驗證文字行是否符合 Markdown 表格分隔線語法結構（例如：`| --- | :---: | ---: |` 或 `---|---|---`）。
  *
  * @param line 待驗證之文字行字串
  * @returns 若符合分隔線語法結構則回傳 true，否則回傳 false
  */
 function isTableSeparator(line: string): boolean {
-  return /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/.test(line);
+  const trimmed = line.trim();
+  if (!trimmed.includes('-')) return false;
+  if (!trimmed.includes('|')) {
+    return /^:?-+:?\s*(\|\s*:?-+:?\s*)+$/.test(trimmed);
+  }
+  return /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$/.test(trimmed) && trimmed.replace(/[|\s:\-]/g, '').length === 0;
 }
 
 /**
@@ -481,35 +549,66 @@ function isHeaderOrHeading(line: string): boolean {
 }
 
 /**
- * 正規化表格資料行，確保首尾皆包含標準管線符號與間距（`| ` 與 ` |`）。
+ * 判斷文字行是否為 Markdown 區塊邊界標籤（如程式碼區塊、引號、HTML 標籤、水平線或無管線之清單）。
  *
- * @param row 原始表格資料行字串
- * @returns 正規化後之表格資料行字串
+ * @param line 待判斷之文字行字串
+ * @returns 若為區塊邊界標籤則回傳 true，否則回傳 false
  */
-function normalizeTableRow(row: string): string {
-  let trimmed = row.trim();
-  if (!trimmed.startsWith('|')) {
-    trimmed = '| ' + trimmed;
-  }
-  if (!trimmed.endsWith('|')) {
-    trimmed = trimmed + ' |';
-  }
-  return trimmed;
+function isBlockBoundary(line: string): boolean {
+  const trimmed = line.trim();
+  if (trimmed.startsWith('```') || trimmed.startsWith('>') || trimmed.startsWith('<')) return true;
+  if (/^(\*{3,}|-{3,}|_{3,})$/.test(trimmed)) return true;
+  if (/^(\s*[-*+]\s+|\s*\d+\.\s+)/.test(line) && !line.includes('|')) return true;
+  return false;
 }
 
 /**
- * 正規化表格分隔線行，確保首尾皆包含標準管線符號與間距（`| ` 與 ` |`）。
+ * 將表格文字行安全分割為儲存格字串陣列，保護行內程式碼與轉義管線字元（`\|`）。
  *
- * @param sep 原始分隔線字串
- * @returns 正規化後之分隔線字串
+ * @param line 表格文字行字串
+ * @returns 儲存格字串陣列
  */
-function normalizeTableSeparator(sep: string): string {
-  let trimmed = sep.trim();
-  if (!trimmed.startsWith('|')) {
-    trimmed = '| ' + trimmed;
+function splitTableCells(line: string): string[] {
+  // 保護行內程式碼區塊（`...`），避免更改程式碼內容中的管線符號
+  const codeSpans: string[] = [];
+  let protectedLine = line.replace(/(`+)([\s\S]*?)\1/g, (match) => {
+    codeSpans.push(match);
+    return `\x00CODE_${codeSpans.length - 1}\x00`;
+  });
+
+  // 保護轉義之管線符號 \|
+  protectedLine = protectedLine.replace(/\\\|/g, '\x00ESCAPED_PIPE\x00');
+
+  let trimmed = protectedLine.trim();
+
+  // 若開頭有管線符號，去除首個管線符號
+  if (trimmed.startsWith('|')) {
+    trimmed = trimmed.slice(1);
   }
-  if (!trimmed.endsWith('|')) {
-    trimmed = trimmed + ' |';
+  // 若結尾有管線符號，去除最後一個管線符號
+  if (trimmed.endsWith('|')) {
+    trimmed = trimmed.slice(0, -1);
   }
-  return trimmed;
+
+  // 依管線符號分割
+  const rawCells = trimmed.split('|');
+
+  return rawCells.map((cell) => {
+    let restored = cell.trim();
+    // 還原轉義管線符號
+    restored = restored.replace(/\x00ESCAPED_PIPE\x00/g, '\\|');
+    // 還原程式碼區塊
+    restored = restored.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);
+    return restored;
+  });
+}
+
+/**
+ * 將儲存格字串陣列格式化為標準 GFM 表格行（例如：`| 儲存格 1 | 儲存格 2 |`）。
+ *
+ * @param cells 儲存格字串陣列
+ * @returns 標準化之表格行字串
+ */
+function formatTableRow(cells: string[]): string {
+  return '| ' + cells.join(' | ') + ' |';
 }
