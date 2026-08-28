@@ -335,6 +335,13 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
     const line = lines[i];
     const trimmed = line.trim();
 
+    // 剔除任何獨立存在於表格外的孤立管線字元行（例如單獨一行的 "|" 或 " | "）
+    if (isGlitchPipeLine(trimmed) && trimmed !== '') {
+      fixedTables++;
+      i++;
+      continue;
+    }
+
     // 偵測潛在表格標頭行：包含管線符號且非孤立管線行、非標題行與非區塊標籤
     if (!isGlitchPipeLine(trimmed) && trimmed.includes('|') && isPotentialTableRow(trimmed) && !isHeaderOrHeading(trimmed)) {
       // 向前探查接下來數行中是否存在合法之分隔線（| --- | --- |）
@@ -463,6 +470,12 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
           }
           tableRows.push(formatTableRow(currentCells));
           currentCells = [];
+        }
+
+        // 清理表格後方緊隨之孤立殘留管線行或空白行
+        while (cursor < lines.length && isGlitchPipeLine(lines[cursor].trim())) {
+          if (lines[cursor].trim() !== '') hadGlitches = true;
+          cursor++;
         }
 
         // 確保表格上方具備適當之空行區隔
