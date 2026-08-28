@@ -64,14 +64,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const statChars = document.getElementById('stat-chars')!;
   const statCursor = document.getElementById('stat-cursor')!;
 
-  /** 當前全站視覺主題（'dark' | 'light'） */
-  let currentTheme: 'dark' | 'light' = 'dark';
+  /** 當前全站視覺主題（'dark' | 'light'），由 html 根節點 class 自動偵測初始狀態 */
+  let currentTheme: 'dark' | 'light' = document.documentElement.classList.contains('light') ? 'light' : 'dark';
   /** 是否存在未匯出之修改標記 */
   let isEdited = false;
   /** CodeMirror 6 實例（未延遲載入完成前為 null） */
   let editorInstance: any = null;
   /** 在編輯器完成非同步初始化前暫存之文本內容 */
   let pendingContent: string | null = null;
+
+  // 初始化主題切換按鈕圖示狀態
+  themeIconMoon.style.display = currentTheme === 'dark' ? 'block' : 'none';
+  themeIconSun.style.display = currentTheme === 'light' ? 'block' : 'none';
 
   /**
    * 取得當前編輯器內容；若編輯器尚未完成初始化則回傳暫存字串。

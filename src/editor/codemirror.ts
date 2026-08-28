@@ -12,9 +12,8 @@ import {
 } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
-import { bracketMatching, indentOnInput } from '@codemirror/language';
-import { oneDarkHighlightStyle } from '@codemirror/theme-one-dark';
-import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+import { bracketMatching, indentOnInput, syntaxHighlighting, HighlightStyle } from '@codemirror/language';
+import { tags } from '@lezer/highlight';
 
 /**
  * 編輯器事件回呼函式介面。
@@ -25,6 +24,50 @@ export interface EditorCallbacks {
   /** 游標位置變更時觸發之回呼函式，傳入當前行號與列號（1-indexed） */
   onCursorActivity?: (line: number, column: number) => void;
 }
+
+/** Linear 淺色模式專屬 Markdown 與程式碼語法高亮配色定義 */
+export const linearLightHighlightStyle = HighlightStyle.define([
+  { tag: tags.heading, color: '#08090A', fontWeight: 'bold' },
+  { tag: tags.strong, color: '#08090A', fontWeight: 'bold' },
+  { tag: tags.emphasis, color: '#374151', fontStyle: 'italic' },
+  { tag: tags.strikethrough, color: '#9CA3AF', textDecoration: 'line-through' },
+  { tag: tags.link, color: '#4F5AB8', textDecoration: 'underline' },
+  { tag: tags.url, color: '#4F5AB8' },
+  { tag: tags.monospace, color: '#9A3412', backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+  { tag: tags.quote, color: '#4B5563', fontStyle: 'italic' },
+  { tag: tags.list, color: '#5E6AD2', fontWeight: '600' },
+  { tag: tags.keyword, color: '#7C3AED', fontWeight: '600' },
+  { tag: tags.string, color: '#0D9488' },
+  { tag: tags.number, color: '#D97706' },
+  { tag: tags.bool, color: '#D97706', fontWeight: '600' },
+  { tag: tags.comment, color: '#9CA3AF', fontStyle: 'italic' },
+  { tag: tags.operator, color: '#4B5563' },
+  { tag: tags.punctuation, color: '#6B7280' },
+  { tag: tags.contentSeparator, color: '#9CA3AF' },
+  { tag: tags.meta, color: '#6B7280' },
+]);
+
+/** Linear 深色模式專屬 Markdown 與程式碼語法高亮配色定義 */
+export const linearDarkHighlightStyle = HighlightStyle.define([
+  { tag: tags.heading, color: '#FFFFFF', fontWeight: 'bold' },
+  { tag: tags.strong, color: '#FFFFFF', fontWeight: 'bold' },
+  { tag: tags.emphasis, color: '#D0D6E0', fontStyle: 'italic' },
+  { tag: tags.strikethrough, color: '#62666D', textDecoration: 'line-through' },
+  { tag: tags.link, color: '#828FFF', textDecoration: 'underline' },
+  { tag: tags.url, color: '#828FFF' },
+  { tag: tags.monospace, color: '#E5C07B', backgroundColor: 'rgba(255, 255, 255, 0.06)' },
+  { tag: tags.quote, color: '#8A8F98', fontStyle: 'italic' },
+  { tag: tags.list, color: '#5E6AD2', fontWeight: '600' },
+  { tag: tags.keyword, color: '#C678DD', fontWeight: '600' },
+  { tag: tags.string, color: '#98C379' },
+  { tag: tags.number, color: '#D19A66' },
+  { tag: tags.bool, color: '#D19A66', fontWeight: '600' },
+  { tag: tags.comment, color: '#62666D', fontStyle: 'italic' },
+  { tag: tags.operator, color: '#ABB2BF' },
+  { tag: tags.punctuation, color: '#8A8F98' },
+  { tag: tags.contentSeparator, color: '#3E3E44' },
+  { tag: tags.meta, color: '#8A8F98' },
+]);
 
 /**
  * CodeMirror 6 核心 Markdown 編輯器封裝類別。
@@ -56,6 +99,10 @@ export class MarkdownEditor {
       fontSize: '13.5px',
       lineHeight: '1.65',
       caretColor: '#5E6AD2',
+      color: '#F7F8F8',
+    },
+    '.cm-line': {
+      color: '#F7F8F8',
     },
     '&.cm-focused .cm-cursor': {
       borderLeftColor: '#5E6AD2',
@@ -89,6 +136,10 @@ export class MarkdownEditor {
       fontSize: '13.5px',
       lineHeight: '1.65',
       caretColor: '#5E6AD2',
+      color: '#08090A',
+    },
+    '.cm-line': {
+      color: '#08090A',
     },
     '&.cm-focused .cm-cursor': {
       borderLeftColor: '#5E6AD2',
@@ -172,9 +223,7 @@ export class MarkdownEditor {
         highlightActiveLine(),
         markdown(),
         this.syntaxCompartment.of(
-          isDark
-            ? syntaxHighlighting(oneDarkHighlightStyle, { fallback: true })
-            : syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+          syntaxHighlighting(isDark ? linearDarkHighlightStyle : linearLightHighlightStyle, { fallback: true })
         ),
         this.themeCompartment.of(isDark ? this.linearDarkTheme : this.linearLightTheme),
         this.wrapCompartment.of(EditorView.lineWrapping),
@@ -203,9 +252,7 @@ export class MarkdownEditor {
       effects: [
         this.themeCompartment.reconfigure(isDark ? this.linearDarkTheme : this.linearLightTheme),
         this.syntaxCompartment.reconfigure(
-          isDark
-            ? syntaxHighlighting(oneDarkHighlightStyle, { fallback: true })
-            : syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+          syntaxHighlighting(isDark ? linearDarkHighlightStyle : linearLightHighlightStyle, { fallback: true })
         ),
       ],
     });
