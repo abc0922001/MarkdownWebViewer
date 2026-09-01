@@ -165,11 +165,12 @@ MarkdownWebViewer/
   * `wrapCompartment`：動態切換自動折行（`EditorView.lineWrapping`）與水平捲動（`[]`）。
 * 所有外觀與配置重配皆透過 `view.dispatch({ effects: [...] })` 完成，完全無須重新銷毀或重建編輯器視圖。
 
-### 5. 渲染防護與 GitHub 警示區塊管線 (`src/renderer/markdown.ts`)
+### 5. 渲染防護與 GFM AST 擴充管線 (`src/renderer/markdown.ts`)
 * **預處理**：先經由 `fixMathSymbols` 轉換 LaTeX 符號。
-* **解析與著色**：透過 `markdown-it` 解析為 HTML，程式碼區塊由 `highlight.js`（common 子集）著色；Mermaid 區塊則轉換為帶有 `data-raw` 屬性之佔位節點。
-* **GitHub 警示區塊處理 (`processAlerts`)**：將 `> [!NOTE]`、`> [!TIP]`、`> [!IMPORTANT]`、`> [!WARNING]`、`> [!CAUTION]` 轉譯為具備專屬色彩與 SVG 圖示的 callout 卡片。
-* **DOMPurify 嚴格安全過濾**：過濾惡意 XSS 標籤，白名單保留 SVG 繪圖元素（`<svg>`、`<path>`、`<foreignObject>` 等）與 `data-raw` 屬性。
+* **自研 GFM Alerts AST 外掛 (`gfmAlertsPlugin`)**：在 `markdown-it` Core 階段遍歷 Token 串流，辨識 `> [!NOTE]`、`> [!TIP]`、`> [!IMPORTANT]`、`> [!WARNING]`、`> [!CAUTION]` 並動態轉為 Alert 容器標籤與 Lucide SVG 圖示。支援內部多段落、清單、表格與程式碼區塊等完整巢狀 Markdown 結構。
+* **自研 GFM Tasklists AST 外掛 (`gfmTasklistsPlugin`)**：自動將 `- [ ]` 與 `- [x]` 轉譯為禁用狀態之 `<input type="checkbox">` 核取方塊元素，並注入 `.task-list-item` 類別。
+* **解析與著色**：透過 `markdown-it` 解析為 HTML，程式碼區塊由 `highlight.js`（common 子集）著色；Mermaid 區塊則透過自訂 `md.renderer.rules.fence` 轉換為純淨帶有 `data-raw` 屬性之佔位節點。
+* **DOMPurify 嚴格安全過濾**：啟用 `USE_PROFILES: { svg: true, svgFilters: true, html: true }`，擴充包含 `<defs>`, `<marker>`, `<use>`, `<clipPath>`, `<filter>` 等完整 SVG 向量標籤與 `transform`, `filter`, `marker-start`, `marker-end` 等屬性白名單，徹底防禦 XSS 攻擊同時確保 Mermaid 複雜圖表零瑕疵呈現。
 
 ### 6. 純前端三合一無損匯出機制 (`src/exporter/`)
 * **`.md` 匯出**：以 UTF-8 編碼建立 `Blob`，透過虛擬 `<a>` 標籤觸發下載，並呼叫 `URL.revokeObjectURL` 即時釋放瀏覽器記憶體。
@@ -215,10 +216,13 @@ npm install
 # 2. 啟動本機開發伺服器
 npm run dev
 
-# 3. 執行 TypeScript 型別檢查並編譯生產環境資源
+# 3. 執行 Vitest 自動化單元測試
+npm test
+
+# 4. 執行 TypeScript 型別檢查並編譯生產環境資源
 npm run build
 
-# 4. 本機預覽編譯後的靜態檔案 (dist/)
+# 5. 本機預覽編譯後的靜態檔案 (dist/)
 npm run preview
 ```
 

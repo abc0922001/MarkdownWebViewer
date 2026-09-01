@@ -70,11 +70,13 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     fixes.push('校正標題語法缺失之空格');
   }
 
-  // 5. 校正無序清單與任務核取方塊排版（補齊破折號後空格與標準化方括號狀態）
+  // 5. 校正無序/有序清單與任務核取方塊排版（補齊空格與標準化方括號狀態）
   const beforeList = text;
   text = text
     // 修正 "-項目" 轉為 "- 項目"
     .replace(/^(\s*[-*+])([^\s\-*+\d])/gm, '$1 $2')
+    // 修正 "1.項目" 轉為 "1. 項目"
+    .replace(/^(\s*\d+\.)([^\s\d])/gm, '$1 $2')
     // 修正 "-[]" 或 "-[x]" 轉為 "- [ ] " 或 "- [x] "
     .replace(/^(\s*[-*+]\s*)\[\s*\]/gm, '$1[ ] ')
     .replace(/^(\s*[-*+]\s*)\[[xX]\]/gm, '$1[x] ');
@@ -274,8 +276,8 @@ function fixBoldInLine(line: string): string {
     const trailingSpace = content.match(/[ \t]+$/)?.[0] || '';
     const trimmed = content.slice(leadingSpace.length, content.length - trailingSpace.length);
 
-    // 若粗體為純英數或常見符號，且相鄰字元為 CJK 中日文字，則於外側補入排版空格
-    const isAlphanumeric = /^[A-Za-z0-9_#+\-@\s]+$/.test(trimmed.trim()) && /[A-Za-z0-9]/.test(trimmed);
+    // 若粗體為純英數或常見技術名詞符號（如 Node.js、Vue.js、npm start、C++ 等），且相鄰字元為 CJK 中日文字，則於外側補入排版空格
+    const isAlphanumeric = /^[A-Za-z0-9_#+\-@./:&~\s]+$/.test(trimmed.trim()) && /[A-Za-z0-9]/.test(trimmed);
     const prevChar = (result + outerOpen).length > 0 ? (result + outerOpen)[(result + outerOpen).length - 1] : '';
     const nextChar = closeRun.index + closeRun.length < textWithoutCode.length ? textWithoutCode[closeRun.index + closeRun.length] : '';
 
@@ -291,6 +293,15 @@ function fixBoldInLine(line: string): string {
       if (isCJK(nextChar) && !suffixSpace && !textWithoutCode.slice(closeRun.index + closeRun.length).startsWith(' ')) {
         suffixSpace = ' ';
       }
+    }
+
+    // 若前置結果已具備空格且 prefixSpace 亦包含空格，則消除重複空格
+    if (result.endsWith(' ') && prefixSpace.startsWith(' ')) {
+      prefixSpace = prefixSpace.trimStart();
+    }
+    // 若後續文字已具備空格且 suffixSpace 亦包含空格，則消除重複空格
+    if (textWithoutCode.slice(closeRun.index + closeRun.length).startsWith(' ') && suffixSpace.endsWith(' ')) {
+      suffixSpace = suffixSpace.trimEnd();
     }
 
     result += `${prefixSpace}${outerOpen}**${trimmed}**${outerClose}${suffixSpace}`;
@@ -370,14 +381,14 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
         while (headerCells.length < expectedCols) headerCells.push('');
         while (sepCells.length < expectedCols) sepCells.push('---');
 
-        // 標準化分隔線儲存格（確保至少 3 個短橫線，並保留對齊冒號）
+        // 標準化分隔線儲存格（確保至少 3 個短橫線，並保留對齊冒號，消除內部多餘空白）
         const normalizedSepCells = sepCells.map((cell) => {
-          const c = cell.trim();
-          const leftColon = c.startsWith(':');
-          const rightColon = c.endsWith(':') && c.length > 1;
-          const dashes = c.replace(/:/g, '');
-          const minDashes = dashes.length >= 3 ? dashes : '---';
-          return `${leftColon ? ':' : ''}${minDashes}${rightColon ? ':' : ''}`;
+          const clean = cell.replace(/\s+/g, '');
+          const leftColon = clean.startsWith(':');
+          const rightColon = clean.endsWith(':') && clean.length > 1;
+          const dashes = clean.replace(/:/g, '');
+          const dashCount = dashes.length >= 3 ? dashes : '---';
+          return `${leftColon ? ':' : ''}${dashCount}${rightColon ? ':' : ''}`;
         });
 
         tableRows.push(formatTableRow(headerCells));
@@ -525,7 +536,7 @@ function isGlitchPipeLine(line: string): boolean {
 }
 
 /**
- * 驗證文字行是否符合 Markdown 表格分隔線語法結構（例如：`| --- | :---: | ---: |` 或 `---|---|---`）。
+ * 驗證文字行是否符合 Markdown 表格分隔線語法結構（例如：`| --- | :---: | ---: |` 或 `| : - : | : - |`）。
  *
  * @param line 待驗證之文字行字串
  * @returns 若符合分隔線語法結構則回傳 true，否則回傳 false
@@ -533,10 +544,23 @@ function isGlitchPipeLine(line: string): boolean {
 function isTableSeparator(line: string): boolean {
   const trimmed = line.trim();
   if (!trimmed.includes('-')) return false;
-  if (!trimmed.includes('|')) {
-    return /^:?-+:?\s*(\|\s*:?-+:?\s*)+$/.test(trimmed);
-  }
-  return /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$/.test(trimmed) && trimmed.replace(/[|\s:\-]/g, '').length === 0;
+  // 必須只包含 |, :, -, 空格等分隔字元
+  if (trimmed.replace(/[|\s:\-]/g, '').length !== 0) return false;
+
+  // 依管線符號切割儲存格並排除首尾空字串
+  const rawSegments = trimmed.split('|');
+  const cells = rawSegments
+    .map((c) => c.trim())
+    .filter((c, idx, arr) => {
+      if ((idx === 0 || idx === arr.length - 1) && c === '') return false;
+      return true;
+    });
+
+  if (cells.length === 0) return false;
+  return cells.every((cell) => {
+    const dashes = cell.replace(/[^-\s]/g, '').replace(/\s+/g, '');
+    return dashes.length >= 1;
+  });
 }
 
 /**

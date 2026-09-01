@@ -33,10 +33,11 @@
 - **右上角 Segmented Control**：一鍵切換「**純編輯** (`Alt+1`)」、「**雙欄對照** (`Alt+2`)」與「**純瀏覽** (`Alt+3`)」，具備滑動指示條。
 - **中央彈性拖曳分隔條**：支援滑鼠與觸控拖曳調整欄寬比例（15% ~ 85% 範圍限制保護）。
 
-### 5. Mermaid 向量圖表按需延遲載入 & GitHub Alerts 警示區塊
+### 5. Mermaid 向量圖表延遲載入 & GFM Alerts 完整巢狀支援
 - **首屏零體積負擔**：僅當文件中出現 ````mermaid` 區塊時才透過 Dynamic Import 動態加載模組。
 - **防競態 Token 與錯誤邊界**：快速打字時不會被舊非同步任務覆蓋，語法未完成時顯示微型錯誤提示，不中斷預覽體驗。
-- **GitHub 風格警示區塊**：原生支援 `[!NOTE]`、`[!TIP]`、`[!IMPORTANT]`、`[!WARNING]`、`[!CAUTION]`，轉譯為具備 Lucide 風格向量 SVG 圖示之專屬卡片。
+- **GFM Alerts 完整巢狀支援**：自研零依賴 Token Stream Ruler，原生支援 `[!NOTE]`、`[!TIP]`、`[!IMPORTANT]`、`[!WARNING]`、`[!CAUTION]`，支援內部多段落、清單、表格與程式碼區塊等無限制巢狀 Markdown 排版。
+- **GFM Tasklists 核取清單**：自動將 `- [ ]` 與 `- [x]` 轉譯為標準 HTML 核取方塊元素，完美適配 Linear 主題樣式。
 
 ### 6. 純前端三合一多格式匯出
 - **Markdown (`.md`)**：標準 UTF-8 純文字檔案下載，即時釋放 Blob ObjectURL 避免記憶體洩漏。
@@ -81,13 +82,18 @@ npm install
 npm run dev
 ```
 
-### 3. 執行型別檢查並編譯生產環境資源
+### 3. 執行自動化單元測試
+```bash
+npm test
+```
+
+### 4. 執行型別檢查並編譯生產環境資源
 ```bash
 npm run build
 ```
 編譯完成之靜態資源將輸出至 `dist/` 目錄中。
 
-### 4. 本機預覽編譯後成果
+### 5. 本機預覽編譯後成果
 ```bash
 npm run preview
 ```
