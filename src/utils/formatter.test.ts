@@ -40,6 +40,18 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       const output = fixBoldFormatting(input);
       expect(output).toBe('無效標記  以及  應被清除。');
     });
+
+    it('應修復 CJK 字元與引號/括號交界處之 CommonMark 粗體邊界空格（避免未渲染）', () => {
+      const input = '採取了**「上午出門 ➔ 中午/下午回 Airbnb 避暑補眠 ➔ 傍晚/晚上再出門」**的防暑策略';
+      const output = fixBoldFormatting(input);
+      expect(output).toBe('採取了 **「上午出門 ➔ 中午/下午回 Airbnb 避暑補眠 ➔ 傍晚/晚上再出門」** 的防暑策略');
+    });
+
+    it('應修復粗體以標點符號（如括號）結尾且後續接 CJK 字元時的邊界空格', () => {
+      const input = '安排整天待在**海遊館（Kaiyukan）**是極為聰明的決定！海遊館是大阪最頂級的** A+ 級全室內避暑與雨備景點**';
+      const output = fixBoldFormatting(input);
+      expect(output).toBe('安排整天待在**海遊館（Kaiyukan）** 是極為聰明的決定！海遊館是大阪最頂級的 **A+ 級全室內避暑與雨備景點**');
+    });
   });
 
   describe('fixMarkdownFormatting() — 全流程 9 大修復管線', () => {

@@ -201,6 +201,30 @@ function findAsteriskRuns(text: string): { index: number; length: number }[] {
 }
 
 /**
+ * 檢查字元是否為 Unicode 標點符號。
+ *
+ * 涵蓋標準 ASCII 標點符號以及全形/CJK 標點符號（如 「」『』【】《》〈〉（）“”‘’！？、。，；：… 等）。
+ *
+ * @param ch 待檢查之單一字元
+ * @returns 若為標點符號則回傳 true，否則回傳 false
+ */
+function isUnicodePunctuation(ch: string): boolean {
+  if (!ch) return false;
+  return /\p{P}/u.test(ch);
+}
+
+/**
+ * 檢查字元是否為 CJK 中日韓文字元或英數字元。
+ *
+ * @param ch 待檢查之單一字元
+ * @returns 若為 CJK 或英數字元則回傳 true
+ */
+function isCJKOrAlphanumeric(ch: string): boolean {
+  if (!ch) return false;
+  return /[\u4e00-\u9fa5\u3040-\u30ffA-Za-z0-9]/.test(ch);
+}
+
+/**
  * 修正單行文字中的粗體標記排版，包含消除標記內首尾空白、移除空粗體標記以及優化中英文字界空格。
  *
  * @param line 待處理的單行文字
@@ -276,8 +300,7 @@ function fixBoldInLine(line: string): string {
     const trailingSpace = content.match(/[ \t]+$/)?.[0] || '';
     const trimmed = content.slice(leadingSpace.length, content.length - trailingSpace.length);
 
-    // 若粗體為純英數或常見技術名詞符號（如 Node.js、Vue.js、npm start、C++ 等），且相鄰字元為 CJK 中日文字，則於外側補入排版空格
-    const isAlphanumeric = /^[A-Za-z0-9_#+\-@./:&~\s]+$/.test(trimmed.trim()) && /[A-Za-z0-9]/.test(trimmed);
+    // 取得相鄰的前後字元
     const prevChar = (result + outerOpen).length > 0 ? (result + outerOpen)[(result + outerOpen).length - 1] : '';
     const nextChar = closeRun.index + closeRun.length < textWithoutCode.length ? textWithoutCode[closeRun.index + closeRun.length] : '';
 
@@ -286,6 +309,8 @@ function fixBoldInLine(line: string): string {
     let prefixSpace = leadingSpace;
     let suffixSpace = trailingSpace;
 
+    // 1. 若粗體為純英數或技術名詞（如 Node.js、Vue.js、A+ 等），且相鄰字元為 CJK 中日文字，則於外側補入排版空格
+    const isAlphanumeric = /^[A-Za-z0-9_#+\-@./:&~%\s]+$/.test(trimmed.trim()) && /[A-Za-z0-9]/.test(trimmed);
     if (isAlphanumeric) {
       if (isCJK(prevChar) && !prefixSpace && !result.endsWith(' ')) {
         prefixSpace = ' ';
@@ -293,6 +318,21 @@ function fixBoldInLine(line: string): string {
       if (isCJK(nextChar) && !suffixSpace && !textWithoutCode.slice(closeRun.index + closeRun.length).startsWith(' ')) {
         suffixSpace = ' ';
       }
+    }
+
+    // 2. CommonMark Delimiter Flanking 合規性修復（解決 CJK 字元與引號/括號交界處粗體未渲染問題）：
+    // (a) 若粗體以標點符號開頭（如 「【《（" 等），且前置字元為非空格非標點之 CJK/英數字元（如 "了**「"），
+    //     依 CommonMark §6.2 規範該 ** 不具備 left-flanking 特性，必須於左側補齊空格（"了 **「"）方可成功開啟粗體。
+    const startsWithPunctuation = isUnicodePunctuation(trimmed[0]);
+    if (startsWithPunctuation && isCJKOrAlphanumeric(prevChar) && !prefixSpace && !result.endsWith(' ')) {
+      prefixSpace = ' ';
+    }
+
+    // (b) 若粗體以標點符號結尾（如 」】》）" 等），且後續字元為非空格非標點之 CJK/英數字元（如 "）**是"），
+    //     依 CommonMark §6.2 規範該 ** 不具備 right-flanking 特性，必須於右側補齊空格（"）** 是"）方可成功閉合粗體。
+    const endsWithPunctuation = isUnicodePunctuation(trimmed[trimmed.length - 1]);
+    if (endsWithPunctuation && isCJKOrAlphanumeric(nextChar) && !suffixSpace && !textWithoutCode.slice(closeRun.index + closeRun.length).startsWith(' ')) {
+      suffixSpace = ' ';
     }
 
     // 若前置結果已具備空格且 prefixSpace 亦包含空格，則消除重複空格
