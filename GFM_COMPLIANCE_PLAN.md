@@ -148,6 +148,7 @@ timeline
 |:---|:---:|:---|:---:|
 | `src/renderer/markdown.ts` | ✏️ 修改 | 注入 Alert 與 Tasklist AST Ruler，擴充 DOMPurify 白名單 | P1 |
 | `src/utils/formatter.ts` | ✏️ 修改 | 增強表格分隔線對齊冒號清洗，優化清單修正邏輯 | P2 |
+| `src/utils/sample.ts` | ✏️ 修改 | 更新範例 Markdown 模板呈現 GFM Alerts 多段落與 Tasklists | P2 |
 | `src/renderer/markdown.test.ts` | ✨ 新增 | GFM Alert 多段落、巢狀清單/表格、Tasklist 渲染單元測試 | P2 |
 | `src/utils/formatter.test.ts` | ✨ 新增 | 表格修復、LaTeX 符號、粗體、清單自動排版單元測試 | P2 |
 | `package.json` | ✏️ 修改 | 新增 `vitest` 至 devDependencies 供 CI/CD 本機測試 | P2 |
