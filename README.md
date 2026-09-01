@@ -2,8 +2,8 @@
 
 > 一套基於 **Linear Design System (`DESIGN.md`)** 規格打造、具備極速冷啟動（Cold Start）、純記憶體無痕暫態（Zero-Persistence）、Lighthouse 全項滿分（100/100）與 **AI / Gemini 複製排版智慧「✨ 自動修正」** 特性的純前端 Markdown & Mermaid 即時查看器與排版工具。
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)
-![Vite](https://img.shields.io/badge/Vite-6.2-646CFF?logo=vite)
+![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue?logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-8.2-646CFF?logo=vite)
 ![Design System](https://img.shields.io/badge/Design%20System-Linear%20(DESIGN.md)-5E6AD2)
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-100%2F100-success?logo=lighthouse)
 ![JSDoc](https://img.shields.io/badge/JSDoc-100%25-blue)

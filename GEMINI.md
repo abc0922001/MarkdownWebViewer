@@ -31,13 +31,13 @@
 
 | 領域 / 模組 | 選用技術 | 版本 | 職責與選型理由 |
 | :--- | :--- | :--- | :--- |
-| **建構工具 / 語言** | Vite + TypeScript | Vite 6 / TS 5 | 極速 HMR、原生 ES 模組、靜態型別安全 |
+| **建構工具 / 語言** | Vite + TypeScript | Vite 8 / TS 7 | 極速 HMR、原生 ES 模組、靜態型別安全 |
 | **編輯器核心** | CodeMirror 6 | 6.x | 模組化設計、輕量、透過 Compartment 支援無重建模組主題、語法著色與折行動態重配 |
-| **Markdown 解析** | markdown-it | 14.x | 高效符合 CommonMark/GFM 規範，擴充彈性高，支援 typographer 與 breaks |
+| **Markdown 解析** | markdown-it | 15.x | 高效符合 CommonMark/GFM 規範，擴充彈性高，內建 TypeScript 型別支援，支援 typographer 與 breaks |
 | **程式碼語法高亮** | highlight.js | 11.x | 採用 common 語言子集打包以最小化體積，適配深/淺雙主題色彩 |
 | **安全消毒過濾** | DOMPurify | 3.x | 嚴格防禦 XSS 攻擊，配置 SVG 與向量繪圖屬性白名單保留圖表 |
 | **向量圖表引擎** | mermaid.js | 11.x | **動態延遲非同步載入（Dynamic Import）**，未出現圖表時首屏零體積負擔 |
-| **圖示庫** | lucide | 0.475.x | 精緻簡約之 SVG 圖示，用於 GitHub Alerts 與工具列控制 |
+| **圖示庫** | lucide | 1.x | 精緻簡約之 SVG 圖示，用於 GitHub Alerts 與工具列控制 |
 | **程式碼壓縮** | terser | 5.x | 生產環境 Minification，清除除錯符號以縮減檔案體積 |
 | **CI/CD 自動化** | GitHub Actions | v4 | Push 到 `main` 分支自動執行 `npm run build` 並部署到 GitHub Pages |
 
@@ -80,7 +80,8 @@ MarkdownWebViewer/
 │   │   ├── formatter.ts      # Gemini / AI Markdown 壞格式智慧修復引擎 (含 LaTeX 數學符號轉換)
 │   │   ├── sample.ts         # 初始範例 Markdown 模板 (含流程圖、時序圖、表格、程式碼、公式)
 │   │   └── toast.ts          # 非侵入式 Toast 輕量通知模組 (支援 success / info / error)
-│   └── main.ts               # 應用程式進入點，延遲掛載、生命週期管線、快捷鍵與全域事件
+│   ├── main.ts               # 應用程式進入點，延遲掛載、生命週期管線、快捷鍵與全域事件
+│   └── vite-env.d.ts         # Vite 環境型別擴充宣告
 ├── .gitignore                # 忽略 node_modules、dist、issue/
 ├── DESIGN.md                 # Linear 設計系統權威分析與 Token 定義文件
 ├── GEMINI.md                 # 本文件 (LLM & 開發者上下文指引)

@@ -1,4 +1,4 @@
-import MarkdownIt from 'markdown-it';
+import MarkdownIt, { type MarkdownIt as MarkdownItType, type StateCore, type Token, type RendererRule } from 'markdown-it';
 import hljs from 'highlight.js/lib/common';
 import DOMPurify from 'dompurify';
 import { fixMathSymbols } from '../utils/formatter';
@@ -47,8 +47,8 @@ function escapeHtml(str: string): string {
  *
  * @param md MarkdownIt 解析器實例
  */
-function gfmAlertsPlugin(md: MarkdownIt): void {
-  md.core.ruler.after('block', 'gfm_alerts', (state) => {
+function gfmAlertsPlugin(md: MarkdownItType): void {
+  md.core.ruler.after('block', 'gfm_alerts', (state: StateCore) => {
     const tokens = state.tokens;
     let i = 0;
 
@@ -121,7 +121,7 @@ function gfmAlertsPlugin(md: MarkdownIt): void {
 
               // 若第一段落僅包含 [!TYPE] 且剝除後無內容，則移除該空段落，避免產生多餘空白行
               const isInlineEmpty = !inlineToken.content.trim() &&
-                (!inlineToken.children || inlineToken.children.every((c) => !c.content || !c.content.trim()));
+                (!inlineToken.children || inlineToken.children.every((c: Token) => !c.content || !c.content.trim()));
 
               if (isInlineEmpty && paraOpenIdx !== -1) {
                 // 移除 paragraph_open, inline, paragraph_close (3 個 tokens) 並插入 titleToken
@@ -148,8 +148,8 @@ function gfmAlertsPlugin(md: MarkdownIt): void {
  *
  * @param md MarkdownIt 解析器實例
  */
-function gfmTasklistsPlugin(md: MarkdownIt): void {
-  md.core.ruler.after('inline', 'gfm_tasklists', (state) => {
+function gfmTasklistsPlugin(md: MarkdownItType): void {
+  md.core.ruler.after('inline', 'gfm_tasklists', (state: StateCore) => {
     const tokens = state.tokens;
 
     for (let i = 0; i < tokens.length; i++) {
@@ -210,7 +210,7 @@ function gfmTasklistsPlugin(md: MarkdownIt): void {
  * 載入自研 GFM Alerts 與 Tasklists AST 外掛，
  * 並整合 Highlight.js 程式碼著色與 Mermaid 圖表佔位標籤生成。
  */
-const md: MarkdownIt = new MarkdownIt({
+const md: MarkdownItType = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: true,
@@ -231,7 +231,7 @@ const md: MarkdownIt = new MarkdownIt({
 });
 
 // 攔截 mermaid 語法區塊，生成具備 data-raw 屬性之佔位節點供非同步渲染引擎接管
-const defaultFenceRenderer = md.renderer.rules.fence || function (tokens, idx, options, _env, self) {
+const defaultFenceRenderer: RendererRule = md.renderer.rules.fence || function (tokens, idx, options, _env, self) {
   return self.renderToken(tokens, idx, options);
 };
 
