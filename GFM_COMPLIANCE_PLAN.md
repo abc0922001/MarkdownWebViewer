@@ -1,363 +1,203 @@
-# GitHub Flavored Markdown (GFM) 規範合規性改進計畫
+# GitHub Flavored Markdown (GFM) 規範合規性改進計畫 (已審查修訂版)
 
-**計畫日期**：2026-09-01  
-**目標**：將 MarkdownWebViewer 的 Markdown 解析與修正功能升級至 GFM 規範完全相容（目前合規度：~70%）  
-**優先級**：P1（高）- 直接影響產品核心功能與規範遵循度
-
----
-
-## 📊 現狀評估
-
-### 合規性評分（5 個維度）
-
-| 維度 | 評分 | 說明 | 關鍵問題 |
-|:---|:---:|:---|:---|
-| **基礎 Markdown** | 9/10 | CommonMark 完全相容 | 細節工作良好 |
-| **GFM 核心特性** | 7/10 | 表格、刪除線、清單支援 | Alerts 多段落支援不完整 ❌ |
-| **GitHub 專有擴充** | 6/10 | Mermaid 完整、Alerts 待改進 | Alert 正規表達式過於簡單 ❌ |
-| **安全性 (XSS 防禦)** | 9/10 | DOMPurify 配置優秀 | SVG 屬性白名單需擴充 ⚠️ |
-| **規範遵循度** | 7/10 | 符合 GFM 主線 | 邊界情況與嵌套支援遺漏 ❌ |
-| **整體** | **7.6/10** | 基本可用，有改進空間 | 見下文詳細分析 |
+**修訂日期**：2026-09-01  
+**目標**：將 MarkdownWebViewer 的 Markdown 解析引擎與自動排版修復功能升級至 GFM 規範完全相容（目標合規度：98%+）  
+**架構原則**：零額外運行時相依（Zero-Dependency）、零持久化（Zero-Persistence）、保持 Lighthouse 100/100 極致冷啟動與 Linear 極簡美學  
+**實施週期**：精簡為 2 階段敏捷交付（預計 1~2 個開發迭代）
 
 ---
 
-## 🔴 優先級 1：緊急問題（必須修復）
+## 📊 現狀評估與問題診斷
 
-### 1.1 GitHub Alerts 多段落支援不完整 ❌❌❌
+### 合規性評分矩陣
 
-**現狀**（`src/renderer/markdown.ts` 第 54-90 行）：
-```typescript
-function processAlerts(html: string): string {
-  const alertTypes = ['note', 'tip', 'important', 'warning', 'caution'];
-  
-  return html.replace(
-    /<blockquote>\s*<p>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(?:<br>|\n)?([\s\S]*?)<\/p>\s*<\/blockquote>/gi,
-    (_match, type, content) => {
-      // ...
-    }
-  );
-}
-```
-
-**問題**：
-- ❌ 正規表達式只匹配**單一 `<p>` 標籤**，無法處理多段落警示
-- ❌ 無法支援警示內部的嵌套 Markdown（清單、程式碼區塊、表格等）
-- ❌ 不遵循 GFM 官方規範 — Alert 應為**容器級元素（Block-Level）**，而非區塊引言後處理
-
-**GFM 標準範例**：
-```markdown
-> [!NOTE]
-> 這是第一段
-> 
-> - 清單項目
-> - 另一項目
-> 
-> 最後一段
-```
-
-**預期輸出**：
-```html
-<div class="markdown-alert markdown-alert-note">
-  <div class="markdown-alert-title">
-    <svg><!-- icon --></svg>
-    <span>NOTE</span>
-  </div>
-  <p>這是第一段</p>
-  <ul>
-    <li>清單項目</li>
-    <li>另一項目</li>
-  </ul>
-  <p>最後一段</p>
-</div>
-```
-
-**改進方案**：
-使用 `markdown-it-container` 或自訂 block rule，在解析階段（而非後處理）即正確識別並處理 Alert 容器內的所有內容。
+| 維度 | 現狀評分 | 目標評分 | 現狀說明 | 關鍵診斷與核心對策 |
+|:---|:---:|:---:|:---|:---|
+| **基礎 Markdown** | 9/10 | 10/10 | CommonMark 完全相容 | markdown-it 底層解析穩定 |
+| **GFM 核心特性** | 7/10 | 10/10 | 表格、刪除線支援；Tasklist 缺渲染 | 補齊 Tasklist AST 轉譯為 Checkbox 元素 |
+| **GitHub 專有擴充** | 6/10 | 10/10 | Alerts 多段落與巢狀解析失效 | 捨棄脆弱 Regex，改採 Token Stream AST 解析 |
+| **安全性 (XSS 防禦)** | 8.5/10 | 10/10 | DOMPurify 白名單缺少進階 SVG 屬性 | 擴充 SVG/Filter Profile 與 Mermaid 必備標籤屬性 |
+| **排版智慧修復** | 8/10 | 9.5/10 | 具備 9 大修復管線，表格對齊需補強 | 增強表格分隔線冒號清洗，收斂於 `formatter.ts` |
+| **整體評級** | **7.7/10** | **9.9/10** | 基礎良好，需解決結構性邊界問題 | 詳見下方優化方案 |
 
 ---
 
-### 1.2 表格對齊符號規範驗證缺失 ⚠️
+## 🛠️ 技術審查與架構決策 (Architectural Decisions)
 
-**現狀**（`src/utils/formatter.ts` 第 328-514 行）：
-```typescript
-function repairMarkdownTables(content: string): { result: string; fixedCount: number } {
-  // 表格修復邏輯完整，但未驗證分隔線對齊語法
-  // 僅修復 "---" 但未檢查 ":---:", ":---", "---:" 等 GFM 對齐標記
-}
+在技術審查（Review）過程中，我們對原計畫進行了以下關鍵技術選型矯正與過度工程裁減：
+
+```mermaid
+graph TD
+    subgraph 原企劃之問題與誤區
+        O1["提議 markdown-it-container<br>❌ (語法為 ::: 不符 GFM > [!NOTE])"]
+        O2["提議 gfm-validator UI 面板<br>❌ (違背極簡與無痕原則，增加體積)"]
+        O3["提議拆分 gfm-fixer.ts<br>❌ (破壞 formatter.ts 單一管線順序)"]
+        O4["4 週冗長工期<br>❌ (嚴重過度估算)"]
+    end
+
+    subgraph 審查修訂後之最佳實踐
+        R1["自研零依賴 Token Stream Ruler<br>✅ (支援多段落、清單、表格、程式碼全巢狀)"]
+        R2["純靜態測試驅動驗證 (Vitest)<br>✅ (無運行時代碼負擔，守護 100/100 滿分)"]
+        R3["統一收斂於 formatter.ts<br>✅ (確保修復順序清晰無衝突)"]
+        R4["2 階段高效實施<br>✅ (聚焦核心，快速交付)"]
+    end
+
+    O1 -.-> R1
+    O2 -.-> R2
+    O3 -.-> R3
+    O4 -.-> R4
 ```
 
-**問題**：
-- ⚠️ 標準化分隔線時（第 374-381 行）未驗證對齊冒號的正確性
-- ⚠️ GFM 規範要求：`:---` (左對齐) / `:---:` (居中) / `---:` (右對齐)
-- ⚠️ 若修復後的對齊符號不符合規範，可能導致渲染差異
+### 1. 拒絕 `markdown-it-container`，改採零依賴 Token Stream 解析器
+* **原因**：`markdown-it-container` 採用 VuePress 式的 `::: container` 自訂標籤語法，並非 GFM 規範之 `> [!NOTE]` 區塊引言延伸語法。
+* **解法**：在 `src/renderer/markdown.ts` 中直接註冊 `md.core.ruler` 外掛，於 Token 解析階段掃描 `blockquote_open` 標籤，識別首行 `[!TYPE]` 並無縫轉換為 `<div class="markdown-alert markdown-alert-${type}">` 容器與 SVG 圖示。其內部的多段落、清單、表格與程式碼區塊均能由 markdown-it 原生遞迴渲染，**完美支援無限層級巢狀**。
 
-**改進方案**：
-在 `normalizedSepCells` 的映射函式中補充對齐驗證，確保所有分隔線符合 GFM 對齐規範。
+### 2. 裁減獨立 UI 驗證面板與獨立修復檔（避免 Over-Engineering）
+* **剔除 `gfm-validator.ts` 與 UI 驗證報告面板**：本專案定位為極簡、極速、無痕的即時查看與排版工具，使用者需要的是「即時擬真渲染」與「Alt+F 默默修好格式」，而非在 UI 上跳出繁雜的 Linter 錯誤清單。
+* **維持 `src/utils/formatter.ts` 為唯一修復管線**：不額外新增 `gfm-fixer.ts`，將表格分隔線冒號清洗與 Tasklist 格式標準化直接收斂於既有的 9 大修復管線中，杜絕職責破碎與重複遍歷。
 
 ---
 
-## 🟡 優先級 2：重要改進（應該修復）
+## 🔴 優先級 1：核心渲染與安全升級 (P1)
 
-### 2.1 列表與工作清單嵌套規範化缺失
+### 1.1 GitHub Alerts 支援多段落與全巢狀 Markdown
 
-**現狀**（`src/utils/formatter.ts` 第 73-83 行）：
-```typescript
-// 只修復缺失空格，未驗證嵌套列表的 GFM 縮排規則
-text = text
-  .replace(/^(\s*[-*+])([^\s\-*+\d])/gm, '$1 $2')
-  .replace(/^(\s*[-*+]\s*)\[\s*\]/gm, '$1[ ] ')
-  .replace(/^(\s*[-*+]\s*)\[[xX]\]/gm, '$1[x] ');
-```
+* **現狀問題**：`src/renderer/markdown.ts` 原本使用後處理正則表達式，僅能匹配單一 `<p>` 標籤，遇到多段落或巢狀清單時完全破功。
+* **升級規格**：
+  * 支援 5 大層級：`NOTE` (藍)、`TIP` (綠)、`IMPORTANT` (紫)、`WARNING` (黃)、`CAUTION` (紅)。
+  * 首行標籤大小寫不敏感（如 `[!NOTE]` 或 `[!note]`）。
+  * 支援 Alert 內部包含：多段落（`\n\n`）、無序/有序清單、巢狀引用、程式碼區塊（```）、表格等。
+  * 產出結構符合 GFM 規範：
+    ```html
+    <div class="markdown-alert markdown-alert-note">
+      <div class="markdown-alert-title">
+        <svg><!-- Lucide Icon --></svg>
+        <span>NOTE</span>
+      </div>
+      <p>第一段文字</p>
+      <ul>
+        <li>清單項目 1</li>
+        <li>清單項目 2</li>
+      </ul>
+      <p>最後一段文字</p>
+    </div>
+    ```
 
-**問題**：
-- ⚠️ GFM 要求嵌套列表使用 **2 空格或 1 Tab 縮排**
-- ⚠️ 工作清單 (`- [ ]`) 嵌套時需正確縮排，否則無法被識別為任務項
+### 1.2 GFM Tasklist (任務清單) AST 解析支援
 
-**GFM 正確範例**：
-```markdown
-- [ ] 任務 1
-  - [ ] 子任務 1.1
-  - [x] 子任務 1.2
-- [x] 任務 2
-```
+* **現狀問題**：`markdown-it` 預設將 `- [ ]` 解析為普通文字，未渲染為 HTML 核取方塊。
+* **升級規格**：
+  * 在 AST 渲染管線中新增 Tasklist 處理規則。
+  * 將 `- [ ] 任務` 轉為 `<li class="task-list-item"><input type="checkbox" disabled class="task-list-item-checkbox"> 任務</li>`。
+  * 將 `- [x] 任務` 轉為 `<li class="task-list-item"><input type="checkbox" checked disabled class="task-list-item-checkbox"> 任務</li>`。
+  * 完美適配 `src/styles/preview.css` 現有之 Linear 主題 Checkbox 樣式。
 
-**改進方案**：
-新增列表縮排驗證函式，確保嵌套列表符合 GFM 規範。
+### 1.3 DOMPurify SVG 與向量繪圖白名單擴充
 
----
-
-### 2.2 SVG 屬性白名單不完整
-
-**現狀**（`src/renderer/markdown.ts` 第 106-109 行）：
-```typescript
-return DOMPurify.sanitize(withAlerts, {
-  ADD_TAGS: ['svg', 'g', 'path', 'rect', 'circle', 'line', 'polyline', 'polygon', 'text', 'tspan', 'foreignObject'],
-  ADD_ATTR: ['viewBox', 'width', 'height', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'd', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'points', 'data-raw'],
-});
-```
-
-**問題**：
-- ⚠️ 缺少 Mermaid 常用的高級 SVG 屬性：
-  - `transform` — 圖形旋轉、縮放、平移
-  - `clip-path` — 裁剪路徑
-  - `filter` — 濾鏡效果
-  - `marker` 與 `use` 元素 — 箭頭、圖形重用
-
-**改進方案**：
-擴充白名單以支援完整的 Mermaid SVG 功能。
+* **現狀問題**：Mermaid 在繪製複雜流程圖、時序圖與架構圖時所使用的 `<defs>`, `<marker>`, `<use>`, `<clipPath>`, `<style>` 標籤與 `transform`, `filter`, `marker-start`, `marker-end` 等屬性易遭 DOMPurify 攔截裁切。
+* **升級規格**：
+  * 配置 `USE_PROFILES: { svg: true, svgFilters: true, html: true }`。
+  * 白名單標籤補充：`['svg', 'g', 'path', 'rect', 'circle', 'line', 'polyline', 'polygon', 'text', 'tspan', 'foreignObject', 'defs', 'marker', 'use', 'clipPath', 'style', 'filter', 'feDropShadow', 'feGaussianBlur']`。
+  * 白名單屬性補充：`['viewBox', 'width', 'height', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'd', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry', 'points', 'data-raw', 'transform', 'clip-path', 'marker-start', 'marker-mid', 'marker-end', 'filter', 'id', 'class', 'style', 'xmlns', 'xmlns:xlink', 'xlink:href', 'href']`。
 
 ---
 
-## 🟢 優先級 3：可選改進（增強體驗）
+## 🟡 優先級 2：排版修正引擎強化 (P2)
 
-### 3.1 缺少正式的 GFM 外掛聲明
+### 2.1 表格分隔線對齊標準化 (`repairMarkdownTables`)
 
-**現狀**（`src/renderer/markdown.ts` 第 27-51 行）：
-```typescript
-const md: MarkdownIt = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true,
-  breaks: true,
-  highlight(str: string, lang: string): string {
-    // ...
-  },
-});
-// 沒有明確啟用 GFM 外掛
-```
+* **現狀問題**：部分由 AI 生成的表格包含不規則對齊語法（例如 `: - :`、`:---` 包含空格、多餘冒號）。
+* **升級規格**：
+  * 清洗並正規化儲存格對齊標記：
+    * 左對齊：`:---`
+    * 居中對齊：`:---:`
+    * 右對齊：`---:`
+    * 預設無對齊：`---`
+  * 確保每個分隔線欄位至少具備 3 個短橫線（`-`），並保留準確之冒號對齊意圖。
 
-**問題**：
-- 🟡 無法確認是否正確加載所有 GFM 外掛（表格、刪除線、工作清單等）
-- 🟡 package.json 中未明確列舉 GFM 相關依賴
+### 2.2 清單與 Tasklist 排版修正防護
 
-**改進方案**：
-新增 `markdown-it` 的官方 GFM 外掛配置，並在 package.json 中明確聲明。
+* **現狀問題**：自動修復時若過度調整縮排，可能破壞使用者特意保留的縮排程式碼區塊。
+* **升級規格**：
+  * 保守修復缺失空格（如 `-項目` 轉 `- 項目`、`*項目` 轉 `* 項目`、`1.項目` 轉 `1. 項目`）。
+  * 標準化 Tasklist 方括號（如 `-[]` 轉 `- [ ] `、`-[x]` 轉 `- [x] `）。
+  * 嚴格保護多行與行內程式碼區塊，杜絕非預期破壞。
 
 ---
 
-## 📋 修正功能強化計畫
+## 🚀 敏捷實施路線圖 (Refined 2-Phase Roadmap)
 
-除了上述 GFM 規範修復外，**修正（Fix）功能**也應同步升級以支援更多規範化場景：
-
-### A. 增強 `fixMarkdownFormatting()` 的 GFM 規範支援
-
-**新增功能**：
-1. **Alert 語法規範化**
-   - 偵測 `> [!TYPE]` 格式並自動補齊缺失空行、對齊層級
-   - 處理多段落警示內容
-
-2. **表格對齐符號標準化**
-   - 驗證並修正分隔線對齐符號（`:---`, `:---:`, `---:` 等）
-   - 自動對齐欄寬（可選）
-
-3. **列表嵌套縮排規範化**
-   - 驗證嵌套列表的縮排（2 空格 / 1 Tab）
-   - 修正工作清單的嵌套結構
-
-### B. 新增 GFM 規範驗證函式
-
-**新檔案**：`src/utils/gfm-validator.ts`
-
-```typescript
-/**
- * GFM 規範驗證器
- * 檢查 Markdown 內容是否符合 GitHub Flavored Markdown 規範
- */
-
-export interface GfmValidationResult {
-  isValid: boolean;
-  errors: GfmError[];
-  warnings: GfmWarning[];
-}
-
-export interface GfmError {
-  type: 'alert' | 'table' | 'list' | 'code' | 'heading';
-  line: number;
-  message: string;
-  suggestion?: string;
-}
-
-export interface GfmWarning {
-  type: string;
-  line: number;
-  message: string;
-}
-
-/**
- * 驗證 Markdown 內容是否符合 GFM 規範
- */
-export function validateGfmCompliance(markdown: string): GfmValidationResult {
-  const errors: GfmError[] = [];
-  const warnings: GfmWarning[] = [];
-  
-  // 1. 驗證 Alerts 結構
-  const alertErrors = validateAlerts(markdown);
-  errors.push(...alertErrors);
-  
-  // 2. 驗證表格格式
-  const tableErrors = validateTables(markdown);
-  errors.push(...tableErrors);
-  
-  // 3. 驗證列表嵌套
-  const listErrors = validateLists(markdown);
-  errors.push(...listErrors);
-  
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings,
-  };
-}
+```mermaid
+timeline
+    title GFM 合規性升級實施階段
+    Phase 1 (核心引擎與安全升級) : 實作 markdownItAlerts Token Stream Ruler (零依賴支援多段落/全巢狀)
+                                : 實作 markdownItTasklists Ruler (自動轉譯 disabled Checkbox)
+                                : 擴充 DOMPurify 之完整 SVG/Mermaid 白名單
+                                : 驗證預覽區渲染效果
+    Phase 2 (修復強化與測試體系) : 強化 formatter.ts 之表格對齊與清單標準化
+                                : 導入 Vitest 並建立 GFM 合規性單元測試套件
+                                : 執行全量編譯與 Lighthouse 效能回歸驗證
+                                : 更新 GEMINI.md 與 README.md 文件
 ```
 
 ---
 
-## 🛠️ 實現路線圖
+## 📝 檔案變更計畫清單
 
-### Phase 1：Alerts 容器級支援（Week 1）
-- [ ] 新增 Alert block rule 至 markdown-it 初始化
-- [ ] 移除現有 `processAlerts()` 後處理，改用前置處理
-- [ ] 支援 Alert 內嵌套 Markdown（清單、程式碼等）
-- [ ] 補充測試用例（單段、多段、嵌套內容）
-
-### Phase 2：表格與列表規範化（Week 2）
-- [ ] 增強 `repairMarkdownTables()` 的對齐符號驗證
-- [ ] 新增列表嵌套縮排檢查函式
-- [ ] 擴充 `fixMarkdownFormatting()` 的 Alert 支援
-- [ ] 新增單元測試與集成測試
-
-### Phase 3：驗證系統與文檔（Week 3）
-- [ ] 實現 `src/utils/gfm-validator.ts` 驗證器
-- [ ] 新增 GFM 合規性檢查報告（可視化面板）
-- [ ] 更新 README.md 與 DESIGN.md，明確標註 GFM 合規度
-- [ ] 建立 GFM 測試套件（參考 [GFM Spec Examples](https://github.github.com/gfm/#example-1)）
-
-### Phase 4：效能測試與上線（Week 4）
-- [ ] 效能基準測試（Lighthouse、渲染速度）
-- [ ] 相容性驗證（瀏覽器、邊界情況）
-- [ ] 發布 Release Note
-- [ ] 部署至 GitHub Pages
-
----
-
-## 📝 檔案變更清單
-
-| 檔案 | 變更類型 | 影響範圍 | 優先級 |
+| 檔案路徑 | 變更類型 | 變更摘要 | 優先級 |
 |:---|:---:|:---|:---:|
-| `src/renderer/markdown.ts` | ✏️ 修改 | Alert 解析邏輯 | P1 |
-| `src/utils/formatter.ts` | ✏️ 修改 | 表格/列表規範化 | P1 |
-| `src/utils/gfm-validator.ts` | ✨ 新增 | 規範驗證系統 | P2 |
-| `src/utils/gfm-fixer.ts` | ✨ 新增 | GFM 特定修復函式 | P2 |
-| `__tests__/gfm-compliance.test.ts` | ✨ 新增 | GFM 測試套件 | P3 |
-| `GFM_COMPLIANCE_REPORT.md` | ✨ 新增 | 合規性報告 | P3 |
-| `package.json` | ✏️ 修改 | 新增依賴宣告 | P3 |
-| `README.md` | ✏️ 修改 | 文檔更新 | P3 |
+| `src/renderer/markdown.ts` | ✏️ 修改 | 注入 Alert 與 Tasklist AST Ruler，擴充 DOMPurify 白名單 | P1 |
+| `src/utils/formatter.ts` | ✏️ 修改 | 增強表格分隔線對齊冒號清洗，優化清單修正邏輯 | P2 |
+| `src/renderer/markdown.test.ts` | ✨ 新增 | GFM Alert 多段落、巢狀清單/表格、Tasklist 渲染單元測試 | P2 |
+| `src/utils/formatter.test.ts` | ✨ 新增 | 表格修復、LaTeX 符號、粗體、清單自動排版單元測試 | P2 |
+| `package.json` | ✏️ 修改 | 新增 `vitest` 至 devDependencies 供 CI/CD 本機測試 | P2 |
+| `GEMINI.md` | ✏️ 修改 | 更新 GFM Alerts AST 機制與 DOMPurify 規範說明 | P3 |
+| `README.md` | ✏️ 修改 | 標註 GFM 98%+ 完全相容支援清單 | P3 |
 
 ---
 
-## 🧪 測試計畫
+## 🧪 核心驗證測試用例 (Test Cases)
 
-### GFM 規範測試用例
-
-**Alert 多段落支援**：
-```markdown
-> [!WARNING]
-> 這是警告
-> 
-> - 重點 1
-> - 重點 2
-> 
-> 最後提醒
-```
-
-**表格對齐**：
-```markdown
-| 左對齐 | 居中 | 右對齐 |
-| :--- | :---: | ---: |
-| A | B | C |
-```
-
-**嵌套列表**：
-```markdown
-- 項目 1
-  - [ ] 子任務 1
-  - [x] 子任務 2
-- 項目 2
-```
-
-**複合嵌套**：
+### 1. Alert 多段落與複雜巢狀測試
 ```markdown
 > [!NOTE]
-> - 清單
->   1. 有序子清單
->   2. 第二項
-> ```code
-> snippet
+> 這是第一段警示文字。
+> 
+> - 清單項目 1
+> - 清單項目 2
+> 
+> ```typescript
+> const a = 1;
 > ```
+> 
+> | 標題 A | 標題 B |
+> | :--- | ---: |
+> | 資料 1 | 資料 2 |
+> 
+> 結尾段落。
+```
+
+### 2. Tasklist 巢狀核取清單測試
+```markdown
+- [ ] 待辦事項 1
+  - [ ] 子項目 1.1
+  - [x] 子項目 1.2 (已完成)
+- [x] 待辦事項 2
+```
+
+### 3. 表格對齊冒號標準化測試
+```markdown
+| 左對齊 | 居中對齊 | 右對齊 |
+| :--- | :---: | ---: |
+| 內容 A | 內容 B | 內容 C |
 ```
 
 ---
 
-## 📊 成功標準
+## 📊 驗收標準 (Definition of Done)
 
-✅ **完成條件**：
-1. GFM 合規度提升至 **95%+**
-2. 所有 P1 優先級問題已解決
-3. 修正功能支援 GFM 規範化場景
-4. 通過 GFM Spec 官方測試套件 **90%+** 用例
-5. 無效能迴歸（Lighthouse 保持 100/100）
-6. 文檔完整更新，清楚標註 GFM 合規狀態
-
----
-
-## 📞 相關資源
-
-- [GFM 官方規範](https://github.github.com/gfm/)
-- [markdown-it 官方文檔](https://github.com/markdown-it/markdown-it)
-- [markdown-it-container](https://github.com/markdown-it/markdown-it-container)
-- [DOMPurify 配置](https://github.com/cure53/DOMPurify)
-
----
-
-**計畫擁有者**：GitHub Copilot  
-**最後更新**：2026-09-01
+1. ✅ **Alerts 多段落相容**：所有 5 種 Alert 均可在包含多段落、清單、表格、程式碼時正確渲染為卡片容器。
+2. ✅ **Tasklist 渲染相容**：`- [ ]` 與 `- [x]` 正確轉為禁用型核取方塊並套用 Linear 主題樣式。
+3. ✅ **Mermaid 圖表零瑕疵**：複雜時序圖與流程圖箭頭、濾鏡不受 DOMPurify 裁切。
+4. ✅ **效能與零持久化**：維持純前端無痕架構，Lighthouse 維持 100/100 滿分評級。
+5. ✅ **測試覆蓋率**：新增的單元測試全數通過（`npm run test`），且編譯無型別錯誤（`npm run build`）。
