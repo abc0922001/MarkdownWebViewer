@@ -124,10 +124,10 @@ MarkdownWebViewer/
 
 ## ⚡ 核心演算法與設計模式 (Core Architecture)
 
-### 1. 極速冷啟動與按需延遲載入管線 (Cold-Start & Lazy Pipeline)
-為達成 Lighthouse 100/100 滿分評級，專案採用全方位延遲非同步載入架構：
-* **CodeMirror 6 延遲掛載**：首屏僅渲染靜態佔位元素，等待使用者觸發首個輸入事件（`pointerdown` / `keydown`）或經過 3.5 秒閒置超時後，才動態載入 CodeMirror 模組與初始化實例。
-* **Markdown 解析引擎延遲預擷取**：透過 `getMarkdownRenderer()` 動態加載 `markdown-it`、`highlight.js` 與 `DOMPurify`，避免首屏同步載入大型解析套件。
+### 1. 極速冷啟動與按需載入管線 (Cold-Start & Lazy Pipeline)
+為兼顧極致效能與即時開箱即用之輸入體驗（Zero-Friction UX），專案採用以下管線設計：
+* **CodeMirror 6 立即掛載與自動聚焦**：首屏即時初始化 CodeMirror 6 編輯器核心，即刻呈現初始行號與編輯游標並自動聚焦（Auto-Focus），同時具備全域剪貼簿貼上（Global Paste）監聽與按鍵輸入轉發機制，支援使用者開啟網頁後無需任何額外點擊即可直接貼上或鍵入 Markdown 內容。
+* **Markdown 解析引擎閒置預擷取**：於瀏覽器閒置時（`requestIdleCallback`）非同步預先載入 `markdown-it`、`highlight.js` 與 `DOMPurify`，確保首次排版渲染極速反饋。
 * **Mermaid 延遲管線與防競態機制**：
   * Mermaid 體積較大（>2MB），僅當解析器於預覽區掃描到 `.mermaid-diagram` 時，才透過 `import('mermaid')` 動態載入。
   * 每次繪圖持有獨立遞增的 **`currentRenderToken`**，避免使用者快速打字時舊渲染工作覆蓋新內容。

@@ -26,6 +26,7 @@ function getMarkdownRenderer() {
 import { LayoutSwitcher } from './layout/switcher';
 import { PaneResizer } from './layout/resizer';
 import { SyncScrollManager } from './layout/sync-scroll';
+import { MarkdownEditor } from './editor/codemirror';
 import { exportMarkdown } from './exporter/md-exporter';
 import { exportHtml } from './exporter/html-exporter';
 import { exportPdf } from './exporter/pdf-exporter';
@@ -39,6 +40,7 @@ import { fixMarkdownFormatting } from './utils/formatter';
  */
 document.addEventListener('DOMContentLoaded', () => {
   // 取得關鍵介面 DOM 節點
+  const editorPane = document.getElementById('editor-pane')!;
   const editorMount = document.getElementById('codemirror-mount')!;
   const previewContent = document.getElementById('preview-content')!;
   const previewScrollContainer = document.getElementById('preview-scroll-container')!;
@@ -68,35 +70,30 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentTheme: 'dark' | 'light' = document.documentElement.classList.contains('light') ? 'light' : 'dark';
   /** 是否存在未匯出之修改標記 */
   let isEdited = false;
-  /** CodeMirror 6 實例（未延遲載入完成前為 null） */
-  let editorInstance: any = null;
-  /** 在編輯器完成非同步初始化前暫存之文本內容 */
-  let pendingContent: string | null = null;
+  /** CodeMirror 6 編輯器核心實例 */
+  let editorInstance: MarkdownEditor;
 
   // 初始化主題切換按鈕圖示狀態
   themeIconMoon.style.display = currentTheme === 'dark' ? 'block' : 'none';
   themeIconSun.style.display = currentTheme === 'light' ? 'block' : 'none';
 
   /**
-   * 取得當前編輯器內容；若編輯器尚未完成初始化則回傳暫存字串。
+   * 取得當前編輯器內容。
    *
    * @returns 當前文件內容
    */
   const getEditorValue = (): string => {
-    return editorInstance ? editorInstance.getValue() : (pendingContent ?? '');
+    return editorInstance ? editorInstance.getValue() : '';
   };
 
   /**
-   * 設定編輯器內容；若編輯器尚未就緒則觸發延遲載入並寫入暫存變數。
+   * 設定編輯器內容。
    *
    * @param text 欲寫入之 Markdown 內容
    */
   const setEditorValue = (text: string): void => {
-    loadCodeMirror();
     if (editorInstance) {
       editorInstance.setValue(text);
-    } else {
-      pendingContent = text;
     }
   };
 
@@ -176,58 +173,82 @@ document.addEventListener('DOMContentLoaded', () => {
   const layoutSwitcher = new LayoutSwitcher();
   new PaneResizer();
 
-  let isEditorLoading = false;
+  // 立即初始化 CodeMirror 6 編輯器核心
+  editorInstance = new MarkdownEditor(editorMount, '', {
+    onChange: (content) => {
+      isEdited = true;
+      debouncedRender(content);
+    },
+    onCursorActivity: (line, col) => {
+      statCursor.textContent = `行 ${line}, 欄 ${col}`;
+    },
+  }, currentTheme);
 
-  /**
-   * 延遲載入 CodeMirror 6 編輯器核心及其相依套件。
-   */
-  const loadCodeMirror = () => {
-    if (editorInstance || isEditorLoading) return;
-    isEditorLoading = true;
-    import('./editor/codemirror').then(({ MarkdownEditor }) => {
-      editorInstance = new MarkdownEditor(editorMount, pendingContent ?? '', {
-        onChange: (content) => {
-          isEdited = true;
-          debouncedRender(content);
-        },
-        onCursorActivity: (line, col) => {
-          statCursor.textContent = `行 ${line}, 欄 ${col}`;
-        },
-      }, currentTheme);
+  // 初始化雙向等比滾動同步
+  new SyncScrollManager(editorInstance.getScrollElement(), previewScrollContainer);
 
-      new SyncScrollManager(editorInstance.getScrollElement(), previewScrollContainer);
-      updateMetrics();
-    });
-  };
+  // 網頁開啟後立即聚焦編輯器，使使用者無需任何額外點擊即可直接輸入或按快捷鍵貼上
+  editorInstance.focus();
+  requestAnimationFrame(() => {
+    editorInstance.focus();
+  });
 
-  /**
-   * 於使用者首次產生互動操作或經過 3.5 秒閒置後掛載編輯器。
-   */
-  const triggerLoad = () => {
-    loadCodeMirror();
-    window.removeEventListener('pointerdown', triggerLoad);
-    window.removeEventListener('keydown', triggerLoad);
-  };
-  window.addEventListener('pointerdown', triggerLoad, { once: true, passive: true });
-  window.addEventListener('keydown', triggerLoad, { once: true, passive: true });
-  editorMount.addEventListener('click', triggerLoad);
-  setTimeout(triggerLoad, 3500);
+  // 點擊編輯區任何空白處或標題列時，自動聚焦編輯器
+  editorPane.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('button, input, a')) return;
+    editorInstance.focus();
+  });
 
-  // 初始化靜態 HTML 預設狀態
+  // 全域剪貼簿貼上支援：當焦點不在其他文字輸入元件且不在編輯器內時，自動將剪貼簿文字注入編輯器
+  window.addEventListener('paste', (e: ClipboardEvent) => {
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) {
+      return;
+    }
+    if (editorMount.contains(active)) {
+      return;
+    }
+    const text = e.clipboardData?.getData('text/plain');
+    if (text) {
+      e.preventDefault();
+      editorInstance.insertText(text);
+      editorInstance.focus();
+    }
+  });
+
+  // 全域鍵盤輸入支援：當焦點位於頁面非輸入區域時，使用者直接鍵入字元自動轉發並聚焦至編輯器
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) {
+      return;
+    }
+    if (editorMount.contains(active)) {
+      return;
+    }
+    if (e.ctrlKey || e.altKey || e.metaKey) {
+      return;
+    }
+    if (e.key.length === 1) {
+      e.preventDefault();
+      editorInstance.insertText(e.key);
+      editorInstance.focus();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      editorInstance.insertText('\n');
+      editorInstance.focus();
+    }
+  });
+
+  // 初始化靜態 HTML 預設狀態與統計數據
   setRenderState('synced');
   updateMetrics();
 
-  /**
-   * 於使用者首次操作或閒置 4 秒後預先擷取 Markdown 解析模組。
-   */
-  const prefetchRenderer = () => {
-    getMarkdownRenderer();
-    window.removeEventListener('pointerdown', prefetchRenderer);
-    window.removeEventListener('keydown', prefetchRenderer);
-  };
-  window.addEventListener('pointerdown', prefetchRenderer, { once: true, passive: true });
-  window.addEventListener('keydown', prefetchRenderer, { once: true, passive: true });
-  setTimeout(prefetchRenderer, 4000);
+  // 於瀏覽器閒置時預先載入 Markdown 解析渲染引擎，確保首次打字或貼上時極速反應
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(() => getMarkdownRenderer());
+  } else {
+    setTimeout(getMarkdownRenderer, 400);
+  }
 
   /**
    * 執行 Markdown 自動排版修正流程。

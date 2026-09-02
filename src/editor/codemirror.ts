@@ -306,6 +306,15 @@ export class MarkdownEditor {
   }
 
   /**
+   * 於當前游標所在位置或替換當前選區插入文本內容。
+   *
+   * @param text 欲插入之文本字串
+   */
+  public insertText(text: string): void {
+    this.view.dispatch(this.view.state.replaceSelection(text));
+  }
+
+  /**
    * 取得 CodeMirror 內部實際負責捲動之 DOM 元素。
    *
    * 用於綁定雙向滾動同步事件監聽。
