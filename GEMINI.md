@@ -36,7 +36,7 @@
 | **Markdown 解析** | markdown-it | 15.x | 高效符合 CommonMark/GFM 規範，擴充彈性高，內建 TypeScript 型別支援，支援 typographer 與 breaks |
 | **程式碼語法高亮** | highlight.js | 11.x | 採用 common 語言子集打包以最小化體積，適配深/淺雙主題色彩 |
 | **安全消毒過濾** | DOMPurify | 3.x | 嚴格防禦 XSS 攻擊，配置 SVG 與向量繪圖屬性白名單保留圖表 |
-| **向量圖表引擎** | mermaid.js | 11.x | **動態延遲非同步載入（Dynamic Import）**，未出現圖表時首屏零體積負擔 |
+| **向量圖表引擎** | mermaid.js | 11.x | **動態延遲非同步載入（Dynamic Import）**，未出現圖表時初次載入零體積負擔 |
 | **圖示庫** | lucide | 1.x | 精緻簡約之 SVG 圖示，用於 GitHub Alerts 與工具列控制 |
 | **程式碼壓縮** | terser | 5.x | 生產環境 Minification，清除除錯符號以縮減檔案體積 |
 | **CI/CD 自動化** | GitHub Actions | v4 | Push 到 `main` 分支自動執行 `npm run build` 並部署到 GitHub Pages |
@@ -126,7 +126,7 @@ MarkdownWebViewer/
 
 ### 1. 極速冷啟動與按需載入管線 (Cold-Start & Lazy Pipeline)
 為兼顧極致效能與即時開箱即用之輸入體驗（Zero-Friction UX），專案採用以下管線設計：
-* **CodeMirror 6 立即掛載與自動聚焦**：首屏即時初始化 CodeMirror 6 編輯器核心，即刻呈現初始行號與編輯游標並自動聚焦（Auto-Focus），同時具備全域剪貼簿貼上（Global Paste）監聽與按鍵輸入轉發機制，支援使用者開啟網頁後無需任何額外點擊即可直接貼上或鍵入 Markdown 內容。
+* **CodeMirror 6 立即掛載與自動聚焦**：網頁開啟時即刻初始化 CodeMirror 6 編輯器核心，即刻呈現初始行號與編輯游標並自動聚焦（Auto-Focus），同時具備全域剪貼簿貼上（Global Paste）監聽與按鍵輸入轉發機制，支援使用者開啟網頁後無需任何額外點擊即可直接貼上或鍵入 Markdown 內容。
 * **Markdown 解析引擎閒置預擷取**：於瀏覽器閒置時（`requestIdleCallback`）非同步預先載入 `markdown-it`、`highlight.js` 與 `DOMPurify`，確保首次排版渲染極速反饋。
 * **Mermaid 延遲管線與防競態機制**：
   * Mermaid 體積較大（>2MB），僅當解析器於預覽區掃描到 `.mermaid-diagram` 時，才透過 `import('mermaid')` 動態載入。
