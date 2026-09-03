@@ -199,13 +199,16 @@ document.addEventListener('DOMContentLoaded', () => {
     editorInstance.focus();
   });
 
-  // 全域剪貼簿貼上支援：當焦點不在其他文字輸入元件且不在編輯器內時，自動將剪貼簿文字注入編輯器
+  // 全域剪貼簿貼上支援：當焦點不在其他文字輸入元件且不在編輯器內時，自動將剪貼簿文字注入編輯器（純瀏覽模式下停用以免誤寫隱藏編輯器）
   window.addEventListener('paste', (e: ClipboardEvent) => {
     const active = document.activeElement;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) {
       return;
     }
     if (editorMount.contains(active)) {
+      return;
+    }
+    if (layoutSwitcher.getMode() === 'preview') {
       return;
     }
     const text = e.clipboardData?.getData('text/plain');
@@ -216,13 +219,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 全域鍵盤輸入支援：當焦點位於頁面非輸入區域時，使用者直接鍵入字元自動轉發並聚焦至編輯器
+  // 全域鍵盤輸入支援：當焦點位於頁面非輸入區域時，使用者直接鍵入字元自動轉發並聚焦至編輯器（純瀏覽模式下停用以保留 Space 等瀏覽快捷鍵）
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     const active = document.activeElement;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) {
       return;
     }
     if (editorMount.contains(active)) {
+      return;
+    }
+    if (layoutSwitcher.getMode() === 'preview') {
       return;
     }
     if (e.ctrlKey || e.altKey || e.metaKey) {
@@ -388,6 +394,17 @@ document.addEventListener('DOMContentLoaded', () => {
       dropdownWrapper.classList.remove('open');
       exportMenu.hidden = true;
       btnExportDropdown.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // 按 Escape 快捷鍵時關閉匯出下拉選單
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (dropdownWrapper.classList.contains('open') || !exportMenu.hidden) {
+        dropdownWrapper.classList.remove('open');
+        exportMenu.hidden = true;
+        btnExportDropdown.setAttribute('aria-expanded', 'false');
+      }
     }
   });
 

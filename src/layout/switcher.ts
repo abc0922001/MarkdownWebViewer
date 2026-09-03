@@ -100,6 +100,7 @@ export class LayoutSwitcher {
         this.setMode('split');
       } else if (e.altKey && e.key === '3') {
         e.preventDefault();
+        this.setZenMode(false);
         this.setMode('preview');
       } else if (e.altKey && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault();
@@ -131,11 +132,28 @@ export class LayoutSwitcher {
       if (!this.isZen || !this.appRoot) return;
       if (e.clientY <= 14) {
         this.appRoot.classList.add('header-peek');
-      } else if (e.clientY > 54) {
+      } else if (e.clientY > 60) {
+        // 若焦點在頂欄輸入框中，或匯出選單處於開啟狀態，或游標仍位於頂欄元素內，保留工具列滑出狀態
+        const active = document.activeElement;
+        const appHeader = this.appRoot.querySelector('.app-header');
+        if (active && appHeader && appHeader.contains(active)) {
+          return;
+        }
+        const exportMenu = document.getElementById('export-menu');
+        if (exportMenu && !exportMenu.hidden) {
+          return;
+        }
+        if (appHeader && appHeader.matches(':hover')) {
+          return;
+        }
         this.appRoot.classList.remove('header-peek');
       }
     });
 
+    this.workspace.setAttribute('data-layout', this.currentMode);
+    if (this.appRoot) {
+      this.appRoot.setAttribute('data-layout', this.currentMode);
+    }
     this.updateUI();
   }
 

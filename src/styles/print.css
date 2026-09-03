@@ -22,7 +22,8 @@
   .pane-resizer,
   .pane-header,
   .toast-container,
-  .dropdown-menu {
+  .dropdown-menu,
+  .zen-floating-pill {
     display: none !important;
   }
 

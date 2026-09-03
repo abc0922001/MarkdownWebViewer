@@ -374,6 +374,8 @@
   background: transparent;
   color: var(--text-primary);
   font-weight: 600;
+  font-size: 13.5px;
+  max-width: 260px;
 }
 
 /* 僅在純瀏覽模式下顯示專注閱讀模式按鈕 */
@@ -412,6 +414,14 @@
 .zen-floating-pill:hover {
   opacity: 1;
   border-color: var(--border-medium);
+}
+
+/* 當頂欄臨時滑出或懸停檢視時，淡出並收回懸浮膠囊以杜絕遮蔽頂部工具列控制項 */
+.app-root.zen-mode.header-peek .zen-floating-pill,
+.app-root.zen-mode .app-header:hover ~ .zen-floating-pill {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
 }
 
 .zen-pill-btn {

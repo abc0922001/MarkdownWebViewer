@@ -228,5 +228,48 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
       expect(switcher.isZenMode()).toBe(false);
       expect(switcher.getMode()).toBe('editor');
     });
+
+    it('處於專注模式時按 Alt+3 應正確退出專注模式並維持純瀏覽', () => {
+      switcher.setZenMode(true);
+      expect(switcher.isZenMode()).toBe(true);
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '3', altKey: true }));
+      expect(switcher.isZenMode()).toBe(false);
+      expect(switcher.getMode()).toBe('preview');
+    });
+
+    it('游標移至視窗頂部 14px 內應滑出頂欄，且頂欄內部有焦點或選單展開時不應誤收回', () => {
+      switcher.setZenMode(true);
+      const app = document.getElementById('app');
+
+      // 移至頂部邊緣觸發滑出
+      window.dispatchEvent(new MouseEvent('mousemove', { clientY: 10 }));
+      expect(app?.classList.contains('header-peek')).toBe(true);
+
+      // 於頂欄內加入輸入框並聚焦
+      const input = document.createElement('input');
+      document.querySelector('.app-header')?.appendChild(input);
+      input.focus();
+
+      // 游標移出超過 60px，但因有焦點故不應收回
+      window.dispatchEvent(new MouseEvent('mousemove', { clientY: 80 }));
+      expect(app?.classList.contains('header-peek')).toBe(true);
+
+      // 解除焦點後再次移出，應正確收回
+      input.blur();
+      input.remove();
+      window.dispatchEvent(new MouseEvent('mousemove', { clientY: 80 }));
+      expect(app?.classList.contains('header-peek')).toBe(false);
+    });
+
+    it('若 app 根節點無預設 data-layout 屬性，初始化時應自動同步設置', () => {
+      const app = document.getElementById('app');
+      app?.removeAttribute('data-layout');
+      expect(app?.hasAttribute('data-layout')).toBe(false);
+
+      const newSwitcher = new LayoutSwitcher();
+      expect(app?.getAttribute('data-layout')).toBe('split');
+      expect(newSwitcher.getMode()).toBe('split');
+    });
   });
 });
