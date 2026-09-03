@@ -97,6 +97,64 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
       expect(styleContent).toContain('fill:#1f2020');
     });
 
+    it('切換至深色主題後再切回淺色主題，應正確恢復淺色樣式', async () => {
+      // 1. 先設為深色並渲染
+      document.documentElement.className = 'dark';
+      const containerDark = document.createElement('div');
+      const diagramDark = document.createElement('div');
+      diagramDark.className = 'mermaid-diagram';
+      diagramDark.dataset.raw = encodeURIComponent('graph TD\nA[節點A] --> B[節點B]');
+      containerDark.appendChild(diagramDark);
+      document.body.appendChild(containerDark);
+
+      await renderMermaidDiagrams(containerDark, 'dark');
+
+      // 2. 切回淺色並渲染
+      document.documentElement.className = 'light';
+      const containerLight = document.createElement('div');
+      const diagramLight = document.createElement('div');
+      diagramLight.className = 'mermaid-diagram';
+      diagramLight.dataset.raw = encodeURIComponent('graph TD\nA[節點A] --> B[節點B]');
+      containerLight.appendChild(diagramLight);
+      document.body.appendChild(containerLight);
+
+      const result = await renderMermaidDiagrams(containerLight, 'light');
+      expect(result).toBe(true);
+      expect(diagramLight.classList.contains('rendered')).toBe(true);
+
+      const svg = diagramLight.querySelector('svg');
+      expect(svg).not.toBeNull();
+
+      const styleContent = svg?.querySelector('style')?.textContent || '';
+      expect(styleContent).toContain('fill:#ECECFF');
+      expect(styleContent).not.toContain('fill:#1f2020');
+    });
+
+    it('冷啟動在淺色主題下渲染時序圖 (sequenceDiagram)，應成功產生 SVG 且不拋錯', async () => {
+      document.documentElement.className = 'light';
+
+      const seqCode = `sequenceDiagram
+        autonumber
+        actor User as 使用者
+        participant CM as CodeMirror
+        User->>CM: 輸入文字
+        CM-->>User: 呈現畫面`;
+
+      const container = document.createElement('div');
+      const diagramEl = document.createElement('div');
+      diagramEl.className = 'mermaid-diagram';
+      diagramEl.dataset.raw = encodeURIComponent(seqCode);
+      container.appendChild(diagramEl);
+      document.body.appendChild(container);
+
+      const result = await renderMermaidDiagrams(container, 'light');
+      expect(result).toBe(true);
+      expect(diagramEl.classList.contains('rendered')).toBe(true);
+
+      const svg = diagramEl.querySelector('svg');
+      expect(svg).not.toBeNull();
+    });
+
     it('當語法不完整或錯誤時，應觸發 Error Boundary 並清除殘留 DOM 節點', async () => {
       const container = document.createElement('div');
       const diagramEl = document.createElement('div');

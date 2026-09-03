@@ -129,11 +129,11 @@
     border: 1px solid #E2E8F0 !important;
   }
 
-  html.dark .mermaid-wrapper svg {
-    filter: invert(0.85) hue-rotate(180deg);
+  .mermaid-wrapper svg {
+    filter: none !important;
   }
 
-  html.light .mermaid-wrapper svg {
-    filter: none !important;
+  html.dark .mermaid-wrapper svg {
+    filter: invert(0.85) hue-rotate(180deg) !important;
   }
 }

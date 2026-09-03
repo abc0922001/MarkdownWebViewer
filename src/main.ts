@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const statCursor = document.getElementById('stat-cursor')!;
 
   /** 當前全站視覺主題（'dark' | 'light'），由 html 根節點 class 自動偵測初始狀態 */
-  let currentTheme: 'dark' | 'light' = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+  let currentTheme: 'dark' | 'light' = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   /** 是否存在未匯出之修改標記 */
   let isEdited = false;
   /** CodeMirror 6 編輯器核心實例 */
@@ -418,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
         exportMarkdown(getEditorValue(), filename);
         showToast('已成功匯出 Markdown 檔案', 'success');
       } else if (type === 'html') {
-        exportHtml(previewContent, filename);
+        exportHtml(previewContent, filename, currentTheme);
         showToast('已成功匯出獨立 HTML 檔案', 'success');
       } else if (type === 'pdf') {
         // 若處於純編輯模式，切換為雙欄以確保列印預覽區域正確呈現在 DOM 樹中

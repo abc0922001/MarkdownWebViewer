@@ -136,7 +136,7 @@ export async function renderMermaidDiagrams(
 
       if (!rawCode.trim()) continue;
 
-      const uniqueId = `mermaid-svg-${Date.now()}-${i}`;
+      const uniqueId = `mermaid-svg-${token}-${Date.now()}-${i}`;
 
       try {
         const { svg } = await mermaid.render(uniqueId, rawCode.trim());
@@ -149,7 +149,7 @@ export async function renderMermaidDiagrams(
         hasError = true;
         
         // 清除 Mermaid 核心於 document.body 殘留之錯誤 DOM 節點
-        const strayError = document.getElementById('d' + uniqueId);
+        const strayError = document.getElementById('d' + uniqueId) || document.getElementById(uniqueId);
         if (strayError) strayError.remove();
 
         const errMsg = err?.message || '語法未完成或錯誤';
