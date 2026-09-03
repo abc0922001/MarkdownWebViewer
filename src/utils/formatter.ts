@@ -436,6 +436,7 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
 
         let cursor = separatorIndex + 1;
         let currentCells: string[] = [];
+        let isLastCellOpen = false;
         let hadGlitches = separatorIndex > i + 1;
 
         // 逐行掃描後續表格資料列
@@ -445,11 +446,12 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
 
           // 1. 空白行或孤立管線符號行處理
           if (isGlitchPipeLine(curTrimmed)) {
-            // 向前探查：若後續仍有有效表格資料行，則跳過此異常空行
+            // 向前探查：若後續仍有有效表格資料行且非新表格起點，則跳過此異常空行
             let hasMoreTableDataAhead = false;
             for (let k = cursor + 1; k < Math.min(cursor + 6, lines.length); k++) {
               const lookahead = lines[k].trim();
               if (isGlitchPipeLine(lookahead)) continue;
+              if (isNewTableStart(k, lines)) break; // 新表格起點，當前表格結束
               if (isPotentialTableRow(lookahead) && !isHeaderOrHeading(lookahead) && !isBlockBoundary(lookahead)) {
                 hasMoreTableDataAhead = true;
                 break;
@@ -468,46 +470,76 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
             }
           }
 
-          // 2. 區塊邊界檢查（標題、程式碼區塊、引號、分隔線等）
-          if (isHeaderOrHeading(curTrimmed) || isBlockBoundary(curTrimmed)) {
+          // 2. 區塊邊界檢查（標題、程式碼區塊、引號、分隔線或新表格起點）
+          if (isHeaderOrHeading(curTrimmed) || isBlockBoundary(curTrimmed) || isNewTableStart(cursor, lines)) {
             break;
           }
 
           // 3. 資料行處理
           if (curTrimmed.includes('|')) {
+            const startsWithPipe = curTrimmed.startsWith('|');
+            const endsWithPipe = curTrimmed.endsWith('|');
             const extracted = splitTableCells(curLine);
             let justFlushed = false;
 
             for (let eIdx = 0; eIdx < extracted.length; eIdx++) {
               const cell = extracted[eIdx];
-              // 若剛完成上一列且此儲存格為雙管線 (||) 產生的空字串，則略過該黏合符號
+
+              // 若剛完成上一列且此儲格為雙管線 (||) 產生的空字串，則略過該黏合符號
               if (justFlushed && cell === '' && currentCells.length === 0) {
                 justFlushed = false;
                 continue;
               }
               justFlushed = false;
 
-              currentCells.push(cell);
+              // 若上一列最後儲存格未封閉且此行未以管線符號開頭，則首個元素為前一儲存格之跨行接續
+              if (eIdx === 0 && isLastCellOpen && !startsWithPipe && currentCells.length > 0) {
+                currentCells[currentCells.length - 1] = mergeCellContent(currentCells[currentCells.length - 1], cell);
+                hadGlitches = true;
+              } else {
+                currentCells.push(cell);
+              }
+
+              // 若已湊齊一整列的所有欄位，輸出為完整表格資料列
               if (currentCells.length === expectedCols) {
                 tableRows.push(formatTableRow(currentCells));
                 currentCells = [];
+                isLastCellOpen = false;
                 justFlushed = true;
               }
             }
+
+            // 根據該行結尾是否有管線符號，標記最後一個儲存格是否保持開啟狀態
+            if (currentCells.length > 0) {
+              isLastCellOpen = !endsWithPipe;
+              if (isLastCellOpen) {
+                hadGlitches = true;
+              }
+            } else {
+              isLastCellOpen = false;
+            }
+
             cursor++;
           } else {
             // 當前行不含管線符號
-            if (currentCells.length > 0 && currentCells.length < expectedCols) {
-              // 若當前資料列尚未補滿，將此行文字作為下一個儲存格填入
-              currentCells.push(curTrimmed);
+            if (currentCells.length > 0) {
               hadGlitches = true;
+              if (isLastCellOpen) {
+                // 若前一儲存格未封閉，將此行文字合併進前一儲存格
+                currentCells[currentCells.length - 1] = mergeCellContent(currentCells[currentCells.length - 1], curTrimmed);
+              } else if (currentCells.length < expectedCols) {
+                // 若前一儲存格已封閉但該列尚未湊滿，將此行文字作為獨立儲存格填入
+                currentCells.push(curTrimmed);
+                isLastCellOpen = true;
+              }
               if (currentCells.length === expectedCols) {
                 tableRows.push(formatTableRow(currentCells));
                 currentCells = [];
+                isLastCellOpen = false;
               }
               cursor++;
             } else {
-              // 若無待補資料列且無管線符號，視為表格結束
+              // 當前列已滿且此行無管線符號，表格結束
               break;
             }
           }
@@ -521,6 +553,7 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
           }
           tableRows.push(formatTableRow(currentCells));
           currentCells = [];
+          isLastCellOpen = false;
         }
 
         // 清理表格後方緊隨之孤立殘留管線行或空白行
@@ -626,17 +659,87 @@ function isHeaderOrHeading(line: string): boolean {
 }
 
 /**
- * 判斷文字行是否為 Markdown 區塊邊界標籤（如程式碼區塊、引號、HTML 標籤、水平線或無管線之清單）。
+ * 判斷文字行是否為 Markdown 區塊邊界標籤（如程式碼區塊、引號、HTML 區塊標籤、水平線或無管線之清單）。
  *
  * @param line 待判斷之文字行字串
  * @returns 若為區塊邊界標籤則回傳 true，否則回傳 false
  */
 function isBlockBoundary(line: string): boolean {
   const trimmed = line.trim();
-  if (trimmed.startsWith('```') || trimmed.startsWith('>') || trimmed.startsWith('<')) return true;
+  // 程式碼區塊開閉標籤或引用區塊標記
+  if (trimmed.startsWith('```') || trimmed.startsWith('>')) return true;
+  // 水平分隔線標記（如 ***, ---, ___）
   if (/^(\*{3,}|-{3,}|_{3,})$/.test(trimmed)) return true;
+  // 清單標記且不含管線符號
   if (/^(\s*[-*+]\s+|\s*\d+\.\s+)/.test(line) && !line.includes('|')) return true;
+  // 僅當文字行不含管線符號時，檢查是否為 HTML 區塊級標籤（排除行內元素如 <br>、<span>、<a> 等）
+  if (
+    !line.includes('|') &&
+    /^<\/?(?:div|table|tbody|thead|tfoot|tr|td|th|section|article|header|footer|nav|aside|p|pre|details|summary|figure|figcaption|form|iframe|blockquote)\b/i.test(
+      trimmed
+    )
+  ) {
+    return true;
+  }
   return false;
+}
+
+/**
+ * 檢查指定行索引是否為新表格之起始標頭列。
+ *
+ * 當前行包含管線符號且其後續緊鄰之非空行為標準表格分隔線時，判定為新表格起點，
+ * 以防止多個連續表格跨空行探查時產生錯誤合併。
+ *
+ * @param index 待檢查之行索引
+ * @param lines 全部文字行陣列
+ * @returns 若為新表格起始標頭則回傳 true，否則回傳 false
+ */
+function isNewTableStart(index: number, lines: string[]): boolean {
+  if (index >= lines.length) return false;
+  const line = lines[index].trim();
+  if (isHeaderOrHeading(line) || isBlockBoundary(line) || isGlitchPipeLine(line)) return false;
+  if (!line.includes('|')) return false;
+
+  // 向前探查緊鄰之次一非空行是否為分隔線
+  for (let j = index + 1; j < Math.min(index + 3, lines.length); j++) {
+    const next = lines[j].trim();
+    if (isGlitchPipeLine(next)) continue;
+    return isTableSeparator(next);
+  }
+  return false;
+}
+
+/**
+ * 智慧合併斷裂於多行之儲存格文字。
+ *
+ * 專為解決自 LLM 或複製貼上時儲存格內容遭換行斷開之問題。
+ * 若前段結尾或後段開頭具備 `<br>` 標籤，直接無縫黏合；
+ * 若兩側交界皆為 CJK 中文字元，直接銜接；
+ * 若已有空格則保留；其餘英數或符號情況自動補入標準半形空格以維持排版。
+ *
+ * @param prev 前段儲存格文字內容
+ * @param next 後段接續文字內容
+ * @returns 合併完成之儲存格字串
+ */
+function mergeCellContent(prev: string, next: string): string {
+  if (!prev) return next;
+  if (!next) return prev;
+  // 若前段結尾或後段開頭已有 <br> 標籤，直接拼接
+  if (/<\s*br\s*\/?>$/i.test(prev) || /^<\s*br\s*\/?>/i.test(next)) {
+    return prev + next;
+  }
+  // 若交界處已具備空格字元
+  if (/\s$/.test(prev) || /^\s/.test(next)) {
+    return prev + next;
+  }
+  // 若兩側交界處皆為 CJK 中文字元，無縫銜接
+  const lastChar = prev[prev.length - 1];
+  const firstChar = next[0];
+  if (/[\u4e00-\u9fa5\u3040-\u30ff]/.test(lastChar) && /[\u4e00-\u9fa5\u3040-\u30ff]/.test(firstChar)) {
+    return prev + next;
+  }
+  // 其餘英數或符號情況補標準半形空格
+  return `${prev} ${next}`;
 }
 
 /**

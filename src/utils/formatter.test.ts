@@ -69,6 +69,69 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       expect(fixesSummary.some((s) => s.includes('表格'))).toBe(true);
     });
 
+    it('應正確修復 Issue #8 之跨行斷裂含 <br> 標籤與空行之表格', () => {
+      const brokenIssue8Table = `| 調校領域 | 核心技術與機制 | 實質效益與操作方式 | 潛在代價與排除解方 |
+| --- | --- | --- | --- |
+| **Android 背景節電**<br>
+
+<br>([快取應用程式凍結](https://www.makeuseof.com/suspend-execution-for-cached-apps-fix-background-battery-drain/)) | 運用 Linux \`cgroup\` 機制，在 App 進入快取時直接暫停其 CPU 運算，而非完全強制關閉。 | 開發人員選項開啟 **Suspend execution for cached apps**。隔夜耗電可從 7–10% 驟降至 1–2%，喚醒時依舊能秒開。 | 部分 App 可能延遲推播。若有重要通訊軟體，至「應用程式資訊」將電池設為「不受限制」即可豁免。 |
+| **本機 AI 空間釋放**<br>
+
+<br>([AI 模型瘦身](https://www.makeuseof.com/iphone-users-discover-hack-to-save-21gb-of-storage-that-also-works-on-android/)) | 移除裝置端 AI 大型語言模型（如 Gemini Nano、Apple Intelligence）及其照片特徵快取。 | iOS 關閉「Apple Intelligence」；Android 至設定搜尋 **AICore** 點選「清除儲存空間」並停用，能立即釋出數 GB 至 21GB。 | 失去裝置端離線智慧功能（如離線摘要、本機照片語意搜尋、自動智慧回覆）。 |
+| **失物記憶管理**<br>
+
+<br>([Find Hub 記憶功能](https://www.makeuseof.com/android-find-hub-remembered-tab-no-tracker/)) | Android 16+ 結合 Gemini，由使用者口述位置建立純文字與照片索引，而非依賴藍牙防丟器。 | 對助理說「記住備用鑰匙在廚房抽屜」，資料即彙整於 Find Hub 的 **Remembered** 標籤頁，省去藍牙標籤電池維護成本。 | 不具備即時追蹤能力；若物品被他人挪動，系統無法感知變更。適合放護照、備用鑰匙等靜態物品。 |
+
+顯示的樣子:
+說明文字`;
+
+      const { formatted, changed, fixesSummary } = fixMarkdownFormatting(brokenIssue8Table);
+      expect(changed).toBe(true);
+      expect(fixesSummary.some((s) => s.includes('表格'))).toBe(true);
+
+      // 驗證第一列成功縫合儲存格，且包含完整的 4 個欄位
+      expect(formatted).toContain(
+        '| **Android 背景節電**<br><br>([快取應用程式凍結](https://www.makeuseof.com/suspend-execution-for-cached-apps-fix-background-battery-drain/)) | 運用 Linux `cgroup` 機制，在 App 進入快取時直接暫停其 CPU 運算，而非完全強制關閉。 | 開發人員選項開啟 **Suspend execution for cached apps**。隔夜耗電可從 7–10% 驟降至 1–2%，喚醒時依舊能秒開。 | 部分 App 可能延遲推播。若有重要通訊軟體，至「應用程式資訊」將電池設為「不受限制」即可豁免。 |'
+      );
+      // 驗證第二列成功縫合
+      expect(formatted).toContain(
+        '| **本機 AI 空間釋放**<br><br>([AI 模型瘦身](https://www.makeuseof.com/iphone-users-discover-hack-to-save-21gb-of-storage-that-also-works-on-android/)) | 移除裝置端 AI 大型語言模型（如 Gemini Nano、Apple Intelligence）及其照片特徵快取。 | iOS 關閉「Apple Intelligence」；Android 至設定搜尋 **AICore** 點選「清除儲存空間」並停用，能立即釋出數 GB 至 21GB。 | 失去裝置端離線智慧功能（如離線摘要、本機照片語意搜尋、自動智慧回覆）。 |'
+      );
+      // 驗證第三列成功縫合
+      expect(formatted).toContain(
+        '| **失物記憶管理**<br><br>([Find Hub 記憶功能](https://www.makeuseof.com/android-find-hub-remembered-tab-no-tracker/)) | Android 16+ 結合 Gemini，由使用者口述位置建立純文字與照片索引，而非依賴藍牙防丟器。 | 對助理說「記住備用鑰匙在廚房抽屜」，資料即彙整於 Find Hub 的 **Remembered** 標籤頁，省去藍牙標籤電池維護成本。 | 不具備即時追蹤能力；若物品被他人挪動，系統無法感知變更。適合放護照、備用鑰匙等靜態物品。 |'
+      );
+      // 驗證表格後方文字未遭破壞
+      expect(formatted).toContain('顯示的樣子:\n說明文字');
+    });
+
+    it('應正確隔離多個連續獨立表格，防止跨空行錯誤合併', () => {
+      const twoTables = `| 表格 1 標題 A | 表格 1 標題 B |
+| --- | --- |
+| 1 | 2 |
+
+| 表格 2 標題 X | 表格 2 標題 Y | 表格 2 標題 Z |
+| --- | --- | --- |
+| A | B | C |`;
+
+      const { formatted } = fixMarkdownFormatting(twoTables);
+      expect(formatted).toContain('| 表格 1 標題 A | 表格 1 標題 B |');
+      expect(formatted).toContain('| 1 | 2 |');
+      expect(formatted).toContain('| 表格 2 標題 X | 表格 2 標題 Y | 表格 2 標題 Z |');
+      expect(formatted).toContain('| A | B | C |');
+    });
+
+    it('應支援無管線跨行儲存格之文字縫合', () => {
+      const wrappedCellTable = `| 欄位 1 | 欄位 2 | 欄位 3 |
+| --- | --- | --- |
+| A | 資料 1
+續接說明文字 | C |
+| D | E | F |`;
+
+      const { formatted } = fixMarkdownFormatting(wrappedCellTable);
+      expect(formatted).toContain('| A | 資料 1 續接說明文字 | C |');
+    });
+
     it('應標準化表格分隔線冒號對齊格式', () => {
       const tableWithSpacedAlign = `| 左 | 居中 | 右 |
 | : - : | : - | - : |
