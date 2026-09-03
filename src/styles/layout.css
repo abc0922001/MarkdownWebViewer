@@ -345,6 +345,119 @@
 }
 
 /* ==========================================================================
+   純瀏覽極簡閱讀模式 (Clean Preview Mode)
+   ========================================================================== */
+
+/* 純瀏覽模式下隱藏次要編輯動作工具群（修正、範例、開啟、複製、清空），呈現簡潔清爽版面 */
+.app-root[data-layout="preview"] .header-actions {
+  display: none !important;
+}
+
+/* 純瀏覽模式下隱藏預覽區次標題欄（即時預覽 / 已同步），釋放垂直視覺空間 */
+.app-root[data-layout="preview"] .preview-pane .pane-header {
+  display: none !important;
+}
+
+/* 純瀏覽模式下隱藏底部狀態列，提供純淨無干擾之閱讀環境 */
+.app-root[data-layout="preview"] .app-statusbar {
+  display: none !important;
+}
+
+/* 純瀏覽模式下預覽滾動容器高度擴展為 100% */
+.app-root[data-layout="preview"] .preview-scroll-container {
+  height: 100% !important;
+}
+
+/* 純瀏覽模式下檔名輸入框呈現為乾淨文檔標題樣式 */
+.app-root[data-layout="preview"] .doc-title-input {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* 僅在純瀏覽模式下顯示專注閱讀模式按鈕 */
+.zen-toggle-btn {
+  display: none;
+}
+
+.app-root[data-layout="preview"] .zen-toggle-btn {
+  display: flex;
+}
+
+/* ==========================================================================
+   專注全螢幕閱讀模式 (Zen Mode)
+   ========================================================================== */
+
+/* 專注閱讀模式懸浮返回膠囊 */
+.zen-floating-pill {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 1000;
+  opacity: 0.9;
+  transition: opacity var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.zen-floating-pill:hover {
+  opacity: 1;
+  border-color: var(--border-medium);
+}
+
+.zen-pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.zen-pill-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface-hover);
+}
+
+/* 專注模式下滑動隱藏頂部工具列 */
+.app-root.zen-mode .app-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  transform: translateY(-100%);
+  transition: transform 220ms var(--ease-linear);
+}
+
+/* 滑鼠移動至頂部邊緣或懸停時臨時滑下頂欄 */
+.app-root.zen-mode .app-header:hover,
+.app-root.zen-mode.header-peek .app-header {
+  transform: translateY(0);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 專注模式下工作區佔滿整個可視空間 */
+.app-root.zen-mode .workspace {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ==========================================================================
    Status Bar
    ========================================================================== */
 
@@ -599,6 +712,28 @@
   /* 純瀏覽模式 */
   .workspace[data-layout="preview"] .preview-pane {
     height: 100% !important;
+  }
+
+  /* 行動端純瀏覽模式：精簡頂欄並消除多餘留白 */
+  .app-root[data-layout="preview"] .app-header {
+    min-height: unset;
+    padding: 6px 12px;
+    gap: 4px;
+  }
+
+  .app-root[data-layout="preview"] .header-row-secondary {
+    justify-content: flex-end;
+  }
+
+  .zen-floating-pill {
+    top: 10px;
+    right: 12px;
+    padding: 2px 4px;
+  }
+
+  .zen-pill-btn {
+    padding: 3px 7px;
+    font-size: 11px;
   }
 
   /* 預覽容器內距縮減，提供更多文字排版可讀面積 */

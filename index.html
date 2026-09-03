@@ -23,7 +23,7 @@
     </script>
   </head>
   <body>
-    <div id="app" class="app-root">
+    <div id="app" class="app-root" data-layout="split">
       <!-- 頂部工具列 (Top Toolbar) -->
       <header class="app-header">
         <!-- 列 1：品牌標題、檔名與三態版面切換器（桌面版為左側與最右側） -->
@@ -94,6 +94,12 @@
               <svg id="theme-icon-sun" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
             </button>
 
+            <!-- 專注閱讀模式切換按鈕 (隱藏頂部工具列) -->
+            <button id="btn-zen-mode" class="action-btn zen-toggle-btn" title="切換專注閱讀模式 (快捷鍵: Alt+Z)" aria-label="切換專注閱讀模式 (Alt+Z)">
+              <svg id="zen-icon-enter" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+              <svg id="zen-icon-exit" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><path d="M4 14h6m0 0v6m0-6-7 7m17-11h-6m0 0V4m0 6 7-7m-7 17v-6m0 0h6m-6 0 7 7M10 4v6m0 0H4m6 0L3 3"></path></svg>
+            </button>
+
             <!-- 匯出下拉選單 -->
             <div class="dropdown-wrapper">
               <button id="btn-export-dropdown" class="btn-primary" aria-expanded="false" aria-haspopup="true" aria-label="匯出檔案選單">
@@ -128,6 +134,18 @@
           </div>
         </div>
       </header>
+
+      <!-- 專注閱讀模式懸浮控制膠囊（隱藏頂欄時浮動呈現） -->
+      <div id="zen-floating-pill" class="zen-floating-pill" hidden>
+        <button id="btn-zen-to-split" class="zen-pill-btn" title="切換至雙欄對照模式 (快捷鍵: Alt+2)" aria-label="切換至雙欄對照模式 (Alt+2)">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="3" x2="12" y2="21"></line></svg>
+          <span>雙欄對照</span>
+        </button>
+        <button id="btn-zen-exit-pill" class="zen-pill-btn" title="結束專注閱讀模式 (快捷鍵: Alt+Z / Esc)" aria-label="結束專注閱讀模式 (Esc)">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h6m0 0v6m0-6-7 7m17-11h-6m0 0V4m0 6 7-7m-7 17v-6m0 0h6m-6 0 7 7M10 4v6m0 0H4m6 0L3 3"></path></svg>
+          <span>顯示工具列</span>
+        </button>
+      </div>
 
       <!-- 主工作區 (Workspace) -->
       <main id="app-workspace" class="workspace" data-layout="split">
