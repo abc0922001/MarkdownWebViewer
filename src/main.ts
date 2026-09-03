@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let mermaidSuccess = true;
       if (previewContent.querySelector('.mermaid-diagram')) {
         const { renderMermaidDiagrams } = await import('./renderer/mermaid');
-        mermaidSuccess = await renderMermaidDiagrams(previewContent);
+        mermaidSuccess = await renderMermaidDiagrams(previewContent, currentTheme);
       }
       setRenderState(mermaidSuccess ? 'synced' : 'error');
     } catch (err) {
@@ -294,9 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.className = currentTheme;
     if (editorInstance) editorInstance.setTheme(currentTheme);
-    if (previewContent.querySelector('.mermaid-diagram, svg[id^="mermaid-"]')) {
-      import('./renderer/mermaid').then(({ setMermaidTheme }) => setMermaidTheme(currentTheme));
-    }
+    import('./renderer/mermaid').then(({ setMermaidTheme }) => setMermaidTheme(currentTheme));
 
     if (currentTheme === 'light') {
       themeIconMoon.style.display = 'none';
