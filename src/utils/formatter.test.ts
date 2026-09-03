@@ -180,6 +180,64 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       expect(formatted).toContain('| B | 測試<br>多重標籤 |');
     });
 
+    it('應支援行尾無管線之儲存格跨空行接續，且正確閉合該列而不與次列合併', () => {
+      const input = `| A | B |
+| --- | --- |
+| 1 | 2<br>
+
+<br>3
+| 4 | 5 |`;
+
+      const { formatted } = fixMarkdownFormatting(input);
+      expect(formatted).toBe(`| A | B |
+| --- | --- |
+| 1 | 2<br>3 |
+| 4 | 5 |`);
+    });
+
+    it('應支援表格最後一列儲存格跨行接續且文末無管線符號與後續資料行', () => {
+      const input = `| 標題 A | 標題 B |
+| --- | --- |
+| 項目 1 | 內容 1<br>
+
+<br>內容 2<br>
+
+<br>內容 3
+
+這是表格後方的獨立普通段落。`;
+
+      const { formatted } = fixMarkdownFormatting(input);
+      expect(formatted).toBe(`| 標題 A | 標題 B |
+| --- | --- |
+| 項目 1 | 內容 1<br>內容 2<br>內容 3 |
+
+這是表格後方的獨立普通段落。`);
+    });
+
+    it('應支援多行純文字無管線跨行儲存格連續縫合', () => {
+      const input = `| 欄位 A | 欄位 B |
+| --- | --- |
+| 1 | 第一行說明
+第二行接續
+第三行結尾 |
+| 2 | 次列內容 |`;
+
+      const { formatted } = fixMarkdownFormatting(input);
+      expect(formatted).toContain('| 1 | 第一行說明第二行接續第三行結尾 |');
+      expect(formatted).toContain('| 2 | 次列內容 |');
+    });
+
+    it('應自動清除儲存格首尾贅餘之 <br> 標籤', () => {
+      const input = `| A | B |
+| --- | --- |
+| <br>頂部換行 | 底部換行<br> |
+| <br><br>雙重頂部 | 正常內容 |`;
+
+      const { formatted } = fixMarkdownFormatting(input);
+      expect(formatted).toContain('| 頂部換行 | 底部換行 |');
+      expect(formatted).toContain('| 雙重頂部 | 正常內容 |');
+    });
+
     it('應支援儲存格內連續多行無管線文字跨空行縫合，且不誤吞表格後方段落', () => {
       const input = `| 標題 A | 標題 B |
 | --- | --- |

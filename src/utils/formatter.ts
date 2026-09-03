@@ -465,14 +465,19 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
               }
             } else {
               // 當前列尚未完成，後續可能夾帶無管線之儲存格換行內容（例如：<br>文字<br>）
-              // 只要在區塊邊界或新表格起點前仍存在管線資料行，即視為當前列或表格之延續
+              // 只要在區塊邊界或新表格起點前仍存在管線資料行，或帶有 <br> 標籤之接續行，即視為當前列或表格之延續
               for (let k = cursor + 1; k < lookaheadLimit; k++) {
                 const lookahead = lines[k].trim();
                 if (isGlitchPipeLine(lookahead)) continue;
                 if (isNewTableStart(k, lines) || isHeaderOrHeading(lookahead) || isBlockBoundary(lookahead)) {
                   break;
                 }
-                if (isPotentialTableRow(lookahead)) {
+                if (isPotentialTableRow(lookahead) || /^<\s*br\s*\/?>/i.test(lookahead)) {
+                  hasMoreTableDataAhead = true;
+                  break;
+                }
+                // 若前一儲存格未閉合且以 <br> 結尾，其後續首個非空行亦為跨行接續
+                if (isLastCellOpen && /(?:<\s*br\s*\/?>\s*)+$/i.test(currentCells[currentCells.length - 1])) {
                   hasMoreTableDataAhead = true;
                   break;
                 }
@@ -547,6 +552,11 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
           } else {
             // 當前行不含管線符號
             if (currentCells.length > 0) {
+              const lastCellVal = currentCells[currentCells.length - 1] || '';
+              const isCellBrContinuation =
+                isLastCellOpen &&
+                (/^<\s*br\s*\/?>/i.test(curTrimmed) || /(?:<\s*br\s*\/?>\s*)+$/i.test(lastCellVal));
+
               // 向前確認後續是否仍有管線資料行（避免誤吞表格後之一般段落文字）
               let hasTablePipeAhead = false;
               const lookaheadLimit = Math.min(cursor + 20, lines.length);
@@ -562,8 +572,8 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
                 }
               }
 
-              if (!hasTablePipeAhead) {
-                // 若後續已無管線資料行，當前表格結束
+              if (!hasTablePipeAhead && !isCellBrContinuation) {
+                // 若後續已無管線資料行且非明確之儲存格跨行接續，當前表格結束
                 break;
               }
 
@@ -577,9 +587,11 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
                 isLastCellOpen = true;
               }
 
-              // 若當前行結尾帶有 <br> 標籤或後續仍有跨行接續，保持開啟狀態
+              // 若當前行結尾帶有 <br> 標籤或後續仍有跨行接續，保持開啟狀態；否則正常閉合儲存格
               if (/(?:<\s*br\s*\/?>\s*)+$/i.test(curTrimmed) || isContinuationAhead(cursor, lines)) {
                 isLastCellOpen = true;
+              } else {
+                isLastCellOpen = false;
               }
 
               if (currentCells.length === expectedCols && !isLastCellOpen) {
@@ -771,11 +783,13 @@ function isContinuationAhead(cursor: number, lines: string[]): boolean {
     const next = lines[k].trim();
     if (isGlitchPipeLine(next)) continue;
     if (isNewTableStart(k, lines) || isHeaderOrHeading(next) || isBlockBoundary(next)) return false;
+    // 若後續非空行以 <br> 標籤開頭，明確為儲存格接續內容
+    if (/^<\s*br\s*\/?>/i.test(next)) return true;
     // 若後續非空行不以管線開頭，且包含管線符號，則為前行儲存格之跨行收尾（例如：接續說明 |）
     if (!next.startsWith('|') && next.includes('|')) return true;
-    // 若後續非空行以 <br> 標籤開頭
-    if (/^<\s*br\s*\/?>/i.test(next)) return true;
-    break;
+    // 若後續非空行以管線開頭，代表是新資料行，當前儲存格未跨行至該行
+    if (next.startsWith('|')) return false;
+    // 若後續非空行既無管線也無 <br>（即純文字接續行），繼續向後檢查後續是否有跨行收尾符號
   }
   return false;
 }
@@ -801,8 +815,8 @@ function mergeCellContent(prev: string, next: string): string {
   if (prevHasBr || nextHasBr) {
     const cleanPrev = prev.replace(/(?:\s*<\s*br\s*\/?>)+\s*$/i, '');
     const cleanNext = next.replace(/^(?:\s*<\s*br\s*\/?>)+\s*/i, '');
-    if (!cleanPrev) return `<br>${cleanNext}`;
-    if (!cleanNext) return `${cleanPrev}<br>`;
+    if (!cleanPrev) return cleanNext;
+    if (!cleanNext) return cleanPrev;
     return `${cleanPrev}<br>${cleanNext}`;
   }
   // 若交界處已具備空格字元
@@ -862,7 +876,7 @@ function splitTableCells(line: string): string[] {
 
 /**
  * 將儲存格字串陣列格式化為標準 GFM 表格行（例如：`| 儲存格 1 | 儲存格 2 |`）。
- * 自動將儲存格內連續多餘的 `<br>` 標籤收斂為單一 `<br>` 標籤。
+ * 自動將儲存格內連續多餘的 `<br>` 標籤收斂為單一 `<br>` 標籤，並清除儲存格首尾贅餘之換行標籤。
  *
  * @param cells 儲存格字串陣列
  * @returns 標準化之表格行字串
@@ -871,7 +885,10 @@ function formatTableRow(cells: string[]): string {
   const normalizedCells = cells.map((cell) => {
     return cell
       .replace(/<\s*br\s*\/?>/gi, '<br>')
-      .replace(/(?:<br>\s*){2,}/gi, '<br>');
+      .replace(/(?:<br>\s*){2,}/gi, '<br>')
+      .replace(/^(?:\s*<br>\s*)+/gi, '')
+      .replace(/(?:\s*<br>\s*)+$/gi, '')
+      .trim();
   });
   return '| ' + normalizedCells.join(' | ') + ' |';
 }
