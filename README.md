@@ -8,6 +8,7 @@
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-100%2F100-success?logo=lighthouse)
 ![JSDoc](https://img.shields.io/badge/JSDoc-100%25-blue)
 ![Deploy](https://img.shields.io/badge/Deploy-GitHub%20Pages-222222?logo=github)
+![PWA](https://img.shields.io/badge/PWA-Ready-success?logo=pwa)
 ![Zero-Persistence](https://img.shields.io/badge/Security-Zero--Persistence-27A644)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
@@ -52,6 +53,12 @@
 ### 8. 嚴格無痕暫態生命週期 (Zero-Persistence)
 - **零本機儲存**：全流程純記憶體生命週期，嚴禁使用 `localStorage`、`sessionStorage`、`IndexedDB` 或 `Cookie`。
 - **防誤關閉防護**：內容編輯後若未手動匯出，重新整理或關閉分頁前會彈出原生確認對話框。
+
+### 9. PWA 漸進式網頁應用程式 (Progressive Web App)
+- **桌面與行動裝置獨立視窗安裝**：支援透過 Chrome / Edge / Safari 原生安裝至桌面或主畫面，以獨立 App 視窗執行。
+- **完整離線 App Shell**：透過 Workbox Service Worker 預先快取完整應用核心（含 CodeMirror、Markdown 解析器與大型 Mermaid.js 繪圖引擎），在飛機上或無網路環境中仍可 100% 正常檢視與繪製圖表。
+- **無感背景自動更新**：新版本靜默於背景快取，於使用者下一次開啟應用時生效，絕不突發重整以保護記憶體中未匯出的文件。
+- **堅守 Zero-Persistence**：快取僅限應用程式靜態程式碼，文件資料依然純記憶體操作、絕無本機殘留。
 
 ---
 

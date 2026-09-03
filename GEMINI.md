@@ -24,6 +24,7 @@
 7. **無障礙 (a11y) 與 SEO 全面適配**：按鈕具備明確 `aria-label`、符合 WCAG AA 高對比度標準、結構化語意標籤與 `robots.txt`。
 8. **嚴格無痕暫態生命週期 (Zero-Persistence)**：全流程純記憶體操作，嚴禁使用 `localStorage` / `sessionStorage` / `Cookie`，內建離開防誤觸保護。
 9. **GitHub Pages 一鍵自動化部署**：基於 Vite 相對路徑（`base: './'`）建置與 GitHub Actions 自動化 CI/CD。
+10. **PWA 漸進式網頁應用與離線 App Shell**：支援安裝為桌面與行動端獨立視窗應用，Workbox 預快取包含 Mermaid 向量引擎在內之完整 App Shell，支援斷網離線繪圖與 Google Fonts 執行期快取，並維持無痕暫態（Zero-Persistence）。
 
 ---
 
@@ -32,6 +33,7 @@
 | 領域 / 模組 | 選用技術 | 版本 | 職責與選型理由 |
 | :--- | :--- | :--- | :--- |
 | **建構工具 / 語言** | Vite + TypeScript | Vite 8 / TS 7 | 極速 HMR、原生 ES 模組、靜態型別安全 |
+| **PWA / Service Worker** | vite-plugin-pwa | 1.x | 基於 Workbox 自動精準處理產物雜湊快取清單、Google Fonts 執行期快取與無感自動更新 |
 | **編輯器核心** | CodeMirror 6 | 6.x | 模組化設計、輕量、透過 Compartment 支援無重建模組主題、語法著色與折行動態重配 |
 | **Markdown 解析** | markdown-it | 15.x | 高效符合 CommonMark/GFM 規範，擴充彈性高，內建 TypeScript 型別支援，支援 typographer 與 breaks |
 | **程式碼語法高亮** | highlight.js | 11.x | 採用 common 語言子集打包以最小化體積，適配深/淺雙主題色彩 |

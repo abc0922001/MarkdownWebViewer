@@ -1,4 +1,5 @@
 import { defineConfig, Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 /**
  * 自訂 Vite 外掛：將建置產出之 CSS 樣式直接內聯（Inline）至 index.html。
@@ -33,7 +34,80 @@ function inlineCssPlugin(): Plugin {
 export default defineConfig({
   // 維持相對路徑，確保於 GitHub Pages 子路徑部署時資源連結正確
   base: './',
-  plugins: [inlineCssPlugin()],
+  plugins: [
+    inlineCssPlugin(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'robots.txt'],
+      manifest: {
+        name: 'Markdown & Mermaid Web Viewer',
+        short_name: 'Markdown Viewer',
+        description: '基於 Linear 設計風格的純前端 Markdown 與 Mermaid 即時預覽工具，具備雙向滾動同步、AI 格式修復與多格式匯出功能。',
+        theme_color: '#0F1011',
+        background_color: '#0F1011',
+        display: 'standalone',
+        orientation: 'any',
+        scope: './',
+        start_url: './',
+        lang: 'zh-TW',
+        categories: ['utilities', 'productivity'],
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
+          {
+            src: 'pwa-maskable-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,txt}'],
+        // 放寬預快取大小上限至 5MB，確保動態分割之大型 Mermaid 模組（約 2.5MB）得以順利預先快取
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-stylesheets',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 年
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 年
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+      },
+    }),
+  ],
   build: {
     target: 'esnext',
     outDir: 'dist',
