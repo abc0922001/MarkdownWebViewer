@@ -89,20 +89,55 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       expect(changed).toBe(true);
       expect(fixesSummary.some((s) => s.includes('表格'))).toBe(true);
 
-      // 驗證第一列成功縫合儲存格，且包含完整的 4 個欄位
+      // 驗證第一列成功縫合儲存格，且包含完整的 4 個欄位，重複冗餘之 <br> 成功收斂為單一 <br>
       expect(formatted).toContain(
-        '| **Android 背景節電**<br><br>([快取應用程式凍結](https://www.makeuseof.com/suspend-execution-for-cached-apps-fix-background-battery-drain/)) | 運用 Linux `cgroup` 機制，在 App 進入快取時直接暫停其 CPU 運算，而非完全強制關閉。 | 開發人員選項開啟 **Suspend execution for cached apps**。隔夜耗電可從 7–10% 驟降至 1–2%，喚醒時依舊能秒開。 | 部分 App 可能延遲推播。若有重要通訊軟體，至「應用程式資訊」將電池設為「不受限制」即可豁免。 |'
+        '| **Android 背景節電**<br>([快取應用程式凍結](https://www.makeuseof.com/suspend-execution-for-cached-apps-fix-background-battery-drain/)) | 運用 Linux `cgroup` 機制，在 App 進入快取時直接暫停其 CPU 運算，而非完全強制關閉。 | 開發人員選項開啟 **Suspend execution for cached apps**。隔夜耗電可從 7–10% 驟降至 1–2%，喚醒時依舊能秒開。 | 部分 App 可能延遲推播。若有重要通訊軟體，至「應用程式資訊」將電池設為「不受限制」即可豁免。 |'
       );
       // 驗證第二列成功縫合
       expect(formatted).toContain(
-        '| **本機 AI 空間釋放**<br><br>([AI 模型瘦身](https://www.makeuseof.com/iphone-users-discover-hack-to-save-21gb-of-storage-that-also-works-on-android/)) | 移除裝置端 AI 大型語言模型（如 Gemini Nano、Apple Intelligence）及其照片特徵快取。 | iOS 關閉「Apple Intelligence」；Android 至設定搜尋 **AICore** 點選「清除儲存空間」並停用，能立即釋出數 GB 至 21GB。 | 失去裝置端離線智慧功能（如離線摘要、本機照片語意搜尋、自動智慧回覆）。 |'
+        '| **本機 AI 空間釋放**<br>([AI 模型瘦身](https://www.makeuseof.com/iphone-users-discover-hack-to-save-21gb-of-storage-that-also-works-on-android/)) | 移除裝置端 AI 大型語言模型（如 Gemini Nano、Apple Intelligence）及其照片特徵快取。 | iOS 關閉「Apple Intelligence」；Android 至設定搜尋 **AICore** 點選「清除儲存空間」並停用，能立即釋出數 GB 至 21GB。 | 失去裝置端離線智慧功能（如離線摘要、本機照片語意搜尋、自動智慧回覆）。 |'
       );
       // 驗證第三列成功縫合
       expect(formatted).toContain(
-        '| **失物記憶管理**<br><br>([Find Hub 記憶功能](https://www.makeuseof.com/android-find-hub-remembered-tab-no-tracker/)) | Android 16+ 結合 Gemini，由使用者口述位置建立純文字與照片索引，而非依賴藍牙防丟器。 | 對助理說「記住備用鑰匙在廚房抽屜」，資料即彙整於 Find Hub 的 **Remembered** 標籤頁，省去藍牙標籤電池維護成本。 | 不具備即時追蹤能力；若物品被他人挪動，系統無法感知變更。適合放護照、備用鑰匙等靜態物品。 |'
+        '| **失物記憶管理**<br>([Find Hub 記憶功能](https://www.makeuseof.com/android-find-hub-remembered-tab-no-tracker/)) | Android 16+ 結合 Gemini，由使用者口述位置建立純文字與照片索引，而非依賴藍牙防丟器。 | 對助理說「記住備用鑰匙在廚房抽屜」，資料即彙整於 Find Hub 的 **Remembered** 標籤頁，省去藍牙標籤電池維護成本。 | 不具備即時追蹤能力；若物品被他人挪動，系統無法感知變更。適合放護照、備用鑰匙等靜態物品。 |'
       );
       // 驗證表格後方文字未遭破壞
       expect(formatted).toContain('顯示的樣子:\n說明文字');
+    });
+
+    it('應正確修復 Issue #9 之多行儲存格包含空行與重複 <br> 之表格', () => {
+      const input = `| 評估維度 | 核心統計項目 | 關鍵數據表現 | 教練戰術解讀 |
+| --- | --- | --- | --- |
+| **賽季基底** | 出賽 / 先發 / 打席 | 94 G / 68 GS / 274 PA | **.269 / .315 / .423（OPS .738, 8 HR, 36 RBI）**，作為內野中線（主守二壘、兼修三壘），產出優於聯盟平均（sOPS+ 105）。 |
+| **左右打逆向現象** | 右打 vs. 右投 / 左投 | vs. 右投：**.288 / .342 / .468 (OPS .810, 6 HR)**<br>
+
+<br>vs. 左投：**.246 / .281 / .368 (OPS .649, 2 HR)** | 出現罕見的**「反向排球效應（Reverse Splits）」**。對右投掌握度極高，但面對左投（特別是左先發 OPS 僅 .563）缺乏長打威脅。 |
+| **殘酷得點圈與大心臟** | 壘上有人 / 得點圈 (RISP) / 兩出局得點圈 | RISP：**.317 / .400 / .413 (OPS .813)**<br>
+
+<br>**2 outs, RISP：.406 / .472 / .531 (OPS 1.003)** | 高張力專注度驚人。兩出局得點圈敲出 13 安打、進帳 16 分打點；高槓桿情境（High Leverage）打擊率達 **.300 / OPS .846**。 |
+| **球數狙擊力** | 球數領先 / 1-1 球數 / 兩好球 | 1-1 球數：**.577 BA / 1.000 SLG (3 HR)**<br>
+
+<br>Batter Ahead：**.318 / .459 / .500 (OPS .959)**<br>
+
+<br>Two Strikes：**.114 / .197 / .154 (64 SO)** | 鎖定好球帶核心攻擊效率極高；但在兩好球陷入被動後，缺乏破壞邊界球的能力，吞下全季 64 次三振。 |
+| **擊球型態與落點** | 平飛球 / 飛球 / 滾地球 | 平飛球（Line Drives）：**.642 BA / .830 SLG**<br>
+
+<br>飛球（Fly Balls）：**8 HR / .619 SLG**<br>
+
+<br>拉打（Pulled）：**.531 BA / 1.469 OPS (3 HR)** | 平飛球轉換率優秀。打擊落點均勻（拉打 17 安、中路 35 安、推打 16 安），但面對滾地球投手打擊率僅 **.189 (OPS .587)**。 |`;
+
+      const expected = `| 評估維度 | 核心統計項目 | 關鍵數據表現 | 教練戰術解讀 |
+| --- | --- | --- | --- |
+| **賽季基底** | 出賽 / 先發 / 打席 | 94 G / 68 GS / 274 PA | **.269 / .315 / .423（OPS .738, 8 HR, 36 RBI）**，作為內野中線（主守二壘、兼修三壘），產出優於聯盟平均（sOPS+ 105）。 |
+| **左右打逆向現象** | 右打 vs. 右投 / 左投 | vs. 右投：**.288 / .342 / .468 (OPS .810, 6 HR)**<br>vs. 左投：**.246 / .281 / .368 (OPS .649, 2 HR)** | 出現罕見的 **「反向排球效應（Reverse Splits）」**。對右投掌握度極高，但面對左投（特別是左先發 OPS 僅 .563）缺乏長打威脅。 |
+| **殘酷得點圈與大心臟** | 壘上有人 / 得點圈 (RISP) / 兩出局得點圈 | RISP：**.317 / .400 / .413 (OPS .813)**<br>**2 outs, RISP：.406 / .472 / .531 (OPS 1.003)** | 高張力專注度驚人。兩出局得點圈敲出 13 安打、進帳 16 分打點；高槓桿情境（High Leverage）打擊率達 **.300 / OPS .846**。 |
+| **球數狙擊力** | 球數領先 / 1-1 球數 / 兩好球 | 1-1 球數：**.577 BA / 1.000 SLG (3 HR)**<br>Batter Ahead：**.318 / .459 / .500 (OPS .959)**<br>Two Strikes：**.114 / .197 / .154 (64 SO)** | 鎖定好球帶核心攻擊效率極高；但在兩好球陷入被動後，缺乏破壞邊界球的能力，吞下全季 64 次三振。 |
+| **擊球型態與落點** | 平飛球 / 飛球 / 滾地球 | 平飛球（Line Drives）：**.642 BA / .830 SLG**<br>飛球（Fly Balls）：**8 HR / .619 SLG**<br>拉打（Pulled）：**.531 BA / 1.469 OPS (3 HR)** | 平飛球轉換率優秀。打擊落點均勻（拉打 17 安、中路 35 安、推打 16 安），但面對滾地球投手打擊率僅 **.189 (OPS .587)**。 |`;
+
+      const { formatted, changed, fixesSummary } = fixMarkdownFormatting(input);
+      expect(changed).toBe(true);
+      expect(fixesSummary.some((s) => s.includes('表格'))).toBe(true);
+      expect(formatted).toBe(expected);
     });
 
     it('應正確隔離多個連續獨立表格，防止跨空行錯誤合併', () => {
@@ -130,6 +165,47 @@ describe('Markdown Formatter 智慧修復引擎', () => {
 
       const { formatted } = fixMarkdownFormatting(wrappedCellTable);
       expect(formatted).toContain('| A | 資料 1 續接說明文字 | C |');
+    });
+
+    it('應正確收斂各種變體之 <br/>、<BR> 與多重冗餘換行', () => {
+      const input = `| 項目 | 說明 |
+| --- | --- |
+| A | 第一行<BR />
+
+<br/>第二行<br >第三行 |
+| B | 測試<br><br><br>多重標籤 |`;
+
+      const { formatted } = fixMarkdownFormatting(input);
+      expect(formatted).toContain('| A | 第一行<br>第二行<br>第三行 |');
+      expect(formatted).toContain('| B | 測試<br>多重標籤 |');
+    });
+
+    it('應支援儲存格內連續多行無管線文字跨空行縫合，且不誤吞表格後方段落', () => {
+      const input = `| 標題 A | 標題 B |
+| --- | --- |
+| 項目 1 | 內容 1<br>
+
+<br>內容 2<br>
+
+<br>內容 3 |
+
+這是表格後方的獨立普通段落。
+這是第二行段落。`;
+
+      const { formatted } = fixMarkdownFormatting(input);
+      expect(formatted).toContain('| 項目 1 | 內容 1<br>內容 2<br>內容 3 |');
+      expect(formatted).toContain('這是表格後方的獨立普通段落。\n這是第二行段落。');
+    });
+
+    it('應正確保護表格內反引號程式碼區塊中的管線字元與轉義管線', () => {
+      const input = `| 指令 | 說明 |
+| --- | --- |
+| \`cat file | grep text\` | 管道管線過濾 |
+| 包含 \\| 轉義符號 | 測試轉義 |`;
+
+      const { formatted } = fixMarkdownFormatting(input);
+      expect(formatted).toContain('| `cat file | grep text` | 管道管線過濾 |');
+      expect(formatted).toContain('| 包含 \\| 轉義符號 | 測試轉義 |');
     });
 
     it('應標準化表格分隔線冒號對齊格式', () => {
