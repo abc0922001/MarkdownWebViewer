@@ -317,9 +317,9 @@ export class MarkdownEditor {
   /**
    * 取得 CodeMirror 內部實際負責捲動之 DOM 元素。
    *
-   * 用於綁定雙向滾動同步事件監聽。
+   * 用於綁定雙向捲動同步事件監聽。
    *
-   * @returns 編輯器滾動 DOM 節點
+   * @returns 編輯器捲動 DOM 節點
    */
   public getScrollElement(): HTMLElement {
     return this.view.scrollDOM;

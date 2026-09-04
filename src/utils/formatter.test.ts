@@ -22,7 +22,7 @@ describe('Markdown Formatter 智慧修復引擎', () => {
     });
   });
 
-  describe('fixBoldFormatting() — 粗體排版優化', () => {
+  describe('fixBoldFormatting() — 粗體排版最佳化', () => {
     it('應消除粗體標籤內部多餘空格', () => {
       const input = '這是 ** 粗體文字 ** 範例。';
       const output = fixBoldFormatting(input);
@@ -310,9 +310,9 @@ describe('Markdown Formatter 智慧修復引擎', () => {
     it('Issue #12 回歸測試：連續執行多次自動修正時應具備嚴格冪等性，空格不再遞增', () => {
       const input = `## ⚡ 核心功能亮點
 
-- [x] **雙欄即時預覽**：左側 Markdown 編輯、右側 HTML/SVG 渲染，支援等比雙向滾動同步
-- [x] **三態佈局切換**：右上角一鍵切換「純編輯」、「純瀏覽」與「雙欄對照」
-- [x] **Mermaid 圖表支援**：按需非同步延遲載入，零首屏負擔
+- [x] **雙欄即時預覽**：左側 Markdown 編輯、右側 HTML/SVG 渲染，支援等比雙向捲動同步
+- [x] **三態版面切換**：右上角一鍵切換「純編輯」、「純瀏覽」與「雙欄對照」
+- [x] **Mermaid 圖表支援**：依需求非同步延遲載入，零初次載入負擔
 - [x] **三合一多格式匯出**：一鍵匯出 \`.md\`、單一獨立 \`.html\`、高解析 \`.pdf\`
 - [x] **無痕隱私保護**：純記憶體生命週期，關閉分頁或重整即徹底銷毀`;
 

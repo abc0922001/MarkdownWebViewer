@@ -363,12 +363,12 @@
   display: none !important;
 }
 
-/* 純瀏覽模式下預覽滾動容器高度擴展為 100% */
+/* 純瀏覽模式下預覽捲動容器高度擴展為 100% */
 .app-root[data-layout="preview"] .preview-scroll-container {
   height: 100% !important;
 }
 
-/* 純瀏覽模式下檔名輸入框呈現為乾淨文檔標題樣式 */
+/* 純瀏覽模式下檔名輸入框呈現為乾淨文件標題樣式 */
 .app-root[data-layout="preview"] .doc-title-input {
   border-color: transparent;
   background: transparent;
@@ -558,7 +558,7 @@
   }
 }
 
-/* 行動裝置斷點 (<= 768px，特別適配 20:9 等長型高解析手機) */
+/* 行動裝置斷點 (<= 768px，特別支援 20:9 等長型高解析手機) */
 @media (max-width: 768px) {
   .app-header {
     height: auto;

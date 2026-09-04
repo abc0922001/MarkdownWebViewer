@@ -2,7 +2,7 @@ import { defineConfig, Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 /**
- * 自訂 Vite 外掛：將建置產出之 CSS 樣式直接內聯（Inline）至 index.html。
+ * 自訂 Vite 外掛：將建置產出之 CSS 樣式直接內嵌（Inline）至 index.html。
  *
  * 消除額外的外部 CSS 網路請求與渲染阻斷（Render-Blocking Resources），
  * 同時自產出清單中移除獨立 CSS 檔案以減少 HTTP 請求數。
@@ -43,7 +43,7 @@ export default defineConfig({
       manifest: {
         name: 'Markdown & Mermaid Web Viewer',
         short_name: 'Markdown Viewer',
-        description: '基於 Linear 設計風格的純前端 Markdown 與 Mermaid 即時預覽工具，具備雙向滾動同步、AI 格式修復與多格式匯出功能。',
+        description: '基於 Linear 設計風格的純前端 Markdown 與 Mermaid 即時預覽工具，具備雙向捲動同步、AI 格式修復與多格式匯出功能。',
         theme_color: '#0F1011',
         background_color: '#0F1011',
         display: 'standalone',
@@ -119,7 +119,7 @@ export default defineConfig({
         drop_debugger: true,
       },
     },
-    // 關閉模組預先載入，避免首屏非同步拆包區塊被無差別提早載入
+    // 關閉模組預先載入，避免初次載入時非同步自訂分包區塊被無差別提早載入
     modulePreload: false,
     rollupOptions: {
       output: {
@@ -127,7 +127,7 @@ export default defineConfig({
          * 自訂 Rollup 程式碼分割（Code Splitting）策略。
          *
          * 將 CodeMirror 編輯器及其按鍵對應相依套件獨立打包為單一 Chunk，
-         * 達成首屏與延遲載入模組之清晰隔離。
+         * 達成初次載入與延遲載入模組之清晰隔離。
          */
         manualChunks(id) {
           if (id.includes('preload-helper')) {

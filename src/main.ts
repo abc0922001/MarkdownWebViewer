@@ -10,9 +10,9 @@ import './styles/print.css';
 let markdownRendererPromise: Promise<typeof import('./renderer/markdown')> | null = null;
 
 /**
- * 按需非同步載入 Markdown 解析渲染引擎（包含 markdown-it、Highlight.js 與 DOMPurify）。
+ * 依需求非同步載入 Markdown 解析渲染引擎（包含 markdown-it、Highlight.js 與 DOMPurify）。
  *
- * 避免首屏同步載入大型解析套件，提升初始頁面渲染速度。
+ * 避免初次載入時同步載入大型解析套件，提升初始頁面渲染速度。
  *
  * @returns Markdown 解析模組之 Promise
  */
@@ -163,13 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
-   * 具備 120ms 防抖排程之渲染函式，確保連續打字時介面流暢不卡頓。
+   * 具備 120ms 防彈跳排程之渲染函式，確保連續打字時介面流暢不卡頓。
    */
   const debouncedRender = debounce((content: string) => {
     doRender(content);
   }, 120);
 
-  // 初始化版面佈局切換器與分隔條拖曳調整器
+  // 初始化版面切換器與分隔條拖曳調整器
   const layoutSwitcher = new LayoutSwitcher();
   new PaneResizer();
 
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   }, currentTheme);
 
-  // 初始化雙向等比滾動同步
+  // 初始化雙向等比捲動同步
   new SyncScrollManager(editorInstance.getScrollElement(), previewScrollContainer);
 
   // 網頁開啟後立即聚焦編輯器，使使用者無需任何額外點擊即可直接輸入或按快捷鍵貼上

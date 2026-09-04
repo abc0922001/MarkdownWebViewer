@@ -65,7 +65,7 @@
   padding: 0 16px !important;
 }
 
-/* 行動裝置編輯器緊湊邊距適配 */
+/* 行動裝置編輯器緊湊邊距支援 */
 @media (max-width: 768px) {
   .cm-lineNumbers .cm-gutterElement {
     padding: 0 4px 0 6px !important;

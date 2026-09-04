@@ -12,9 +12,9 @@ export const SAMPLE_MARKDOWN = `# Markdown & Mermaid Web Viewer
 
 ## ⚡ 核心功能亮點
 
-- [x] **雙欄即時預覽**：左側 Markdown 編輯、右側 HTML/SVG 渲染，支援等比雙向滾動同步
-- [x] **三態佈局切換**：右上角一鍵切換「純編輯」、「純瀏覽」與「雙欄對照」
-- [x] **Mermaid 圖表支援**：按需非同步延遲載入，零首屏負擔
+- [x] **雙欄即時預覽**：左側 Markdown 編輯、右側 HTML/SVG 渲染，支援等比雙向捲動同步
+- [x] **三態版面切換**：右上角一鍵切換「純編輯」、「純瀏覽」與「雙欄對照」
+- [x] **Mermaid 圖表支援**：依需求非同步延遲載入，零初次載入負擔
 - [x] **三合一多格式匯出**：一鍵匯出 \`.md\`、單一獨立 \`.html\`、高解析 \`.pdf\`
 - [x] **無痕隱私保護**：純記憶體生命週期，關閉分頁或重整即徹底銷毀
 
@@ -87,16 +87,16 @@ def calculate_metrics(text: str) -> dict:
 | :--- | :--- | :--- |
 | **編輯器核心** | CodeMirror 6 | 語法高亮、按鍵對應、折行控制 |
 | **Markdown 解析** | markdown-it + Highlight.js | 支援 GFM、程式碼暗色著色 |
-| **向量圖表** | mermaid.js (v11) | Dynamic Import 按需載入 |
+| **向量圖表** | mermaid.js (v11) | Dynamic Import 依需求載入 |
 | **安全消毒** | DOMPurify | 嚴格防禦 XSS 腳本注入 |
-| **PDF 匯出** | CSS Paged Media | \`window.print()\` 搭配列印優化 |
+| **PDF 匯出** | CSS Paged Media | \`window.print()\` 搭配列印最佳化 |
 
 ---
 
-## 💡 提示資訊 (GitHub Flavored Alerts)
+## 💡 提示訊息 (GitHub Flavored Alerts)
 
 > [!NOTE]
-> 本應用完全由純前端靜態編譯而成，已適配 **GitHub Pages** 零後端自動部署。
+> 本應用完全由純前端靜態編譯而成，已支援 **GitHub Pages** 零後端自動部署。
 > 
 > 支援任意數量的多段落文字、清單與巢狀區塊排版。
 

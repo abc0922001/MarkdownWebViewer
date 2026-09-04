@@ -40,7 +40,7 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * 自研 GitHub Flavored Alerts (GFM Alerts) 零依賴 Token Stream 解析外掛。
+ * 自行開發之 GitHub Flavored Alerts (GFM Alerts) 零依賴 Token Stream 解析外掛。
  *
  * 在 Core 階段掃描 Blockquote Token 串流，若開頭段落具備 `[!NOTE]` 等標籤，
  * 則動態轉為 GFM Alert 容器標籤與標題列，支援內部多段落、清單、表格與程式碼區塊等完整巢狀結構。
@@ -141,7 +141,7 @@ function gfmAlertsPlugin(md: MarkdownItType): void {
 }
 
 /**
- * 自研 GitHub Flavored Tasklists (GFM 任務核取清單) 零依賴 AST 轉譯外掛。
+ * 自行開發之 GitHub Flavored Tasklists (GFM 任務核取清單) 零依賴 AST 轉譯外掛。
  *
  * 掃描清單項目開頭之 `[ ]` 與 `[x]` 語法，自動為 `<li>` 注入 `.task-list-item` 類別，
  * 並在行首插入禁用狀態之 `<input type="checkbox">` 核取方塊元素。
@@ -207,7 +207,7 @@ function gfmTasklistsPlugin(md: MarkdownItType): void {
  * 初始化 markdown-it 解析器實例。
  *
  * 配置 GFM 自動連結、排版符號替換、軟換行支援，
- * 載入自研 GFM Alerts 與 Tasklists AST 外掛，
+ * 載入自行開發之 GFM Alerts 與 Tasklists AST 外掛，
  * 並整合 Highlight.js 程式碼著色與 Mermaid 圖表佔位標籤生成。
  */
 const md: MarkdownItType = new MarkdownIt({
@@ -247,7 +247,7 @@ md.renderer.rules.fence = function (tokens, idx, options, env, self) {
   return defaultFenceRenderer(tokens, idx, options, env, self);
 };
 
-// 載入自研 GFM Alerts 與 Tasklist AST 插件
+// 載入自行開發之 GFM Alerts 與 Tasklist AST 外掛
 md.use(gfmAlertsPlugin);
 md.use(gfmTasklistsPlugin);
 

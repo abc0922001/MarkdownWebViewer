@@ -6,7 +6,7 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
   let originalGetBBox: any;
 
   beforeEach(() => {
-    // 設置 JSDOM 缺失之 SVG getBBox 模擬，使 Mermaid 佈局計算順暢執行
+    // 設置 JSDOM 缺失之 SVG getBBox 模擬，使 Mermaid 版面計算順暢執行
     if (typeof window !== 'undefined' && window.SVGElement) {
       originalGetBBox = (window.SVGElement.prototype as any).getBBox;
       (window.SVGElement.prototype as any).getBBox = () => ({ x: 0, y: 0, width: 100, height: 40 });

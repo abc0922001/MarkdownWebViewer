@@ -6,13 +6,13 @@
 
 | 核心需求 | 技術選型與架構實作 | 規格目標與技術亮點 |
 | --- | --- | --- |
-| **1. 雙欄輸入與預覽** | CodeMirror 6 + DOMPurify + 自適應雙欄 Layout | 左右等比或彈性分配，支援雙向游標與滾動同步 |
+| **1. 雙欄輸入與預覽** | CodeMirror 6 + DOMPurify + 自適應雙欄 Layout | 左右等比或彈性分配，支援雙向游標與捲動同步 |
 | **2. 右上角三態切換** | Linear 風格 Segmented Control（純編輯／純瀏覽／雙欄） | CSS Grid / Flex 狀態機切換，無版面重繪延遲 |
-| **3. Mermaid 語法支援** | 動態非同步載入 `mermaid.js` + SVG 錯誤邊界保護 | 按需載入（Lazy Loading），未出現圖表時零效能負擔 |
+| **3. Mermaid 語法支援** | 動態非同步載入 `mermaid.js` + SVG 錯誤邊界保護 | 依需求載入（Lazy Loading），未出現圖表時零效能負擔 |
 | **4. 多格式檔案匯出** | 純客戶端 Blob API (`.md`, `.html`) + CSS Paged Media (`.pdf`) | 產出單一可攜式獨立 HTML 與列印級無損 PDF |
 | **5. Linear 設計風格** | 嚴格導入 `getdesign.md/linear.app/design-md` 規範 | 黑曜暗色調、精準 1px 邊框、極致微互動、高資訊密度 |
 | **6. GitHub Pages 託管** | Vite + GitHub Actions CI/CD Pipeline | 自動化靜態編譯、自適應 Base URL、全球邊緣 CDN 分發 |
-| **7. 急速冷啟動** | Vanilla TS / 輕量核心 + 核心 CSS 內聯 + 按需拆包 | 首屏傳輸量 **< 60KB (Gzip)**，首字互動時間（TTI）**< 80ms** |
+| **7. 急速冷啟動** | Vanilla TS / 輕量核心 + 核心 CSS 內嵌 + 依需求自訂分包 | 初次載入傳輸量 **< 60KB (Gzip)**，首字互動時間（TTI）**< 80ms** |
 | **8. 不留存歷史資料** | 純記憶體生命週期管理（嚴格禁用 Web Storage / Cookie） | 關閉或重新整理即銷毀，實作敏感內容無痕編輯機制 |
 
 ---
@@ -35,7 +35,7 @@
 |    A[Cold Start] --> B[In-Memory UI]            |  +-------------+       +--------------+         |
 |  ```                                            |                                                 |
 +-------------------------------------------------+-------------------------------------------------+
-|  行 12, 欄 4  |  UTF-8  |  純記憶體工作區（重整即清空）                                滾動同步 [啟用]  |
+|  行 12, 欄 4  |  UTF-8  |  純記憶體工作區（重整即清空）                                捲動同步 [啟用]  |
 +---------------------------------------------------------------------------------------------------+
 
 ```
@@ -83,15 +83,15 @@
 
 #### 1. 急速冷啟動機制（Cold-Start Optimization）
 
-為達成毫秒級首屏渲染，徹底消除龐大第三方庫帶來的阻塞延遲：
+為達成毫秒級初次載入渲染，徹底消除龐大第三方庫帶來的阻塞延遲：
 
 * **框架選型去肥胖化**：捨棄大型 SPA 框架（如 Angular/React），採用 **原生 TypeScript + 微型 DOM 綁定（Vanilla / Lite Component）**，首頁 HTML 預先內嵌 Critical CSS。
 * **Mermaid.js 延遲非同步載入（Dynamic Code Splitting）**：
-* `mermaid.js` 體積龐大（> 2MB），**嚴禁在首屏初始化時載入**。
+* `mermaid.js` 體積龐大（> 2MB），**嚴禁在初次載入時載入**。
 * 實作動態偵測器：僅當 Markdown 解析器在內容中掃描到 ````mermaid` 程式碼區塊時，才觸發 `import('mermaid')` 進行模組拉取與編譯。
 
 
-* **字體子集化與延遲加載**：優先使用系統字體棧（System UI Font），非同步拉取 Inter 與 JetBrains Mono 子集。
+* **字體子集化與延遲載入**：優先使用系統字體棧（System UI Font），非同步拉取 Inter 與 JetBrains Mono 子集。
 
 #### 2. 嚴格無痕暫態機制（Zero-Persistence Security）
 
@@ -107,7 +107,7 @@
 
 ---
 
-### 三、 佈局切換與視圖聯動系統
+### 三、 版面切換與檢視連動系統
 
 #### 1. 右上角三態切換按鈕（Linear Segmented Switcher）
 
@@ -118,7 +118,7 @@
 
 
 * **`純瀏覽模式 (Preview Only)`**：
-* 隱藏左側輸入框，右側預覽區全寬居中展示，模擬現代技術文檔閱讀視圖。
+* 隱藏左側輸入框，右側預覽區全寬居中展示，模擬現代技術文件閱讀檢視。
 
 
 * **`雙欄對照模式 (Split View - 預設)`**：
@@ -127,7 +127,7 @@
 
 
 ```typescript
-// 佈局切換狀態機
+// 版面切換狀態機
 type LayoutMode = 'editor' | 'preview' | 'split';
 
 function setLayoutMode(mode: LayoutMode): void {
@@ -146,9 +146,9 @@ function setLayoutMode(mode: LayoutMode): void {
 
 ```
 
-#### 2. 等比即時滾動同步 (High-Precision Sync Scroll)
+#### 2. 等比即時捲動同步 (High-Precision Sync Scroll)
 
-* 計算編輯器滾動比例：`const ratio = scrollTop / (scrollHeight - clientHeight)`。
+* 計算編輯器捲動比例：`const ratio = scrollTop / (scrollHeight - clientHeight)`。
 * 使用 `requestAnimationFrame` 驅動預覽面板：`preview.scrollTop = ratio * (preview.scrollHeight - preview.clientHeight)`，確保雙向平滑同步無跳動。
 
 ---
@@ -158,7 +158,7 @@ function setLayoutMode(mode: LayoutMode): void {
 ```
 [ 使用者輸入文字 ]
        │
-       ▼ (150ms Debounce 防抖排程)
+       ▼ (150ms Debounce 防彈跳排程)
 [ markdown-it 核心解析 ] 
        │
        ├──► [ 基礎 Markdown ] ──► [ DOMPurify 消毒過濾 ] ──► [ HTML 生成 ]
@@ -173,7 +173,7 @@ function setLayoutMode(mode: LayoutMode): void {
 
 ```
 
-#### 1. 防抖排程與動態模組載入實作
+#### 1. 防彈跳排程與動態模組載入實作
 
 ```typescript
 let mermaidModule: typeof import('mermaid') | null = null;
@@ -220,7 +220,7 @@ async function renderMarkdown(content: string): Promise<void> {
 
 ### 五、 純客戶端三合一檔案匯出引擎
 
-全功能在瀏覽器本地完成封裝，無任何後端呼叫或傳輸：
+全功能在瀏覽器本機完成封裝，無任何後端呼叫或傳輸：
 
 ```
                               ┌──► [.md 匯出]  ──► Blob (text/markdown) ──► 觸發原生下載
@@ -285,7 +285,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // 將核心與龐大套件嚴格拆包
+          // 將核心與龐大套件嚴格自訂分包
           codemirror: ['codemirror', '@codemirror/lang-markdown'],
           parser: ['markdown-it', 'dompurify']
         }
@@ -296,7 +296,7 @@ export default defineConfig({
 
 ```
 
-#### 2. CI/CD 工作流 (`.github/workflows/deploy.yml`)
+#### 2. CI/CD 工作流程 (`.github/workflows/deploy.yml`)
 
 ```yaml
 name: Deploy to GitHub Pages
@@ -353,7 +353,7 @@ jobs:
 
 ```
 第 1 週 (Day 1-5)         第 2 週 (Day 6-10)        第 3 週 (Day 11-15)       第 4 週 (Day 16-18)
-[ Linear UI / 雙欄佈局 ] ──► [ 解析管線 / 按需圖表 ] ──► [ 匯出引擎 / 無痕防護 ] ──► [ 效能壓測 / 上線部署 ]
+[ Linear UI / 雙欄版面 ] ──► [ 解析管線 / 依需求圖表 ] ──► [ 匯出引擎 / 無痕防護 ] ──► [ 效能壓測 / 上線部署 ]
 
 ```
 
@@ -362,16 +362,16 @@ jobs:
 * 實作頂部工具列、右上角三態切換按鈕（純編輯／純瀏覽／雙欄）與彈性拖曳分隔條。
 
 
-* **階段二：編輯器核心與 Mermaid 按需載入（Day 6 – Day 10）**
+* **階段二：編輯器核心與 Mermaid 依需求載入（Day 6 – Day 10）**
 * 整合 CodeMirror 6，配置 Markdown 語法高亮。
-* 實作動態非同步 `mermaid.js` 載入機制與輸入防抖處理。
+* 實作動態非同步 `mermaid.js` 載入機制與輸入防彈跳處理。
 
 
 * **階段三：三合一匯出與無痕機制驗證（Day 11 – Day 15）**
-* 實作 Markdown、獨立 HTML、PDF 格式匯出邏輯與 `@media print` 樣式適配。
+* 實作 Markdown、獨立 HTML、PDF 格式匯出邏輯與 `@media print` 樣式支援。
 * 嚴格清除所有快取機制，實作記憶體狀態銷毀與防誤關閉攔截。
 
 
-* **階段四：冷啟動效能優化與 CI/CD 發布（Day 16 – Day 18）**
-* 進行 Rollup 拆包與 Gzip 壓縮校準，確保首屏體積 `< 60KB`。
+* **階段四：冷啟動效能最佳化與 CI/CD 發布（Day 16 – Day 18）**
+* 進行 Rollup 自訂分包與 Gzip 壓縮校準，確保初次載入體積 `< 60KB`。
 * 設定 GitHub Actions 自動化部署並於 GitHub Pages 正式上線驗收。

@@ -19,7 +19,7 @@ export function getActiveTheme(): 'dark' | 'light' {
 let currentTheme: 'dark' | 'light' = getActiveTheme();
 
 /**
- * 依據指定主題產生適配 Linear Design System 之 Mermaid 設定物件。
+ * 依據指定主題產生符合 Linear Design System 之 Mermaid 設定物件。
  *
  * @param theme 目標視覺主題（'dark' | 'light'）
  * @returns Mermaid 初始化設定選項
@@ -69,7 +69,7 @@ function getMermaidConfig(theme: 'dark' | 'light') {
 /**
  * 延遲非同步載入 Mermaid.js 核心庫並套用主題初始化。
  *
- * 僅於首次偵測到圖表渲染需求時才載入模組，降低首屏 Bundle 載入體積。
+ * 僅於首次偵測到圖表渲染需求時才載入模組，降低初次載入時 Bundle 體積。
  *
  * @returns 初始化完畢之 Mermaid 實例
  */

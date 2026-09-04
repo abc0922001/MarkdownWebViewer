@@ -1,5 +1,5 @@
 /**
- * 支援之版面佈局模式：
+ * 支援之版面模式：
  * - `editor`: 純編輯器模式（隱藏預覽區）
  * - `split`: 雙欄對照模式（同時顯示編輯器與預覽區）
  * - `preview`: 純預覽模式（隱藏編輯器與次要操作欄位）
@@ -7,14 +7,14 @@
 export type LayoutMode = 'editor' | 'split' | 'preview';
 
 /**
- * 版面佈局切換管理員。
+ * 版面切換管理員。
  *
- * 管理分段控制器（Segmented Control）之三態佈局狀態機、
+ * 管理分段控制器（Segmented Control）之三態版面狀態機、
  * 滑動膠囊指示條（Pill Indicator）動畫、快捷鍵（Alt+1 / Alt+2 / Alt+3 / Alt+Z / Esc）、
  * 純瀏覽極簡排版與專注全螢幕閱讀模式（Zen Mode）之狀態切換。
  */
 export class LayoutSwitcher {
-  /** 當前版面佈局模式，預設為雙欄對照（split） */
+  /** 當前版面模式，預設為雙欄對照（split） */
   private currentMode: LayoutMode = 'split';
   /** 應用程式最外層根節點（用於全域版面配置狀態樣式選擇器） */
   private appRoot: HTMLElement | null = null;
@@ -24,7 +24,7 @@ export class LayoutSwitcher {
   private buttons: Map<LayoutMode, HTMLElement> = new Map();
   /** 分段控制器滑動背景指示條元素 */
   private indicator: HTMLElement | null = null;
-  /** 佈局模式變更時之回呼函式佇列 */
+  /** 版面模式變更時之回呼函式佇列 */
   private onModeChangeCallbacks: Array<(mode: LayoutMode) => void> = [];
 
   /** 是否處於專注全螢幕閱讀模式（隱藏頂部工具列） */
@@ -158,9 +158,9 @@ export class LayoutSwitcher {
   }
 
   /**
-   * 設定版面佈局模式，更新工作區 DOM 屬性與分段控制器視覺狀態，並通知訂閱者。
+   * 設定版面模式，更新工作區 DOM 屬性與分段控制器視覺狀態，並通知訂閱者。
    *
-   * @param mode 目標版面佈局模式
+   * @param mode 目標版面模式
    */
   public setMode(mode: LayoutMode): void {
     if (this.currentMode === mode) return;
@@ -180,9 +180,9 @@ export class LayoutSwitcher {
   }
 
   /**
-   * 取得當前作用中之版面佈局模式。
+   * 取得當前作用中之版面模式。
    *
-   * @returns 當前版面佈局模式（'editor' | 'split' | 'preview'）
+   * @returns 當前版面模式（'editor' | 'split' | 'preview'）
    */
   public getMode(): LayoutMode {
     return this.currentMode;
@@ -243,7 +243,7 @@ export class LayoutSwitcher {
   }
 
   /**
-   * 註冊版面佈局模式變更監聽回呼函式。
+   * 註冊版面模式變更監聽回呼函式。
    *
    * @param callback 當版面模式變更時觸發之回呼函式
    */
