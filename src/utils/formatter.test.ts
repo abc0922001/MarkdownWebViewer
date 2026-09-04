@@ -306,5 +306,81 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       expect(changed).toBe(true);
       expect(formatted).toBe('段落 1\n\n段落 2');
     });
+
+    it('Issue #12 回歸測試：連續執行多次自動修正時應具備嚴格冪等性，空格不再遞增', () => {
+      const input = `## ⚡ 核心功能亮點
+
+- [x] **雙欄即時預覽**：左側 Markdown 編輯、右側 HTML/SVG 渲染，支援等比雙向滾動同步
+- [x] **三態佈局切換**：右上角一鍵切換「純編輯」、「純瀏覽」與「雙欄對照」
+- [x] **Mermaid 圖表支援**：按需非同步延遲載入，零首屏負擔
+- [x] **三合一多格式匯出**：一鍵匯出 \`.md\`、單一獨立 \`.html\`、高解析 \`.pdf\`
+- [x] **無痕隱私保護**：純記憶體生命週期，關閉分頁或重整即徹底銷毀`;
+
+      // 第 1 次修復
+      const run1 = fixMarkdownFormatting(input);
+      // 第 2 至 5 次連續修復
+      let current = run1.formatted;
+      for (let i = 2; i <= 5; i++) {
+        const next = fixMarkdownFormatting(current);
+        expect(next.changed).toBe(false);
+        expect(next.formatted).toBe(run1.formatted);
+        current = next.formatted;
+      }
+
+      // 確認第 1 行核取方塊後方緊接單一空格
+      expect(run1.formatted).toContain('- [x] **雙欄即時預覽**：');
+      // 確保未出現多重空格 "- [x]  **" 或 "- [x]   **"
+      expect(run1.formatted).not.toMatch(/- \[x\] {2,}\*\*/);
+    });
+
+    it('應正確正規化任務核取方塊並保持縮排、大寫與邊界空白修剪', () => {
+      const input = `-[]待辦事項
+-[x]完成事項
+- [X]大寫打勾項目
+  * [ ] 縮排無序任務
+  + [x] 加號標記任務
+1.[] 有序任務清單
+- [ ]
+- [x]   `;
+
+      const { formatted, changed } = fixMarkdownFormatting(input);
+      expect(changed).toBe(true);
+
+      expect(formatted).toContain('- [ ] 待辦事項');
+      expect(formatted).toContain('- [x] 完成事項');
+      expect(formatted).toContain('- [x] 大寫打勾項目');
+      expect(formatted).toContain('  * [ ] 縮排無序任務');
+      expect(formatted).toContain('  + [x] 加號標記任務');
+      expect(formatted).toContain('1. [ ] 有序任務清單');
+      expect(formatted).toContain('- [ ]\n- [x]');
+
+      // 二次修復驗證冪等性
+      const secondRun = fixMarkdownFormatting(formatted);
+      expect(secondRun.changed).toBe(false);
+      expect(secondRun.formatted).toBe(formatted);
+    });
+
+    it('應正確區分表格分隔線與水平分隔線 (---)，且連續修復保持穩定冪等', () => {
+      const input = `## 表格與水平線
+
+| 標題 A | 標題 B |
+| :--- | ---: |
+| 內容 1 | 內容 2 |
+
+---
+
+這是水平線下方的普通段落。`;
+
+      const run1 = fixMarkdownFormatting(input);
+      expect(run1.formatted).toContain('| 標題 A | 標題 B |');
+      expect(run1.formatted).toContain('| :--- | ---: |');
+      expect(run1.formatted).toContain('| 內容 1 | 內容 2 |');
+      expect(run1.formatted).toContain('\n---\n');
+      expect(run1.formatted).toContain('這是水平線下方的普通段落。');
+
+      const run2 = fixMarkdownFormatting(run1.formatted);
+      expect(run2.changed).toBe(false);
+      expect(run2.formatted).toBe(run1.formatted);
+    });
   });
 });

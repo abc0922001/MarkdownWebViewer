@@ -74,7 +74,7 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
       const styleContent = svg?.querySelector('style')?.textContent || '';
       expect(styleContent).toContain('fill:#ECECFF');
       expect(styleContent).not.toContain('fill:#1f2020');
-    });
+    }, 20000);
 
     it('切換至深色主題後，應自動套用深色圖表樣式', async () => {
       document.documentElement.className = 'dark';

@@ -77,9 +77,13 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     .replace(/^(\s*[-*+])([^\s\-*+\d])/gm, '$1 $2')
     // 修正 "1.項目" 轉為 "1. 項目"
     .replace(/^(\s*\d+\.)([^\s\d])/gm, '$1 $2')
-    // 修正 "-[]" 或 "-[x]" 轉為 "- [ ] " 或 "- [x] "
-    .replace(/^(\s*[-*+]\s*)\[\s*\]/gm, '$1[ ] ')
-    .replace(/^(\s*[-*+]\s*)\[[xX]\]/gm, '$1[x] ');
+    // 修正任務核取方塊排版（如 "-[]", "-[x]", "- [ ]", "- [x]" 等，補齊空格並標準化方括號狀態，確保冪等性）
+    .replace(/^(\s*(?:[-*+]|\d+\.))\s*\[\s*\](?:[ \t]*([^\s\n].*)|[ \t]*$)/gm, (_, prefix, content) => {
+      return content ? `${prefix} [ ] ${content}` : `${prefix} [ ]`;
+    })
+    .replace(/^(\s*(?:[-*+]|\d+\.))\s*\[[xX]\](?:[ \t]*([^\s\n].*)|[ \t]*$)/gm, (_, prefix, content) => {
+      return content ? `${prefix} [x] ${content}` : `${prefix} [x]`;
+    });
   if (text !== beforeList) {
     fixes.push('校正清單與核取方塊排版');
   }
@@ -637,9 +641,9 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
           outputLines.push('');
         }
 
-        // 比對原始片段與重構片段是否發生變更
-        const origFullSlice = lines.slice(i, cursor).join('\n');
-        const reconstructed = tableRows.join('\n');
+        // 比對原始片段與重構片段是否發生變更（排除末尾空白行造成的比對誤差）
+        const origFullSlice = lines.slice(i, cursor).join('\n').trim();
+        const reconstructed = tableRows.join('\n').trim();
         if (origFullSlice !== reconstructed || hadGlitches) {
           fixedTables++;
         }
@@ -678,7 +682,8 @@ function isGlitchPipeLine(line: string): boolean {
  */
 function isTableSeparator(line: string): boolean {
   const trimmed = line.trim();
-  if (!trimmed.includes('-')) return false;
+  // 依 GFM 規範，表格分隔線必須同時包含短橫線與管線符號，避免誤判水平分隔線 (---)
+  if (!trimmed.includes('-') || !trimmed.includes('|')) return false;
   // 必須只包含 |, :, -, 空格等分隔字元
   if (trimmed.replace(/[|\s:\-]/g, '').length !== 0) return false;
 
