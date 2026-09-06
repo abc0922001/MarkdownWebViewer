@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const statChars = document.getElementById('stat-chars')!;
   const statCursor = document.getElementById('stat-cursor')!;
 
-  /** 當前全站視覺主題（'dark' | 'light'），由 html 根節點 class 自動偵測初始狀態 */
+  /** 目前全站視覺主題（'dark' | 'light'），由 html 根節點 class 自動偵測初始狀態 */
   let currentTheme: 'dark' | 'light' = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   /** 是否存在未匯出之修改標記 */
   let isEdited = false;
@@ -78,9 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
   themeIconSun.style.display = currentTheme === 'light' ? 'block' : 'none';
 
   /**
-   * 取得當前編輯器內容。
+   * 取得目前編輯器內容。
    *
-   * @returns 當前文件內容
+   * @returns 目前文件內容
    */
   const getEditorValue = (): string => {
     return editorInstance ? editorInstance.getValue() : '';
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
-   * 更新狀態列的文件統計數據（行數、單字數、字元數）。
+   * 更新狀態列的文件統計資料（行數、單字數、字元數）。
    */
   const updateMetrics = () => {
     if (!editorInstance) {
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param markdownText 待轉譯之 Markdown 原始文字
    */
   const doRender = async (markdownText: string) => {
-    // 內容為空時直接呈現預設佔位提示，避免耗損解析資源
+    // 內容為空時直接呈現預設預留位置提示，避免耗損解析資源
     if (!markdownText || !markdownText.trim()) {
       previewContent.innerHTML = '<div class="empty-placeholder">開始輸入 Markdown 內容...</div>';
       setRenderState('synced');
@@ -187,13 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // 初始化雙向等比捲動同步
   new SyncScrollManager(editorInstance.getScrollElement(), previewScrollContainer);
 
-  // 網頁開啟後立即聚焦編輯器，使使用者無需任何額外點擊即可直接輸入或按快捷鍵貼上
+  // 網頁開啟後立即聚焦編輯器，使使用者無需任何額外點選即可直接輸入或按快速鍵貼上
   editorInstance.focus();
   requestAnimationFrame(() => {
     editorInstance.focus();
   });
 
-  // 點擊編輯區任何空白處或標題列時，自動聚焦編輯器
+  // 點選編輯區任何空白處或標題列時，自動聚焦編輯器
   editorPane.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('button, input, a')) return;
     editorInstance.focus();
@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 全域鍵盤輸入支援：當焦點位於頁面非輸入區域時，使用者直接鍵入字元自動轉發並聚焦至編輯器（純瀏覽模式下停用以保留 Space 等瀏覽快捷鍵）
+  // 全域鍵盤輸入支援：當焦點位於頁面非輸入區域時，使用者直接鍵入字元自動轉發並聚焦至編輯器（純瀏覽模式下停用以保留 Space 等瀏覽快速鍵）
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     const active = document.activeElement;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) {
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 初始化靜態 HTML 預設狀態與統計數據
+  // 初始化靜態 HTML 預設狀態與統計資料
   setRenderState('synced');
   updateMetrics();
 
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnFix.addEventListener('click', handleAutoFix);
 
-  // 全域快捷鍵：Alt+F 執行智慧自動修正
+  // 全域快速鍵：Alt+F 執行智慧自動修正
   window.addEventListener('keydown', (e) => {
     if (e.altKey && (e.key === 'f' || e.key === 'F')) {
       e.preventDefault();
@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnThemeToggle.addEventListener('click', toggleTheme);
 
-  // 全域快捷鍵：Alt+T 切換色彩主題
+  // 全域快速鍵：Alt+T 切換色彩主題
   window.addEventListener('keydown', (e) => {
     if (e.altKey && (e.key === 't' || e.key === 'T')) {
       e.preventDefault();
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('已清空編輯器內容', 'info');
   });
 
-  // 工具列按鈕操作：切換自動折行
+  // 工具列按鈕操作：切換自動換行
   btnEditorWrap.addEventListener('click', () => {
     if (editorInstance) {
       const isWrapped = editorInstance.toggleWrap();
@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnExportDropdown.setAttribute('aria-expanded', String(isOpen));
   });
 
-  // 點擊下拉選單外部自動關閉
+  // 點選下拉選單外部自動關閉
   document.addEventListener('click', (e) => {
     if (!dropdownWrapper.contains(e.target as Node)) {
       dropdownWrapper.classList.remove('open');
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 按 Escape 快捷鍵時關閉匯出下拉選單
+  // 按 Escape 快速鍵時關閉匯出下拉選單
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       if (dropdownWrapper.classList.contains('open') || !exportMenu.hidden) {

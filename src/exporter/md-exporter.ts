@@ -13,7 +13,7 @@ export function exportMarkdown(content: string, filename = 'document.md'): void 
   const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   
-  // 建立暫態 <a> 標籤並觸發點擊以啟動下載
+  // 建立暫態 <a> 標籤並觸發點選以啟動下載
   const link = document.createElement('a');
   link.href = url;
   link.download = finalName;

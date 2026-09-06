@@ -40,7 +40,7 @@ export class PaneResizer {
   }
 
   /**
-   * 判斷當前工作區是否處於手機直向縱向排列模式（<= 768px）。
+   * 判斷目前工作區是否處於手機直向縱向排列模式（<= 768px）。
    *
    * @returns 若視窗寬度小於等於 768px 則回傳 true，否則回傳 false
    */
@@ -54,7 +54,7 @@ export class PaneResizer {
    * 於拖曳開始時動態於 window 註冊移動與釋放事件，並於結束時解除註冊以節省資源。
    */
   private initEvents(): void {
-    // 拖曳啟動處理器（支援滑鼠按鈕與觸控點擊）
+    // 拖曳啟動處理器（支援滑鼠按鈕與觸控點選）
     const onMouseDown = (e: MouseEvent | TouchEvent) => {
       this.isDragging = true;
       this.resizer.classList.add('resizing');

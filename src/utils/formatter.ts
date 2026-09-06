@@ -1,7 +1,7 @@
 /**
  * Markdown 排版自動修正引擎。
  *
- * 專門用於偵測並修復自 LLM（如 Gemini、ChatGPT 等）複製內容時常見的格式異常，
+ * 專門用於偵測並修復自 LLM（如 Gemini、ChatGPT 等）複製內容時常見的格式缺陷，
  * 包括零寬字元、粗體符號未閉合、表格斷裂、缺少管線字元、缺少標題空格以及清單語法錯誤。
  */
 
@@ -18,7 +18,7 @@ export interface FixResult {
 }
 
 /**
- * 執行 Markdown 內容自動排版與異常修復。
+ * 執行 Markdown 內容自動排版與格式修復。
  *
  * 依序進行行尾換行標準化、清除隱形零寬字元、修復粗體標記、拼接修補斷裂表格、
  * 校正標題與清單空格、補齊未閉合程式碼區塊以及壓縮多餘連續空行。
@@ -33,7 +33,7 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
   // 1. 標準化行尾換行字元（CRLF / CR 轉為 LF）
   text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-  // 2. 清除隱形零寬字元（\u200B ~ \u2060）並將不換行空格替換為標準空格
+  // 2. 清除隱形零寬字元（\u200B ~ \u2060）並將不換行空格取代為標準空格
   const beforeCharClean = text;
   text = text
     .replace(/[\u200B\u200C\u200D\uFEFF\u2060]/g, '') // 清除零寬空格與格式控制字元
@@ -56,7 +56,7 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     fixes.push('修正粗體標籤排版與空格問題');
   }
 
-  // 3. 修復 Markdown 表格（拼接中斷行、移除孤立管線字元與內部異常空行）
+  // 3. 修復 Markdown 表格（拼接中斷行、移除孤立管線字元與內部非預期空行）
   const { result: tableFixedText, fixedCount: tableFixedCount } = repairMarkdownTables(text);
   if (tableFixedCount > 0) {
     text = tableFixedText;
@@ -114,14 +114,14 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
  * 修正自 AI（如 Gemini、ChatGPT 等）複製內容中殘留的 LaTeX 數學與比較符號。
  *
  * 將常見的獨立 LaTeX 符號標記（如 $\le$、$\ge$、$\neq$ 等）轉換為標準 Unicode 符號（≤、≥、≠ 等）。
- * 支援帶有 $ 標記（如 $\le$）、公式內部運算符號（如 $x \le y$ 轉為 $x ≤ y$）與不帶 $ 標記之獨立 LaTeX 巨集（如 \le 35）。
- * 同時保護多行程式碼區塊（```...```）與行內程式碼（`...`），防止程式碼內容遭誤替換。
+ * 支援帶有 $ 標記（如 $\le$）、公式內部運算子符號（如 $x \le y$ 轉為 $x ≤ y$）與不帶 $ 標記之獨立 LaTeX 巨集（如 \le 35）。
+ * 同時保護多行程式碼區塊（```...```）與行內程式碼（`...`），防止程式碼內容遭誤取代。
  *
  * @param text 待處理的文字內容
  * @returns 轉換後的文字內容
  */
 export function fixMathSymbols(text: string): string {
-  // 保護多行程式碼區塊與行內程式碼，避免替換程式碼內容
+  // 保護多行程式碼區塊與行內程式碼，避免取代程式碼內容
   const codeSpans: string[] = [];
   const textWithoutCode = text.replace(/(```[\s\S]*?```|`[^`\r\n]+`)/g, (match) => {
     codeSpans.push(match);
@@ -130,7 +130,7 @@ export function fixMathSymbols(text: string): string {
 
   let result = textWithoutCode;
 
-  // 1. 替換帶有獨立 $ 標記的 LaTeX 符號（如 $\le$, $ \le $）
+  // 1. 取代帶有獨立 $ 標記的 LaTeX 符號（如 $\le$, $ \le $）
   result = result
     .replace(/\$\s*\\(?:le|leq)\s*\$/g, '≤')
     .replace(/\$\s*\\(?:ge|geq)\s*\$/g, '≥')
@@ -143,7 +143,7 @@ export function fixMathSymbols(text: string): string {
     .replace(/\$\s*\\sim\s*\$/g, '~')
     .replace(/\$\s*\\infty\s*\$/g, '∞');
 
-  // 2. 替換行內數學式 $...$ 內部的運算符號（如 $x \le y$ 轉為 $x ≤ y$）
+  // 2. 取代行內數學式 $...$ 內部的運算子符號（如 $x \le y$ 轉為 $x ≤ y$）
   result = result.replace(/\$([^$\r\n]+)\$/g, (_, inner) => {
     const replaced = inner
       .replace(/\\(?:le|leq)\b/g, '≤')
@@ -158,7 +158,7 @@ export function fixMathSymbols(text: string): string {
     return `$${replaced}$`;
   });
 
-  // 3. 替換無 $ 標記但獨立出現的 LaTeX 符號（如 \le 35 轉為 ≤ 35）
+  // 3. 取代無 $ 標記但獨立出現的 LaTeX 符號（如 \le 35 轉為 ≤ 35）
   result = result
     .replace(/(?<![\\a-zA-Z])\\(?:le|leq)(?![a-zA-Z])/g, '≤')
     .replace(/(?<![\\a-zA-Z])\\(?:ge|geq)(?![a-zA-Z])/g, '≥')
@@ -174,7 +174,7 @@ export function fixMathSymbols(text: string): string {
 }
 
 /**
- * 掃描字串中所有未被反斜線轉義的連續星號序列。
+ * 掃描字串中所有未被反斜線逸出的連續星號序列。
  *
  * @param text 待掃描的文字內容
  * @returns 星號序列的位置與長度清單
@@ -359,7 +359,7 @@ function fixBoldInLine(line: string): string {
 }
 
 /**
- * 修正 Markdown 文本中的粗體排版與邊界空格問題。
+ * 修正 Markdown 文字中的粗體排版與邊界空格問題。
  *
  * 逐行嚴格配對成對的粗體星號標記，修剪標記內部首尾多餘空白並移至外側、清除空粗體標記，
  * 同時保護行內程式碼不受干擾，避免跨標籤誤配導致一般文字被轉為粗體。
@@ -374,7 +374,7 @@ export function fixBoldFormatting(text: string): string {
 /**
  * 表格結構修復與拼接演算法。
  *
- * 掃描並重組 Markdown 表格，自動忽略表格內部異常插入的空白行與孤立管線字元，
+ * 掃描並重組 Markdown 表格，自動忽略表格內部非預期插入的空白行與孤立管線字元，
  * 依據標頭與分隔線欄位數量自動縫合斷裂跨行的儲存格資料，並將分散的資料列合併為標準 GFM 表格區塊。
  *
  * @param content 待修復之 Markdown 內容
@@ -403,7 +403,7 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
       let separatorIndex = -1;
       for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
         const nextTrimmed = lines[j].trim();
-        if (isGlitchPipeLine(nextTrimmed)) continue; // 略過標頭與分隔線之間的異常空白或孤立管線行
+        if (isGlitchPipeLine(nextTrimmed)) continue; // 略過標頭與分隔線之間的非預期空白或孤立管線行
         if (isTableSeparator(nextTrimmed)) {
           separatorIndex = j;
           break;
@@ -450,12 +450,12 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
 
           // 1. 空白行或孤立管線符號行處理
           if (isGlitchPipeLine(curTrimmed)) {
-            // 向前探查：若後續仍有有效表格資料行且非新表格起點，則跳過此異常空行
+            // 向前探查：若後續仍有有效表格資料行且非新表格起點，則跳過此非預期空行
             let hasMoreTableDataAhead = false;
             const lookaheadLimit = Math.min(cursor + 20, lines.length);
 
             if (currentCells.length === 0) {
-              // 當前列已完成，次一資料列必須為具備管線字元之表格行
+              // 目前列已完成，次一資料列必須為具備管線字元之表格行
               for (let k = cursor + 1; k < lookaheadLimit; k++) {
                 const lookahead = lines[k].trim();
                 if (isGlitchPipeLine(lookahead)) continue;
@@ -468,8 +468,8 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
                 break;
               }
             } else {
-              // 當前列尚未完成，後續可能夾帶無管線之儲存格換行內容（例如：<br>文字<br>）
-              // 只要在區塊邊界或新表格起點前仍存在管線資料行，或帶有 <br> 標籤之接續行，即視為當前列或表格之延續
+              // 目前列尚未完成，後續可能夾帶無管線之儲存格換行內容（例如：<br>文字<br>）
+              // 只要在區塊邊界或新表格起點前仍存在管線資料行，或帶有 <br> 標籤之接續行，即視為目前列或表格之延續
               for (let k = cursor + 1; k < lookaheadLimit; k++) {
                 const lookahead = lines[k].trim();
                 if (isGlitchPipeLine(lookahead)) continue;
@@ -554,7 +554,7 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
 
             cursor++;
           } else {
-            // 當前行不含管線符號
+            // 目前行不含管線符號
             if (currentCells.length > 0) {
               const lastCellVal = currentCells[currentCells.length - 1] || '';
               const isCellBrContinuation =
@@ -577,7 +577,7 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
               }
 
               if (!hasTablePipeAhead && !isCellBrContinuation) {
-                // 若後續已無管線資料行且非明確之儲存格跨行接續，當前表格結束
+                // 若後續已無管線資料行且非明確之儲存格跨行接續，目前表格結束
                 break;
               }
 
@@ -591,7 +591,7 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
                 isLastCellOpen = true;
               }
 
-              // 若當前行結尾帶有 <br> 標籤或後續仍有跨行接續，保持開啟狀態；否則正常閉合儲存格
+              // 若目前行結尾帶有 <br> 標籤或後續仍有跨行接續，保持開啟狀態；否則正常閉合儲存格
               if (/(?:<\s*br\s*\/?>\s*)+$/i.test(curTrimmed) || isContinuationAhead(cursor, lines)) {
                 isLastCellOpen = true;
               } else {
@@ -605,7 +605,7 @@ function repairMarkdownTables(content: string): { result: string; fixedCount: nu
               }
               cursor++;
             } else {
-              // 當前列已滿且此行無管線符號，表格結束
+              // 目前列已滿且此行無管線符號，表格結束
               break;
             }
           }
@@ -754,7 +754,7 @@ function isBlockBoundary(line: string): boolean {
 /**
  * 檢查指定行索引是否為新表格之起始標頭列。
  *
- * 當前行包含管線符號且其後續緊鄰之非空行為標準表格分隔線時，判定為新表格起點，
+ * 目前行包含管線符號且其後續緊鄰之非空行為標準表格分隔線時，判定為新表格起點，
  * 以防止多個連續表格跨空行探查時產生錯誤合併。
  *
  * @param index 待檢查之行索引
@@ -779,7 +779,7 @@ function isNewTableStart(index: number, lines: string[]): boolean {
 /**
  * 向前探查緊鄰之非空行是否為前一未閉合儲存格之跨行接續內容。
  *
- * @param cursor 當前行索引
+ * @param cursor 目前行索引
  * @param lines 全部文字行陣列
  * @returns 若後續行具備儲存格接續特徵則回傳 true，否則回傳 false
  */
@@ -792,7 +792,7 @@ function isContinuationAhead(cursor: number, lines: string[]): boolean {
     if (/^<\s*br\s*\/?>/i.test(next)) return true;
     // 若後續非空行不以管線開頭，且包含管線符號，則為前行儲存格之跨行收尾（例如：接續說明 |）
     if (!next.startsWith('|') && next.includes('|')) return true;
-    // 若後續非空行以管線開頭，代表是新資料行，當前儲存格未跨行至該行
+    // 若後續非空行以管線開頭，代表是新資料行，目前儲存格未跨行至該行
     if (next.startsWith('|')) return false;
     // 若後續非空行既無管線也無 <br>（即純文字接續行），繼續向後檢查後續是否有跨行收尾符號
   }
@@ -839,7 +839,7 @@ function mergeCellContent(prev: string, next: string): string {
 }
 
 /**
- * 將表格文字行安全分割為儲存格字串陣列，保護行內程式碼與轉義管線字元（`\|`）。
+ * 將表格文字行安全分割為儲存格字串陣列，保護行內程式碼與逸出管線字元（`\|`）。
  *
  * @param line 表格文字行字串
  * @returns 儲存格字串陣列
@@ -852,7 +852,7 @@ function splitTableCells(line: string): string[] {
     return `\x00CODE_${codeSpans.length - 1}\x00`;
   });
 
-  // 保護轉義之管線符號 \|
+  // 保護逸出之管線符號 \|
   protectedLine = protectedLine.replace(/\\\|/g, '\x00ESCAPED_PIPE\x00');
 
   let trimmed = protectedLine.trim();
@@ -871,7 +871,7 @@ function splitTableCells(line: string): string[] {
 
   return rawCells.map((cell) => {
     let restored = cell.trim();
-    // 還原轉義管線符號
+    // 還原逸出管線符號
     restored = restored.replace(/\x00ESCAPED_PIPE\x00/g, '\\|');
     // 還原程式碼區塊
     restored = restored.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);

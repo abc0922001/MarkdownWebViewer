@@ -29,7 +29,7 @@ function inlineCssPlugin(): Plugin {
 }
 
 /**
- * Vite 專案建置與開發伺服器配置。
+ * Vite 專案建置與開發伺服器設定。
  */
 export default defineConfig({
   // 維持相對路徑，確保於 GitHub Pages 子路徑部署時資源連結正確

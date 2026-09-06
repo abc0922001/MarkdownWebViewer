@@ -10,17 +10,17 @@ export type LayoutMode = 'editor' | 'split' | 'preview';
  * 版面切換管理員。
  *
  * 管理分段控制器（Segmented Control）之三態版面狀態機、
- * 滑動膠囊指示條（Pill Indicator）動畫、快捷鍵（Alt+1 / Alt+2 / Alt+3 / Alt+Z / Esc）、
+ * 滑動膠囊指示條（Pill Indicator）動畫、快速鍵（Alt+1 / Alt+2 / Alt+3 / Alt+Z / Esc）、
  * 純瀏覽極簡排版與專注全螢幕閱讀模式（Zen Mode）之狀態切換。
  */
 export class LayoutSwitcher {
-  /** 當前版面模式，預設為雙欄對照（split） */
+  /** 目前版面模式，預設為雙欄對照（split） */
   private currentMode: LayoutMode = 'split';
-  /** 應用程式最外層根節點（用於全域版面配置狀態樣式選擇器） */
+  /** 應用程式最外層根節點（用於全域版面狀態樣式選擇器） */
   private appRoot: HTMLElement | null = null;
   /** 工作區主容器元素 */
   private workspace: HTMLElement;
-  /** 版面切換按鈕元素映射表 */
+  /** 版面切換按鈕元素對應表 */
   private buttons: Map<LayoutMode, HTMLElement> = new Map();
   /** 分段控制器滑動背景指示條元素 */
   private indicator: HTMLElement | null = null;
@@ -38,7 +38,7 @@ export class LayoutSwitcher {
   private zenIconExit: HTMLElement | null = null;
 
   /**
-   * 初始化版面切換器，綁定分段控制器按鈕點擊、專注模式控制與全域鍵盤快捷鍵。
+   * 初始化版面切換器，綁定分段控制器按鈕點選、專注模式控制與全域鍵盤快速鍵。
    */
   constructor() {
     this.appRoot = document.getElementById('app');
@@ -88,7 +88,7 @@ export class LayoutSwitcher {
       });
     }
 
-    // 註冊版面切換鍵盤快捷鍵：Alt+1（編輯）、Alt+2（雙欄）、Alt+3（預覽）、Alt+Z（專注）、Escape（返回雙欄）
+    // 註冊版面切換鍵盤快速鍵：Alt+1（編輯）、Alt+2（雙欄）、Alt+3（預覽）、Alt+Z（專注）、Escape（返回雙欄）
     window.addEventListener('keydown', (e) => {
       if (e.altKey && e.key === '1') {
         e.preventDefault();
@@ -106,7 +106,7 @@ export class LayoutSwitcher {
         e.preventDefault();
         this.toggleZenMode();
       } else if (e.key === 'Escape') {
-        // 若當前正處於輸入焦點或有展開之下拉選單，優先保留原操作
+        // 若目前正處於輸入焦點或有展開之下拉選單，優先保留原操作
         const active = document.activeElement;
         if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
           return;
@@ -127,7 +127,7 @@ export class LayoutSwitcher {
       }
     });
 
-    // 當處於專注模式時，滑鼠移至視窗頂部邊緣自動臨時呼出頂端工具列
+    // 當處於專注模式時，滑鼠移至視窗頂部邊緣自動臨時顯示頂端工具列
     window.addEventListener('mousemove', (e) => {
       if (!this.isZen || !this.appRoot) return;
       if (e.clientY <= 14) {
@@ -180,9 +180,9 @@ export class LayoutSwitcher {
   }
 
   /**
-   * 取得當前作用中之版面模式。
+   * 取得目前作用中之版面模式。
    *
-   * @returns 當前版面模式（'editor' | 'split' | 'preview'）
+   * @returns 目前版面模式（'editor' | 'split' | 'preview'）
    */
   public getMode(): LayoutMode {
     return this.currentMode;
@@ -227,14 +227,14 @@ export class LayoutSwitcher {
     }
 
     if (this.btnZenMode) {
-      const title = enabled ? '結束專注閱讀模式 (快捷鍵: Alt+Z / Esc)' : '切換專注閱讀模式 (快捷鍵: Alt+Z)';
+      const title = enabled ? '結束專注閱讀模式 (快速鍵: Alt+Z / Esc)' : '切換專注閱讀模式 (快速鍵: Alt+Z)';
       this.btnZenMode.title = title;
       this.btnZenMode.setAttribute('aria-label', title);
     }
   }
 
   /**
-   * 取得當前是否處於專注全螢幕閱讀模式。
+   * 取得目前是否處於專注全螢幕閱讀模式。
    *
    * @returns 是否為專注模式
    */
@@ -252,7 +252,7 @@ export class LayoutSwitcher {
   }
 
   /**
-   * 根據當前模式更新切換按鈕的 active 狀態與滑動指示條之位移量。
+   * 根據目前模式更新切換按鈕的 active 狀態與滑動指示條之位移量。
    */
   private updateUI(): void {
     this.buttons.forEach((btn, mode) => {

@@ -17,11 +17,11 @@
 ## 🌟 核心特色 (Key Features)
 
 ### 1. 雙欄即時預覽與雙向捲動同步
-- **CodeMirror 6 現代編輯器**：支援 Markdown 語法著色、行號、自動折行切換、本機檔案拖曳載入，以及行數、字數、字元數與游標動態統計。
-- **等比雙向捲動同步**：左右雙向平滑捲動，內建互斥鎖與 `requestAnimationFrame` 節流，徹底杜絕無窮循環震顫。
+- **CodeMirror 6 現代編輯器**：支援 Markdown 語法著色、行號、自動換行切換、本機檔案拖曳載入，以及行數、字數、字元數與游標動態統計。
+- **等比雙向捲動同步**：左右雙向平滑捲動，內建互斥鎖與 `requestAnimationFrame` 節流，徹底杜絕無窮遞迴震顫。
 
 ### 2. ✨ AI / Gemini 排版智慧「自動修正」引擎 (`Alt + F`)
-- **LaTeX 數學與比較符號標準化**：自動將自 AI 介面複製之 LaTeX 不等式與符號（如 `$\le$`、`$\ge$`、`$\neq$`、`$\approx$`、`$\pm$`、`$\times$`、`$\div$` 等）轉為對應標準 Unicode 符號（`≤`、`≥`、`≠`、`≈`、`±`、`×`、`÷` 等），支援行內公式運算子替換，並具備多行與行內程式碼遮罩保護。
+- **LaTeX 數學與比較符號標準化**：自動將自 AI 介面複製之 LaTeX 不等式與符號（如 `$\le$`、`$\ge$`、`$\neq$`、`$\approx$`、`$\pm$`、`$\times$`、`$\div$` 等）轉為對應標準 Unicode 符號（`≤`、`≥`、`≠`、`≈`、`±`、`×`、`÷` 等），支援行內公式運算子取代，並具備多行與行內程式碼遮罩保護。
 - **粗體標籤格式校正**：閉合孤立星號、消除標記內側贅餘空格，在中文字元與英數字元交界處智慧補齊標準半形空格，嚴格限制單行配對以防止跨行合併與跨標記跑版。
 - **表格智慧修復**：一鍵修復自 Gemini / ChatGPT 等 AI 介面複製時常發生的**表格列間空行**與**孤立 `|` 符號**，並為缺失首尾直線符號的資料列補齊 `| ` 與 ` |`。
 - **語法修補與隱形字元清洗**：自動清除零寬字元（`\u200B`~`\u2060`）與置換不換行空格（`\u00A0`），修補標題空格（`#標題` ➔ `# 標題`）、清單待辦核取方塊（`-[]` ➔ `- [ ] `）、未閉合反引號區塊（```）並壓縮連續空行。
@@ -39,7 +39,7 @@
 ### 5. Mermaid 向量圖表延遲載入 & GFM Alerts 完整巢狀支援
 - **初次載入零體積負擔**：僅當文件中出現 ````mermaid` 區塊時才透過 Dynamic Import 動態載入模組。
 - **防競態 Token 與錯誤邊界**：快速打字時不會被舊非同步任務覆蓋，語法未完成時顯示微型錯誤提示，不中斷預覽體驗。
-- **GFM Alerts 完整巢狀支援**：自行開發之零依賴 Token Stream Ruler，原生支援 `[!NOTE]`、`[!TIP]`、`[!IMPORTANT]`、`[!WARNING]`、`[!CAUTION]`，支援內部多段落、清單、表格與程式碼區塊等無限制巢狀 Markdown 排版。
+- **GFM Alerts 完整巢狀支援**：自行開發之零外部相依 Token Stream Ruler，原生支援 `[!NOTE]`、`[!TIP]`、`[!IMPORTANT]`、`[!WARNING]`、`[!CAUTION]`，支援內部多段落、清單、表格與程式碼區塊等無限制巢狀 Markdown 排版。
 - **GFM Tasklists 核取清單**：自動將 `- [ ]` 與 `- [x]` 轉譯為標準 HTML 核取方塊元素，完美符合 Linear 主題樣式。
 
 ### 6. 純前端三合一多格式匯出
@@ -54,19 +54,19 @@
 
 ### 8. 嚴格無痕暫態生命週期 (Zero-Persistence)
 - **零本機儲存**：全流程純記憶體生命週期，嚴禁使用 `localStorage`、`sessionStorage`、`IndexedDB` 或 `Cookie`。
-- **防誤關閉防護**：內容編輯後若未手動匯出，重新整理或關閉分頁前會彈出原生確認對話框。
+- **防誤關閉防護**：內容編輯後若未手動匯出，重新整理或關閉分頁前會彈出原生確認對話方塊。
 
 ### 9. PWA 漸進式網頁應用程式 (Progressive Web App)
 - **桌面與行動裝置獨立視窗安裝**：支援透過 Chrome / Edge / Safari 原生安裝至桌面或主畫面，以獨立 App 視窗執行。
 - **完整離線 App Shell**：透過 Workbox Service Worker 預先快取完整應用核心（含 CodeMirror、Markdown 解析器與大型 Mermaid.js 繪圖引擎），在飛機上或無網路環境中仍可 100% 正常檢視與繪製圖表。
-- **無感背景自動更新**：新版本靜默於背景快取，於使用者下一次開啟應用時生效，絕不突發重整以保護記憶體中未匯出的文件。
+- **無感背景自動更新**：新版本靜默於背景快取，於使用者下一次開啟應用時生效，絕不突然重新整理以保護記憶體中未匯出的文件。
 - **堅守 Zero-Persistence**：快取僅限應用程式靜態程式碼，文件資料依然純記憶體操作、絕無本機殘留。
 
 ---
 
-## ⌨️ 鍵盤快捷鍵 (Keyboard Shortcuts)
+## ⌨️ 鍵盤快速鍵 (Keyboard Shortcuts)
 
-| 快捷鍵 | 功能說明 |
+| 快速鍵 | 功能說明 |
 | :--- | :--- |
 | **`Alt + 1`** | 切換至「純編輯」模式 (100% 編輯欄) |
 | **`Alt + 2`** | 切換至「雙欄對照」模式 (50 / 50 分割) |
@@ -151,7 +151,7 @@ MarkdownWebViewer/
 │   │   ├── switcher.ts       # 右上角三態版面狀態機 (Alt+1/2/3) 與 Segmented 指示條
 │   │   └── sync-scroll.ts    # 雙向等比捲動同步與 isScrolling 迴圈互斥鎖 (rAF 節流)
 │   ├── renderer/
-│   │   ├── markdown.ts       # markdown-it 配置、Highlight.js 著色、GitHub 警示區塊、DOMPurify 消毒
+│   │   ├── markdown.ts       # markdown-it 設定、Highlight.js 著色、GitHub 警示區塊、DOMPurify 消毒
 │   │   └── mermaid.ts        # 視需求動態載入 mermaid.js、主題重繪、防競態 Token、錯誤邊界
 │   ├── styles/
 │   │   ├── base.css          # 全域 Reset、自訂捲軸、Toast 動畫、[hidden] 全域保護
@@ -166,10 +166,10 @@ MarkdownWebViewer/
 │   │   ├── formatter.ts      # Gemini / AI Markdown 壞格式智慧修復引擎 (含 LaTeX 數學符號轉換)
 │   │   ├── sample.ts         # 初始範例 Markdown 模板 (含流程圖、時序圖、表格、程式碼、公式)
 │   │   └── toast.ts          # 非侵入式 Toast 輕量通知模組 (支援 success / info / error)
-│   └── main.ts               # 應用程式進入點，即時掛載與自動聚焦、生命週期管線、快捷鍵與全域事件
+│   └── main.ts               # 應用程式進入點，即時掛載與自動聚焦、生命週期管線、快速鍵與全域事件
 ├── DESIGN.md                 # Linear 設計系統權威分析與 Token 定義文件
 ├── GEMINI.md                 # LLM & 開發者全域上下文指引文件
-├── index.html                # 靜態 HTML Shell (含預設輕量佔位與 SEO meta)
+├── index.html                # 靜態 HTML Shell (含預設輕量預留位置與 SEO meta)
 ├── package.json              # 專案相依套件與腳本
 ├── plan.md                   # 產品初始架構與規格計畫書
 ├── tsconfig.json             # TypeScript 編譯設定

@@ -3,10 +3,10 @@ let mermaidModule: typeof import('mermaid').default | null = null;
 /** 渲染序號 Token，用於競態條件（Race Condition）防禦，防止過期的非同步回呼覆蓋最新內容 */
 let currentRenderToken = 0;
 /**
- * 取得當前環境或 DOM 根節點所套用之色彩主題。
+ * 取得目前環境或 DOM 根節點所套用之色彩主題。
  * 優先依據 DOM 根節點（html）之 class 進行偵測，若包含 'dark' 則為深色主題，否則為淺色主題。
  *
- * @returns 當前作用中之主題（'dark' | 'light'）
+ * @returns 目前作用中之主題（'dark' | 'light'）
  */
 export function getActiveTheme(): 'dark' | 'light' {
   if (typeof document !== 'undefined') {
@@ -15,7 +15,7 @@ export function getActiveTheme(): 'dark' | 'light' {
   return 'light';
 }
 
-/** 當前作用中之圖表色彩主題，依據 DOM 根節點狀態自動初始化 */
+/** 目前作用中之圖表色彩主題，依據 DOM 根節點狀態自動初始化 */
 let currentTheme: 'dark' | 'light' = getActiveTheme();
 
 /**
@@ -84,7 +84,7 @@ async function getMermaid() {
 }
 
 /**
- * 設定 Mermaid 向量圖表之渲染主題並重新配置核心引擎。
+ * 設定 Mermaid 向量圖表之渲染主題並重新設定核心引擎。
  *
  * @param theme 欲套用之視覺主題（'dark' | 'light'）
  */
@@ -101,8 +101,8 @@ export function setMermaidTheme(theme: 'dark' | 'light'): void {
  * 具備主題自動校準、渲染 Token 防競態檢查、孤立錯誤節點自動清除與錯誤邊界（Error Boundary）提示機制。
  *
  * @param container 包含 `.mermaid-diagram` 節點之容器 DOM 元素
- * @param theme 可選指定欲套用之視覺主題，未指定時自動依據 DOM 當前狀態校準
- * @returns 全部圖表渲染成功回傳 true，若存在語法錯誤或異常則回傳 false
+ * @param theme 可選指定欲套用之視覺主題，未指定時自動依據 DOM 目前狀態校準
+ * @returns 全部圖表渲染成功回傳 true，若存在語法錯誤或例外則回傳 false
  */
 export async function renderMermaidDiagrams(
   container: HTMLElement,
@@ -113,7 +113,7 @@ export async function renderMermaidDiagrams(
     return true;
   }
 
-  // 自動依據指定主題或 DOM 當前狀態校準 Mermaid 渲染配置
+  // 自動依據指定主題或 DOM 目前狀態校準 Mermaid 渲染設定
   const targetTheme = theme ?? getActiveTheme();
   if (targetTheme !== currentTheme) {
     setMermaidTheme(targetTheme);

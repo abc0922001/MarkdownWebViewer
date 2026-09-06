@@ -7,10 +7,10 @@
 ## 📌 專案概述 (Project Overview)
 
 **MarkdownWebViewer** 是一套基於 **Linear Design System (`DESIGN.md`)** 規格打造的純前端靜態 Markdown & Mermaid 即時查看器與排版工具。
-專為極致冷啟動（Cold Start）、零後端依賴、零本機殘留（Zero-Persistence）、Lighthouse 全項滿分（100/100）與 GitHub Pages 自動化發布而設計。
+專為極致冷啟動（Cold Start）、零後端相依、零本機殘留（Zero-Persistence）、Lighthouse 全項滿分（100/100）與 GitHub Pages 自動化發布而設計。
 
 ### 核心功能清單：
-1. **雙欄即時預覽與雙向捲動同步**：左側 CodeMirror 6 編輯、右側 Markdown + Highlight.js + Mermaid 即時渲染，內建互斥鎖防止循環捲動震顫。
+1. **雙欄即時預覽與雙向捲動同步**：左側 CodeMirror 6 編輯、右側 Markdown + Highlight.js + Mermaid 即時渲染，內建互斥鎖防止無窮遞迴捲動震顫。
 2. **Linear 風格三態版面切換與純瀏覽極簡排版**：右上角 Segmented Control（純編輯 `Alt+1`、雙欄對照 `Alt+2`、純瀏覽 `Alt+3`）與中央拖曳分隔條（15%~85% 範圍限制保護）。純瀏覽模式自動隱藏次要編輯動作、即時預覽次標題欄與底部狀態列，並支援專注全螢幕閱讀（`Alt+Z`）與一鍵返回雙欄對照（`Alt+2` / `Escape`）。
 3. **AI / Gemini 排版智慧「✨ 自動修正」(`Alt+F`)**：
    * **表格智慧修復**：自動縫合中斷資料列、剔除孤立 `|` 符號、補齊缺失之首尾管線字元。
@@ -24,7 +24,7 @@
 7. **無障礙 (a11y) 與 SEO 全面支援**：按鈕具備明確 `aria-label`、符合 WCAG AA 高對比度標準、結構化語意標籤與 `robots.txt`。
 8. **嚴格無痕暫態生命週期 (Zero-Persistence)**：全流程純記憶體操作，嚴禁使用 `localStorage` / `sessionStorage` / `Cookie`，內建離開防誤觸保護。
 9. **GitHub Pages 一鍵自動化部署**：基於 Vite 相對路徑（`base: './'`）建置與 GitHub Actions 自動化 CI/CD。
-10. **PWA 漸進式網頁應用與離線 App Shell**：支援安裝為桌面與行動端獨立視窗應用，Workbox 預快取包含 Mermaid 向量引擎在內之完整 App Shell，支援斷網離線繪圖與 Google Fonts 執行期快取，並維持無痕暫態（Zero-Persistence）。
+10. **PWA 漸進式網頁應用與離線 App Shell**：支援安裝為桌面與行動裝置獨立視窗應用，Workbox 預快取包含 Mermaid 向量引擎在內之完整 App Shell，支援斷網離線繪圖與 Google Fonts 執行期快取，並維持無痕暫態（Zero-Persistence）。
 
 ---
 
@@ -32,12 +32,12 @@
 
 | 領域 / 模組 | 選用技術 | 版本 | 職責與選型理由 |
 | :--- | :--- | :--- | :--- |
-| **建構工具 / 語言** | Vite + TypeScript | Vite 8 / TS 7 | 極速 HMR、原生 ES 模組、靜態型別安全 |
+| **建置工具 / 語言** | Vite + TypeScript | Vite 8 / TS 7 | 極速 HMR、原生 ES 模組、靜態型別安全 |
 | **PWA / Service Worker** | vite-plugin-pwa | 1.x | 基於 Workbox 自動精準處理產物雜湊快取清單、Google Fonts 執行期快取與無感自動更新 |
-| **編輯器核心** | CodeMirror 6 | 6.x | 模組化設計、輕量、透過 Compartment 支援無重建模組主題、語法著色與折行動態重配 |
+| **編輯器核心** | CodeMirror 6 | 6.x | 模組化設計、輕量、透過 Compartment 支援無重建模組主題、語法著色與自動換行動態重配 |
 | **Markdown 解析** | markdown-it | 15.x | 高效符合 CommonMark/GFM 規範，擴充彈性高，內建 TypeScript 型別支援，支援 typographer 與 breaks |
 | **程式碼語法高亮** | highlight.js | 11.x | 採用 common 語言子集打包以最小化體積，支援深/淺雙主題色彩 |
-| **安全消毒過濾** | DOMPurify | 3.x | 嚴格防禦 XSS 攻擊，配置 SVG 與向量繪圖屬性白名單保留圖表 |
+| **安全消毒過濾** | DOMPurify | 3.x | 嚴格防禦 XSS 攻擊，設定 SVG 與向量繪圖屬性白名單保留圖表 |
 | **向量圖表引擎** | mermaid.js | 11.x | **動態延遲非同步載入（Dynamic Import）**，未出現圖表時初次載入零體積負擔 |
 | **圖示庫** | lucide | 1.x | 精緻簡約之 SVG 圖示，用於 GitHub Alerts 與工具列控制 |
 | **程式碼壓縮** | terser | 5.x | 生產環境 Minification，清除除錯符號以縮減檔案體積 |
@@ -67,7 +67,7 @@ MarkdownWebViewer/
 │   │   ├── switcher.ts       # 右上角三態版面狀態機 (Alt+1/2/3) 與 Segmented 指示條
 │   │   └── sync-scroll.ts    # 雙向等比捲動同步與 isScrolling 迴圈互斥鎖 (rAF 節流)
 │   ├── renderer/
-│   │   ├── markdown.ts       # markdown-it 配置、Highlight.js 著色、GitHub 警示區塊、DOMPurify 消毒
+│   │   ├── markdown.ts       # markdown-it 設定、Highlight.js 著色、GitHub 警示區塊、DOMPurify 消毒
 │   │   └── mermaid.ts        # 依需求動態載入 mermaid.js、主題重繪、防競態 Token、錯誤邊界
 │   ├── styles/
 │   │   ├── base.css          # 全域 Reset、自訂捲軸、Toast 動畫、[hidden] 全域保護
@@ -82,17 +82,17 @@ MarkdownWebViewer/
 │   │   ├── formatter.ts      # Gemini / AI Markdown 壞格式智慧修復引擎 (含 LaTeX 數學符號轉換)
 │   │   ├── sample.ts         # 初始範例 Markdown 模板 (含流程圖、時序圖、表格、程式碼、公式)
 │   │   └── toast.ts          # 非侵入式 Toast 輕量通知模組 (支援 success / info / error)
-│   ├── main.ts               # 應用程式進入點，延遲掛載、生命週期管線、快捷鍵與全域事件
+│   ├── main.ts               # 應用程式進入點，延遲掛載、生命週期管線、快速鍵與全域事件
 │   └── vite-env.d.ts         # Vite 環境型別擴充宣告
 ├── .gitignore                # 忽略 node_modules、dist、issue/
 ├── DESIGN.md                 # Linear 設計系統權威分析與 Token 定義文件
 ├── GEMINI.md                 # 本文件 (LLM & 開發者上下文指引)
-├── index.html                # 靜態 HTML Shell (含預設輕量佔位與 SEO meta)
+├── index.html                # 靜態 HTML Shell (含預設輕量預留位置與 SEO meta)
 ├── package.json              # 專案相依套件與腳本
 ├── plan.md                   # 產品初始架構與規格計畫書
 ├── README.md                 # 專案說明文件與快速開始指南
 ├── tsconfig.json             # TypeScript 編譯設定
-└── vite.config.ts            # Vite 相對路徑建置、CSS 自動內嵌外掛與 Rollup 自訂分包配置
+└── vite.config.ts            # Vite 相對路徑建置、CSS 自動內嵌外掛與 Rollup 自訂分包設定
 ```
 
 ---
@@ -120,7 +120,7 @@ MarkdownWebViewer/
    * 標籤與狀態：`9999px` (`--radius-pill`)
 5. **字型規範 (Typography)**：
    * 編輯器程式碼：`'JetBrains Mono', monospace` (13.5px / 1.65 行高)
-   * 介面與預覽本文：`-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif`
+   * 介面與預覽內文：`-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif`
 
 ---
 
@@ -128,8 +128,8 @@ MarkdownWebViewer/
 
 ### 1. 極速冷啟動與依需求載入管線 (Cold-Start & Lazy Pipeline)
 為兼顧極致效能與即時開箱即用之輸入體驗（Zero-Friction UX），專案採用以下管線設計：
-* **CodeMirror 6 立即掛載與自動聚焦**：網頁開啟時即刻初始化 CodeMirror 6 編輯器核心，即刻呈現初始行號與編輯游標並自動聚焦（Auto-Focus），同時具備全域剪貼簿貼上（Global Paste）監聽與按鍵輸入轉發機制，支援使用者開啟網頁後無需任何額外點擊即可直接貼上或鍵入 Markdown 內容。
-* **Markdown 解析引擎閒置預擷取**：於瀏覽器閒置時（`requestIdleCallback`）非同步預先載入 `markdown-it`、`highlight.js` 與 `DOMPurify`，確保首次排版渲染極速反饋。
+* **CodeMirror 6 立即掛載與自動聚焦**：網頁開啟時即刻初始化 CodeMirror 6 編輯器核心，即刻呈現初始行號與編輯游標並自動聚焦（Auto-Focus），同時具備全域剪貼簿貼上（Global Paste）監聽與按鍵輸入轉發機制，支援使用者開啟網頁後無需任何額外點選即可直接貼上或鍵入 Markdown 內容。
+* **Markdown 解析引擎閒置預擷取**：於瀏覽器閒置時（`requestIdleCallback`）非同步預先載入 `markdown-it`、`highlight.js` 與 `DOMPurify`，確保首次排版渲染極速回饋。
 * **Mermaid 延遲管線與防競態機制**：
   * Mermaid 體積較大（>2MB），僅當解析器於預覽區掃描到 `.mermaid-diagram` 時，才透過 `import('mermaid')` 動態載入。
   * 每次繪圖持有獨立遞增的 **`currentRenderToken`**，避免使用者快速打字時舊渲染工作覆蓋新內容。
@@ -144,7 +144,7 @@ MarkdownWebViewer/
 3. **LaTeX 數學與比較符號校正 (`fixMathSymbols`)**：
    * 建立多行程式碼區塊（```...```）與行內反引號程式碼（`...`）遮罩，防止程式碼內部符號遭誤改。
    * 將獨立 LaTeX 標記（如 `$\le$`、`$\ge$`、`$\neq$`、`$\approx$`、`$\pm$`、`$\times$`、`$\div$`、`$\degree$`、`$\infty$` 等）轉為對應標準 Unicode 符號（`≤`、`≥`、`≠`、`≈`、`±`、`×`、`÷`、`°`、`∞`）。
-   * 將行內公式 `$x \le y$` 內部之運算符轉換為 `$x ≤ y$`，並支援無 `$` 標記但獨立出現之巨集（如 `\le 35` 轉 `≤ 35`）。
+   * 將行內公式 `$x \le y$` 內部之運算子轉換為 `$x ≤ y$`，並支援無 `$` 標記但獨立出現之巨集（如 `\le 35` 轉 `≤ 35`）。
 4. **粗體標記格式修復 (`fixBoldFormatting`)**：
    * 排除三星號（粗斜體）干擾，精準比對行內雙星號。
    * 消除標記內側多餘空格（如 `** 粗體 **` 轉 `**粗體**`）、清除空粗體標記（`****`）。
@@ -159,20 +159,20 @@ MarkdownWebViewer/
 
 ### 3. 雙向捲動同步互斥鎖 (`src/layout/sync-scroll.ts`)
 * 左右雙欄綁定 `scroll` 事件，依據捲動百分比（`scrollTop / (scrollHeight - clientHeight)`）進行等比同步。
-* 設置 `isEditorScrolling` 與 `isPreviewScrolling` 互斥標記，並結合 `requestAnimationFrame` 節流，徹底防止左右兩側互發捲動事件造成的無窮遞迴震顫。
+* 設定 `isEditorScrolling` 與 `isPreviewScrolling` 互斥標記，並結合 `requestAnimationFrame` 節流，徹底防止左右兩側互發捲動事件造成的無窮遞迴震顫。
 
 ### 4. CodeMirror 6 Compartment 狀態隔離隔間模式 (`src/editor/codemirror.ts`)
 * 使用 `@codemirror/state` 的 `Compartment` 技術：
   * `themeCompartment`：動態切換 `linearDarkTheme` 與 `linearLightTheme`。
   * `syntaxCompartment`：動態切換深色（One Dark）與淺色（Default）語法高亮配色。
-  * `wrapCompartment`：動態切換自動折行（`EditorView.lineWrapping`）與水平捲動（`[]`）。
-* 所有外觀與配置重配皆透過 `view.dispatch({ effects: [...] })` 完成，完全無須重新銷毀或重建編輯器視圖。
+  * `wrapCompartment`：動態切換自動換行（`EditorView.lineWrapping`）與水平捲動（`[]`）。
+* 所有外觀與設定重配皆透過 `view.dispatch({ effects: [...] })` 完成，完全無須重新銷毀或重建編輯器視圖。
 
 ### 5. 渲染防護與 GFM AST 擴充管線 (`src/renderer/markdown.ts`)
 * **預處理**：先經由 `fixMathSymbols` 轉換 LaTeX 符號。
 * **自行開發之 GFM Alerts AST 外掛 (`gfmAlertsPlugin`)**：在 `markdown-it` Core 階段遍歷 Token 串流，辨識 `> [!NOTE]`、`> [!TIP]`、`> [!IMPORTANT]`、`> [!WARNING]`、`> [!CAUTION]` 並動態轉為 Alert 容器標籤與 Lucide SVG 圖示。支援內部多段落、清單、表格與程式碼區塊等完整巢狀 Markdown 結構。
 * **自行開發之 GFM Tasklists AST 外掛 (`gfmTasklistsPlugin`)**：自動將 `- [ ]` 與 `- [x]` 轉譯為禁用狀態之 `<input type="checkbox">` 核取方塊元素，並注入 `.task-list-item` 類別。
-* **解析與著色**：透過 `markdown-it` 解析為 HTML，程式碼區塊由 `highlight.js`（common 子集）著色；Mermaid 區塊則透過自訂 `md.renderer.rules.fence` 轉換為純淨帶有 `data-raw` 屬性之佔位節點。
+* **解析與著色**：透過 `markdown-it` 解析為 HTML，程式碼區塊由 `highlight.js`（common 子集）著色；Mermaid 區塊則透過自訂 `md.renderer.rules.fence` 轉換為純淨帶有 `data-raw` 屬性之預留位置節點。
 * **DOMPurify 嚴格安全過濾**：啟用 `USE_PROFILES: { svg: true, svgFilters: true, html: true }`，擴充包含 `<defs>`, `<marker>`, `<use>`, `<clipPath>`, `<filter>` 等完整 SVG 向量標籤與 `transform`, `filter`, `marker-start`, `marker-end` 等屬性白名單，徹底防禦 XSS 攻擊同時確保 Mermaid 複雜圖表零瑕疵呈現。
 
 ### 6. 純前端三合一無損匯出機制 (`src/exporter/`)
@@ -195,9 +195,9 @@ MarkdownWebViewer/
 
 ---
 
-## ⌨️ 鍵盤快捷鍵 (Keyboard Shortcuts)
+## ⌨️ 鍵盤快速鍵 (Keyboard Shortcuts)
 
-| 快捷鍵 | 功能 | 說明 |
+| 快速鍵 | 功能 | 說明 |
 | :--- | :--- | :--- |
 | **`Alt + 1`** | 切換「純編輯」模式 | 100% 寬度編輯區，適用專注寫作 |
 | **`Alt + 2`** | 切換「雙欄對照」模式 | 50 / 50 寬度即時編輯與渲染對照 |
@@ -237,11 +237,11 @@ npm run preview
 
 1. **嚴禁引入持久化快取 (No Local Storage / Cookies / IndexedDB)**：
    * 本專案定位為嚴格無痕暫態工具，任何時候皆不得自動將使用者內容儲存至 `localStorage`、`sessionStorage`、`IndexedDB` 或 `Cookie`。
-2. **保持相對路徑配置 (Relative Base URL)**：
+2. **保持相對路徑設定 (Relative Base URL)**：
    * [`vite.config.ts`](vite.config.ts) 必須持續維持 `base: './'`，確保部署於 GitHub Pages 任意子路徑時資源載入正確。
 3. **保持 CSS 模組化匯入與 Vite 內嵌架構**：
    * 樣式表必須由 `src/main.ts` 集中引入，透過 `inlineCssPlugin` 內嵌至 HTML，禁止在 `index.html` 直接寫死未編譯的 `/src/styles/...` 標籤。
-4. **排除問題排查素材**：
+4. **排除除錯與測試素材**：
    * 本機測試素材、截圖與除錯目錄（如 `issue/`）必須維持在 `.gitignore` 中，嚴禁提交至 Git 儲存庫。
 5. **維持 100% JSDoc 註解覆蓋率**：
    * 新增或修改任何函式、介面或模組時，必須同步補齊詳盡之 JSDoc 繁體中文註解與型別標註。
@@ -250,18 +250,18 @@ npm run preview
 
 # Git Commit Timing & Execution Protocol
 
-你在執行代碼撰寫與修改時，必須嚴格遵守以下 Git Commit 時機與原則：
+你在執行程式碼撰寫與修改時，必須嚴格遵守以下 Git Commit 時機與原則：
 
 ## 1. 觸發 Commit 的時機（When to Commit）
 你必須在滿足以下任一「原子條件」且驗證通過時，立即執行 Commit：
-* **綠燈時刻（Task Completed & Verified）：** 完成單一函數、模組或功能改動，且已執行相關測試（Unit Tests / Build / Type Check）確認通過。
-* **重構與格式化隔離（Style/Refactor Shift）：** 剛完成純代碼重構、排版整理、重新命名或 Lint 修正時，必須立即獨立 Commit，絕不與業務邏輯修改混雜。
-* **冒險前錨點（Pre-Exploration Checkpoint）：** 在準備進行高風險架構重構、大規模套件替換或嘗試不確定解法前，先將目前穩定的狀態 Commit 作為還原基準點。
-* **缺陷根因修復（Bug Isolated & Fixed）：** 成功定位並修復單一 Bug、驗證有效後立即 Commit，不可夾帶任何「順手修改」的無關代碼。
+* **綠燈時刻（Task Completed & Verified）：** 完成單一函式、模組或功能改動，且已執行相關測試（Unit Tests / Build / Type Check）確認通過。
+* **重構與格式化隔離（Style/Refactor Shift）：** 剛完成純程式碼重構、排版整理、重新命名或 Lint 修正時，必須立即獨立 Commit，絕不與業務邏輯修改混雜。
+* **冒險前錨點（Pre-Exploration Checkpoint）：** 在準備進行高風險架構重構、大規模套件更換或嘗試不確定解法前，先將目前穩定的狀態 Commit 作為還原基準點。
+* **缺陷根因修復（Bug Isolated & Fixed）：** 成功定位並修復單一 Bug、驗證有效後立即 Commit，不可夾帶任何「順手修改」的無關程式碼。
 * **子任務切分點（Sub-task Boundary）：** 當使用者指派複合型任務時，每完成計畫中的一個子步驟並確認無誤，即刻 Commit 一次。
 
 ## 2. 嚴禁 Commit 的情境（When NOT to Commit）
-* **編譯失敗或測試未過：** 代碼處於 Broken 狀態時絕不 Commit。
+* **編譯失敗或測試未過：** 程式碼處於 Broken 狀態時絕不 Commit。
 * **混雜多重意圖：** 單次改動涵蓋兩個以上不相關的檔案修改或意圖時，不可合併 Commit，必須拆分暫存（Staging）。
 * **邏輯半成品：** 功能僅完成一半、尚未形成閉環邏輯時不可 Commit（除非使用者明確要求建立 WIP Checkpoint）。
 

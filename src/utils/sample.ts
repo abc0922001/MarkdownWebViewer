@@ -2,7 +2,7 @@
  * 預設展示 Markdown 模板內容。
  *
  * 包含 GFM 任務清單、Mermaid 流程圖與時序圖、多語言程式碼區塊、技術選型表格與 GitHub 警示區塊（Callouts），
- * 供使用者於首次載入或點擊「範例」按鈕時作為功能展示與格式驗證基準。
+ * 供使用者於首次載入或點選「範例」按鈕時作為功能展示與格式驗證基準。
  */
 export const SAMPLE_MARKDOWN = `# Markdown & Mermaid Web Viewer
 
@@ -16,7 +16,7 @@ export const SAMPLE_MARKDOWN = `# Markdown & Mermaid Web Viewer
 - [x] **三態版面切換**：右上角一鍵切換「純編輯」、「純瀏覽」與「雙欄對照」
 - [x] **Mermaid 圖表支援**：依需求非同步延遲載入，零初次載入負擔
 - [x] **三合一多格式匯出**：一鍵匯出 \`.md\`、單一獨立 \`.html\`、高解析 \`.pdf\`
-- [x] **無痕隱私保護**：純記憶體生命週期，關閉分頁或重整即徹底銷毀
+- [x] **無痕隱私保護**：純記憶體生命週期，關閉分頁或重新整理即徹底銷毀
 
 ---
 
@@ -85,7 +85,7 @@ def calculate_metrics(text: str) -> dict:
 
 | 功能模組 | 技術方案 | 關鍵特性 |
 | :--- | :--- | :--- |
-| **編輯器核心** | CodeMirror 6 | 語法高亮、按鍵對應、折行控制 |
+| **編輯器核心** | CodeMirror 6 | 語法高亮、按鍵對應、自動換行控制 |
 | **Markdown 解析** | markdown-it + Highlight.js | 支援 GFM、程式碼暗色著色 |
 | **向量圖表** | mermaid.js (v11) | Dynamic Import 依需求載入 |
 | **安全消毒** | DOMPurify | 嚴格防禦 XSS 腳本注入 |
@@ -102,12 +102,12 @@ def calculate_metrics(text: str) -> dict:
 
 > [!TIP]
 > 您可使用頂部的「**開啟**」按鈕載入本機的 \`.md\` 檔案，或直接將檔案拖曳至左側編輯區！
-> - 支援快捷鍵 \`Alt + F\` 觸發 AI 複製排版智慧自動修正
-> - 支援快捷鍵 \`Alt + T\` 即時切換深淺雙主題
+> - 支援快速鍵 \`Alt + F\` 觸發 AI 複製排版智慧自動修正
+> - 支援快速鍵 \`Alt + T\` 即時切換深淺雙主題
 
 > [!IMPORTANT]
 > 嚴格遵循**無痕暫態原則 (Zero-Persistence)**：
-> 關閉分頁或重新整理將徹底釋放記憶體，請及時點擊右上角「**匯出**」儲存成果。
+> 關閉分頁或重新整理將徹底釋放記憶體，請及時點選右上角「**匯出**」儲存成果。
 
 > [!WARNING]
 > 大量包含數百個節點之複雜 Mermaid 圖表可能需要稍長的渲染時間。

@@ -416,7 +416,7 @@
   border-color: var(--border-medium);
 }
 
-/* 當頂欄臨時滑出或懸停檢視時，淡出並收回懸浮膠囊以杜絕遮蔽頂部工具列控制項 */
+/* 當頂欄臨時滑出或滑鼠暫留檢視時，淡出並收回懸浮膠囊以杜絕遮蔽頂部工具列控制項 */
 .app-root.zen-mode.header-peek .zen-floating-pill,
 .app-root.zen-mode .app-header:hover ~ .zen-floating-pill {
   opacity: 0;
@@ -454,7 +454,7 @@
   transition: transform 220ms var(--ease-linear);
 }
 
-/* 滑鼠移動至頂部邊緣或懸停時臨時滑下頂欄 */
+/* 滑鼠移動至頂部邊緣或滑鼠暫留時臨時滑下頂欄 */
 .app-root.zen-mode .app-header:hover,
 .app-root.zen-mode.header-peek .app-header {
   transform: translateY(0);
@@ -530,7 +530,7 @@
    Responsive Design (Mobile & Tablet Adaptation)
    ========================================================================== */
 
-/* 平板與窄桌面過渡斷點 (769px ~ 1024px) */
+/* 平板與窄桌面中介斷點 (769px ~ 1024px) */
 @media (min-width: 769px) and (max-width: 1024px) {
   .brand-group {
     gap: 8px;
@@ -724,7 +724,7 @@
     height: 100% !important;
   }
 
-  /* 行動端純瀏覽模式：精簡頂欄並消除多餘留白 */
+  /* 行動裝置純瀏覽模式：精簡頂欄並消除多餘留白 */
   .app-root[data-layout="preview"] .app-header {
     min-height: unset;
     padding: 6px 12px;

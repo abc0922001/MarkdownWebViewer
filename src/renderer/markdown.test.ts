@@ -122,7 +122,7 @@ describe('Markdown Renderer (GFM & Alerts & Tasklists)', () => {
   });
 
   describe('Mermaid 與程式碼高亮整合', () => {
-    it('應正確將 mermaid 區塊轉換為 data-raw 佔位節點', () => {
+    it('應正確將 mermaid 區塊轉換為 data-raw 預留位置節點', () => {
       const md = '```mermaid\ngraph TD\nA --> B\n```';
       const html = renderMarkdownToHtml(md);
 

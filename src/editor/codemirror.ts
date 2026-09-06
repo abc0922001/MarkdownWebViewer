@@ -21,7 +21,7 @@ import { tags } from '@lezer/highlight';
 export interface EditorCallbacks {
   /** 文件內容變更時觸發之回呼函式 */
   onChange: (content: string) => void;
-  /** 游標位置變更時觸發之回呼函式，傳入當前行號與列號（1-indexed） */
+  /** 游標位置變更時觸發之回呼函式，傳入目前行號與欄號（1-indexed） */
   onCursorActivity?: (line: number, column: number) => void;
 }
 
@@ -78,13 +78,13 @@ export const linearDarkHighlightStyle = HighlightStyle.define([
 export class MarkdownEditor {
   /** CodeMirror 視圖實例 */
   private view: EditorView;
-  /** 自動換行配置隔間，用於動態切換折行而無須重建視圖 */
+  /** 自動換行設定隔間，用於動態切換自動換行而無須重建視圖 */
   private wrapCompartment = new Compartment();
-  /** 介面主題配置隔間，用於切換深淺外觀樣式 */
+  /** 介面主題設定隔間，用於切換深淺外觀樣式 */
   private themeCompartment = new Compartment();
   /** 語法高亮樣式隔間，用於切換深淺語法配色 */
   private syntaxCompartment = new Compartment();
-  /** 當前自動折行啟用狀態 */
+  /** 目前自動換行啟用狀態 */
   private isWordWrapEnabled = true;
 
   /** Linear 深色主題樣式定義 */
@@ -165,7 +165,7 @@ export class MarkdownEditor {
    * 初始化 CodeMirror 6 編輯器實例。
    *
    * @param container 掛載編輯器之父容器 DOM 元素
-   * @param initialContent 初始 Markdown 文本內容
+   * @param initialContent 初始 Markdown 文字內容
    * @param callbacks 狀態變更回呼函式集合
    * @param initialTheme 初始主題模式（'dark' | 'light'），預設為 'dark'
    */
@@ -242,7 +242,7 @@ export class MarkdownEditor {
   /**
    * 切換編輯器之介面主題與語法著色方案。
    *
-   * 透過 Compartment 動態重新配置，避免重新建立編輯器實例所引發之狀態遺失與效能損耗。
+   * 透過 Compartment 動態重新設定，避免重新建立編輯器實例所引發之狀態遺失與效能損耗。
    *
    * @param theme 目標視覺主題（'dark' | 'light'）
    */
@@ -259,7 +259,7 @@ export class MarkdownEditor {
   }
 
   /**
-   * 取得編輯器當前全部文本內容。
+   * 取得編輯器目前全部文字內容。
    *
    * @returns 編輯器文件字串
    */
@@ -268,9 +268,9 @@ export class MarkdownEditor {
   }
 
   /**
-   * 替換編輯器全文內容，並記錄至復原歷史（Undo History）。
+   * 取代編輯器全文內容，並記錄至復原歷史（Undo History）。
    *
-   * @param content 欲設定之新 Markdown 文本內容
+   * @param content 欲設定之新 Markdown 文字內容
    */
   public setValue(content: string): void {
     this.view.dispatch({
@@ -283,10 +283,10 @@ export class MarkdownEditor {
   }
 
   /**
-   * 切換或設定編輯器文字自動折行（Line Wrapping）狀態。
+   * 切換或設定編輯器文字自動換行（Line Wrapping）狀態。
    *
-   * @param enabled 選填之明確啟用狀態；若未傳入則切換當前狀態
-   * @returns 切換後之折行啟用狀態
+   * @param enabled 選填之明確啟用狀態；若未傳入則切換目前狀態
+   * @returns 切換後之自動換行啟用狀態
    */
   public toggleWrap(enabled?: boolean): boolean {
     this.isWordWrapEnabled = enabled !== undefined ? enabled : !this.isWordWrapEnabled;
@@ -306,9 +306,9 @@ export class MarkdownEditor {
   }
 
   /**
-   * 於當前游標所在位置或替換當前選區插入文本內容。
+   * 於目前游標所在位置或取代目前選區插入文字內容。
    *
-   * @param text 欲插入之文本字串
+   * @param text 欲插入之文字字串
    */
   public insertText(text: string): void {
     this.view.dispatch(this.view.state.replaceSelection(text));
@@ -326,7 +326,7 @@ export class MarkdownEditor {
   }
 
   /**
-   * 計算當前文件之統計指標，包括總行數、字數與字元數。
+   * 計算目前文件之統計指標，包括總行數、字數與字元數。
    *
    * @returns 包含行數（lines）、單字數（words）與字元數（chars）之統計物件
    */

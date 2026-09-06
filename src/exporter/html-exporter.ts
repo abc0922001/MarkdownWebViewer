@@ -1,8 +1,8 @@
 /**
  * 匯出單一獨立自給之 HTML 檔案（.html）。
  *
- * 將當前預覽區渲染之 HTML 結構、已繪製之 Mermaid 向量圖形（SVG）與內嵌 CSS 樣式表封裝為單一靜態 HTML 文件，
- * 依據當前視覺主題套用對應之 Linear 樣式與色彩變數，無須依賴任何外部樣式表或 CDN 即可於離線環境完整呈現。
+ * 將目前預覽區渲染之 HTML 結構、已繪製之 Mermaid 向量圖形（SVG）與內嵌 CSS 樣式表封裝為單一靜態 HTML 文件，
+ * 依據目前視覺主題套用對應之 Linear 樣式與色彩變數，無須相依任何外部樣式表或 CDN 即可於離線環境完整呈現。
  *
  * @param previewElement 包含已渲染 Markdown 內容之預覽容器 DOM 節點
  * @param title 文件標題與下載檔名基準，預設為 'Document'

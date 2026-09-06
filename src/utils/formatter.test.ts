@@ -9,16 +9,16 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       expect(output).toBe('數值 A ≤ 10 且 B ≥ 20，兩者 ≠ 30，誤差 ± 0.5。');
     });
 
-    it('應支援行內公式內部的運算符號轉換', () => {
+    it('應支援行內公式內部的運算子符號轉換', () => {
       const input = '已知 $x \\le y$ 且 $a \\ge b$ 且 $c \\neq d$。';
       const output = fixMathSymbols(input);
       expect(output).toBe('已知 $x ≤ y$ 且 $a ≥ b$ 且 $c ≠ d$。');
     });
 
-    it('應保護程式碼區塊不受 LaTeX 符號替換干擾', () => {
-      const input = '```latex\n\\le \\ge \\neq\n```\n行內 `\\le` 不應被替換。';
+    it('應保護程式碼區塊不受 LaTeX 符號取代干擾', () => {
+      const input = '```latex\n\\le \\ge \\neq\n```\n行內 `\\le` 不應被取代。';
       const output = fixMathSymbols(input);
-      expect(output).toBe('```latex\n\\le \\ge \\neq\n```\n行內 `\\le` 不應被替換。');
+      expect(output).toBe('```latex\n\\le \\ge \\neq\n```\n行內 `\\le` 不應被取代。');
     });
   });
 
@@ -80,7 +80,7 @@ describe('Markdown Formatter 智慧修復引擎', () => {
 <br>([AI 模型瘦身](https://www.makeuseof.com/iphone-users-discover-hack-to-save-21gb-of-storage-that-also-works-on-android/)) | 移除裝置端 AI 大型語言模型（如 Gemini Nano、Apple Intelligence）及其照片特徵快取。 | iOS 關閉「Apple Intelligence」；Android 至設定搜尋 **AICore** 點選「清除儲存空間」並停用，能立即釋出數 GB 至 21GB。 | 失去裝置端離線智慧功能（如離線摘要、本機照片語意搜尋、自動智慧回覆）。 |
 | **失物記憶管理**<br>
 
-<br>([Find Hub 記憶功能](https://www.makeuseof.com/android-find-hub-remembered-tab-no-tracker/)) | Android 16+ 結合 Gemini，由使用者口述位置建立純文字與照片索引，而非依賴藍牙防丟器。 | 對助理說「記住備用鑰匙在廚房抽屜」，資料即彙整於 Find Hub 的 **Remembered** 標籤頁，省去藍牙標籤電池維護成本。 | 不具備即時追蹤能力；若物品被他人挪動，系統無法感知變更。適合放護照、備用鑰匙等靜態物品。 |
+<br>([Find Hub 記憶功能](https://www.makeuseof.com/android-find-hub-remembered-tab-no-tracker/)) | Android 16+ 結合 Gemini，由使用者口述位置建立純文字與照片索引，而非依賴藍牙防丟器。 | 對助理說「記住備用鑰匙在廚房抽屜」，資料即彙整於 Find Hub 的 **Remembered** 分頁，省去藍牙標籤電池維護成本。 | 不具備即時追蹤能力；若物品被他人挪動，系統無法感知變更。適合放護照、備用鑰匙等靜態物品。 |
 
 顯示的樣子:
 說明文字`;
@@ -99,14 +99,14 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       );
       // 驗證第三列成功縫合
       expect(formatted).toContain(
-        '| **失物記憶管理**<br>([Find Hub 記憶功能](https://www.makeuseof.com/android-find-hub-remembered-tab-no-tracker/)) | Android 16+ 結合 Gemini，由使用者口述位置建立純文字與照片索引，而非依賴藍牙防丟器。 | 對助理說「記住備用鑰匙在廚房抽屜」，資料即彙整於 Find Hub 的 **Remembered** 標籤頁，省去藍牙標籤電池維護成本。 | 不具備即時追蹤能力；若物品被他人挪動，系統無法感知變更。適合放護照、備用鑰匙等靜態物品。 |'
+        '| **失物記憶管理**<br>([Find Hub 記憶功能](https://www.makeuseof.com/android-find-hub-remembered-tab-no-tracker/)) | Android 16+ 結合 Gemini，由使用者口述位置建立純文字與照片索引，而非依賴藍牙防丟器。 | 對助理說「記住備用鑰匙在廚房抽屜」，資料即彙整於 Find Hub 的 **Remembered** 分頁，省去藍牙標籤電池維護成本。 | 不具備即時追蹤能力；若物品被他人挪動，系統無法感知變更。適合放護照、備用鑰匙等靜態物品。 |'
       );
       // 驗證表格後方文字未遭破壞
       expect(formatted).toContain('顯示的樣子:\n說明文字');
     });
 
     it('應正確修復 Issue #9 之多行儲存格包含空行與重複 <br> 之表格', () => {
-      const input = `| 評估維度 | 核心統計項目 | 關鍵數據表現 | 教練戰術解讀 |
+      const input = `| 評估維度 | 核心統計項目 | 關鍵資料表現 | 教練戰術解讀 |
 | --- | --- | --- | --- |
 | **賽季基底** | 出賽 / 先發 / 打席 | 94 G / 68 GS / 274 PA | **.269 / .315 / .423（OPS .738, 8 HR, 36 RBI）**，作為內野中線（主守二壘、兼修三壘），產出優於聯盟平均（sOPS+ 105）。 |
 | **左右打逆向現象** | 右打 vs. 右投 / 左投 | vs. 右投：**.288 / .342 / .468 (OPS .810, 6 HR)**<br>
@@ -126,7 +126,7 @@ describe('Markdown Formatter 智慧修復引擎', () => {
 
 <br>拉打（Pulled）：**.531 BA / 1.469 OPS (3 HR)** | 平飛球轉換率優秀。打擊落點均勻（拉打 17 安、中路 35 安、推打 16 安），但面對滾地球投手打擊率僅 **.189 (OPS .587)**。 |`;
 
-      const expected = `| 評估維度 | 核心統計項目 | 關鍵數據表現 | 教練戰術解讀 |
+      const expected = `| 評估維度 | 核心統計項目 | 關鍵資料表現 | 教練戰術解讀 |
 | --- | --- | --- | --- |
 | **賽季基底** | 出賽 / 先發 / 打席 | 94 G / 68 GS / 274 PA | **.269 / .315 / .423（OPS .738, 8 HR, 36 RBI）**，作為內野中線（主守二壘、兼修三壘），產出優於聯盟平均（sOPS+ 105）。 |
 | **左右打逆向現象** | 右打 vs. 右投 / 左投 | vs. 右投：**.288 / .342 / .468 (OPS .810, 6 HR)**<br>vs. 左投：**.246 / .281 / .368 (OPS .649, 2 HR)** | 出現罕見的 **「反向排球效應（Reverse Splits）」**。對右投掌握度極高，但面對左投（特別是左先發 OPS 僅 .563）缺乏長打威脅。 |
@@ -255,19 +255,19 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       expect(formatted).toContain('這是表格後方的獨立普通段落。\n這是第二行段落。');
     });
 
-    it('應正確保護表格內反引號程式碼區塊中的管線字元與轉義管線', () => {
+    it('應正確保護表格內反引號程式碼區塊中的管線字元與逸出管線', () => {
       const input = `| 指令 | 說明 |
 | --- | --- |
 | \`cat file | grep text\` | 管道管線過濾 |
-| 包含 \\| 轉義符號 | 測試轉義 |`;
+| 包含 \\| 逸出符號 | 測試逸出 |`;
 
       const { formatted } = fixMarkdownFormatting(input);
       expect(formatted).toContain('| `cat file | grep text` | 管道管線過濾 |');
-      expect(formatted).toContain('| 包含 \\| 轉義符號 | 測試轉義 |');
+      expect(formatted).toContain('| 包含 \\| 逸出符號 | 測試逸出 |');
     });
 
     it('應標準化表格分隔線冒號對齊格式', () => {
-      const tableWithSpacedAlign = `| 左 | 居中 | 右 |
+      const tableWithSpacedAlign = `| 左 | 置中 | 右 |
 | : - : | : - | - : |
 | A | B | C |`;
 
@@ -314,7 +314,7 @@ describe('Markdown Formatter 智慧修復引擎', () => {
 - [x] **三態版面切換**：右上角一鍵切換「純編輯」、「純瀏覽」與「雙欄對照」
 - [x] **Mermaid 圖表支援**：依需求非同步延遲載入，零初次載入負擔
 - [x] **三合一多格式匯出**：一鍵匯出 \`.md\`、單一獨立 \`.html\`、高解析 \`.pdf\`
-- [x] **無痕隱私保護**：純記憶體生命週期，關閉分頁或重整即徹底銷毀`;
+- [x] **無痕隱私保護**：純記憶體生命週期，關閉分頁或重新整理即徹底銷毀`;
 
       // 第 1 次修復
       const run1 = fixMarkdownFormatting(input);

@@ -25,10 +25,10 @@ const ALERT_ICONS: Record<AlertType, string> = {
 };
 
 /**
- * 對純文字字串進行 HTML 特殊符號轉義處理，防止 XSS 與破壞 HTML 結構。
+ * 對純文字字串進行 HTML 特殊符號逸出處理，防止 XSS 與破壞 HTML 結構。
  *
  * @param str 原始純文字字串
- * @returns 轉義後的 HTML 安全字串
+ * @returns 逸出後的 HTML 安全字串
  */
 function escapeHtml(str: string): string {
   return str
@@ -40,7 +40,7 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * 自行開發之 GitHub Flavored Alerts (GFM Alerts) 零依賴 Token Stream 解析外掛。
+ * 自行開發之 GitHub Flavored Alerts (GFM Alerts) 零外部相依 Token Stream 解析外掛。
  *
  * 在 Core 階段掃描 Blockquote Token 串流，若開頭段落具備 `[!NOTE]` 等標籤，
  * 則動態轉為 GFM Alert 容器標籤與標題列，支援內部多段落、清單、表格與程式碼區塊等完整巢狀結構。
@@ -141,7 +141,7 @@ function gfmAlertsPlugin(md: MarkdownItType): void {
 }
 
 /**
- * 自行開發之 GitHub Flavored Tasklists (GFM 任務核取清單) 零依賴 AST 轉譯外掛。
+ * 自行開發之 GitHub Flavored Tasklists (GFM 任務核取清單) 零外部相依 AST 轉譯外掛。
  *
  * 掃描清單項目開頭之 `[ ]` 與 `[x]` 語法，自動為 `<li>` 注入 `.task-list-item` 類別，
  * 並在行首插入禁用狀態之 `<input type="checkbox">` 核取方塊元素。
@@ -173,7 +173,7 @@ function gfmTasklistsPlugin(md: MarkdownItType): void {
             // 1. 為 <li> 元素注入 task-list-item 樣式類別
             tokens[i].attrJoin('class', 'task-list-item');
 
-            // 2. 剝除 inline 文本開頭的 [ ] 或 [x] 標記
+            // 2. 剝除行內文字開頭的 [ ] 或 [x] 標記
             inlineToken.content = inlineToken.content.slice(match[0].length);
 
             // 3. 同步剝除 children 內部第一個 text token 的標記
@@ -206,9 +206,9 @@ function gfmTasklistsPlugin(md: MarkdownItType): void {
 /**
  * 初始化 markdown-it 解析器實例。
  *
- * 配置 GFM 自動連結、排版符號替換、軟換行支援，
+ * 設定 GFM 自動連結、排版符號取代、軟換行支援，
  * 載入自行開發之 GFM Alerts 與 Tasklists AST 外掛，
- * 並整合 Highlight.js 程式碼著色與 Mermaid 圖表佔位標籤生成。
+ * 並整合 Highlight.js 程式碼著色與 Mermaid 圖表預留位置標籤生成。
  */
 const md: MarkdownItType = new MarkdownIt({
   html: true,
@@ -221,7 +221,7 @@ const md: MarkdownItType = new MarkdownIt({
       try {
         return `<pre class="hljs"><code class="language-${lang}">${hljs.highlight(str, { language: lang, ignoreIllegals: true }).value}</code></pre>`;
       } catch {
-        // 若著色過程發生解析異常，降級為純文字跳脫處理
+        // 若著色過程發生解析錯誤，降級為純文字逸出處理
       }
     }
 
@@ -230,7 +230,7 @@ const md: MarkdownItType = new MarkdownIt({
   },
 });
 
-// 攔截 mermaid 語法區塊，生成具備 data-raw 屬性之佔位節點供非同步渲染引擎接管
+// 攔截 mermaid 語法區塊，生成具備 data-raw 屬性之預留位置節點供非同步渲染引擎接管
 const defaultFenceRenderer: RendererRule = md.renderer.rules.fence || function (tokens, idx, options, _env, self) {
   return self.renderToken(tokens, idx, options);
 };

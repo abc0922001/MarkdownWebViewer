@@ -9,7 +9,7 @@
 | **1. 雙欄輸入與預覽** | CodeMirror 6 + DOMPurify + 自適應雙欄 Layout | 左右等比或彈性分配，支援雙向游標與捲動同步 |
 | **2. 右上角三態切換** | Linear 風格 Segmented Control（純編輯／純瀏覽／雙欄） | CSS Grid / Flex 狀態機切換，無版面重繪延遲 |
 | **3. Mermaid 語法支援** | 動態非同步載入 `mermaid.js` + SVG 錯誤邊界保護 | 依需求載入（Lazy Loading），未出現圖表時零效能負擔 |
-| **4. 多格式檔案匯出** | 純客戶端 Blob API (`.md`, `.html`) + CSS Paged Media (`.pdf`) | 產出單一可攜式獨立 HTML 與列印級無損 PDF |
+| **4. 多格式檔案匯出** | 純前端 Blob API (`.md`, `.html`) + CSS Paged Media (`.pdf`) | 產出單一可攜式獨立 HTML 與列印級無損 PDF |
 | **5. Linear 設計風格** | 嚴格導入 `getdesign.md/linear.app/design-md` 規範 | 黑曜暗色調、精準 1px 邊框、極致微互動、高資訊密度 |
 | **6. GitHub Pages 託管** | Vite + GitHub Actions CI/CD Pipeline | 自動化靜態編譯、自適應 Base URL、全球邊緣 CDN 分發 |
 | **7. 急速冷啟動** | Vanilla TS / 輕量核心 + 核心 CSS 內嵌 + 依需求自訂分包 | 初次載入傳輸量 **< 60KB (Gzip)**，首字互動時間（TTI）**< 80ms** |
@@ -35,9 +35,8 @@
 |    A[Cold Start] --> B[In-Memory UI]            |  +-------------+       +--------------+         |
 |  ```                                            |                                                 |
 +-------------------------------------------------+-------------------------------------------------+
-|  行 12, 欄 4  |  UTF-8  |  純記憶體工作區（重整即清空）                                捲動同步 [啟用]  |
+|  行 12, 欄 4  |  UTF-8  |  純記憶體工作區（重新整理即清空）                            捲動同步 [啟用]  |
 +---------------------------------------------------------------------------------------------------+
-
 ```
 
 #### 1. Design Tokens 核心參數定義
@@ -66,7 +65,7 @@
   --accent-hover: #6E79D6;
   --accent-glow: rgba(94, 106, 210, 0.25);
 
-  /* 字體系統 */
+  /* 字型系統 */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
@@ -79,7 +78,7 @@
 
 ---
 
-### 二、 急速冷啟動與無痕暫態架構（性能與隱私核心）
+### 二、 急速冷啟動與無痕暫態架構（效能與隱私核心）
 
 #### 1. 急速冷啟動機制（Cold-Start Optimization）
 
@@ -91,17 +90,17 @@
 * 實作動態偵測器：僅當 Markdown 解析器在內容中掃描到 ````mermaid` 程式碼區塊時，才觸發 `import('mermaid')` 進行模組拉取與編譯。
 
 
-* **字體子集化與延遲載入**：優先使用系統字體棧（System UI Font），非同步拉取 Inter 與 JetBrains Mono 子集。
+* **字型子集化與延遲載入**：優先使用系統字型（System UI Font），非同步拉取 Inter 與 JetBrains Mono 子集。
 
 #### 2. 嚴格無痕暫態機制（Zero-Persistence Security）
 
 * **資料生命週期僅存於記憶體**：
-* **嚴禁調用** `localStorage`、`sessionStorage`、`IndexedDB` 或寫入 `Cookie`。
+* **嚴禁呼叫** `localStorage`、`sessionStorage`、`IndexedDB` 或寫入 `Cookie`。
 * 網頁載入時僅注入標準空白樣板或預設 Demo 語法，一旦使用者執行 **重新整理（F5 / Cmd+R）** 或 **關閉分頁**，所有文字立即自記憶體抹除，無任何本機快取殘留。
 
 
 * **防止誤觸關閉防護**：
-* 透過 `window.addEventListener('beforeunload', (e) => { ... })`，在使用者編輯且未手動匯出前，彈出原生防誤關提示對話框。
+* 透過 `window.addEventListener('beforeunload', (e) => { ... })`，在使用者編輯且未手動匯出前，彈出原生防誤關提示對話方塊。
 
 
 
@@ -114,15 +113,15 @@
 頂部工具列右上角設計專屬 Segmented Control，具備狀態指示滑塊（Sliding Active Pill）：
 
 * **`純編輯模式 (Edit Only)`**：
-* 左側編輯區展開為 `100%`（可切換行寬限制 `max-w-4xl` 居中），右側預覽區設為 `display: none`。
+* 左側編輯區展開為 `100%`（可切換行寬限制 `max-w-4xl` 置中），右側預覽區設為 `display: none`。
 
 
 * **`純瀏覽模式 (Preview Only)`**：
-* 隱藏左側輸入框，右側預覽區全寬居中展示，模擬現代技術文件閱讀檢視。
+* 隱藏左側輸入框，右側預覽區全寬置中展示，模擬現代技術文件閱讀檢視。
 
 
 * **`雙欄對照模式 (Split View - 預設)`**：
-* 左右等寬 `50% : 50%`，中央配置極細 `1px` 分割條（Divider），支援滑鼠拖曳即時調整左右比例。
+* 左右等寬 `50% : 50%`，中央設有極細 `1px` 分割條（Divider），支援滑鼠拖曳即時調整左右比例。
 
 
 
@@ -218,7 +217,7 @@ async function renderMarkdown(content: string): Promise<void> {
 
 ---
 
-### 五、 純客戶端三合一檔案匯出引擎
+### 五、 純前端三合一檔案匯出引擎
 
 全功能在瀏覽器本機完成封裝，無任何後端呼叫或傳輸：
 
@@ -242,7 +241,7 @@ async function renderMarkdown(content: string): Promise<void> {
 
 #### 3. 列印級無損 PDF 匯出 (`.pdf`)
 
-* **排版樣式注入**：調用原生 `window.print()`，配合 `@media print` 實現無損排版。
+* **排版樣式注入**：呼叫原生 `window.print()`，配合 `@media print` 實現無損排版。
 * **防截斷規則**：
 ```css
 @media print {
@@ -265,7 +264,7 @@ async function renderMarkdown(content: string): Promise<void> {
 
 ### 六、 GitHub Pages 自動化建置與部署架構
 
-#### 1. 建構設定檔 (`vite.config.ts`)
+#### 1. 建置設定檔 (`vite.config.ts`)
 
 ```typescript
 import { defineConfig } from 'vite';
@@ -363,7 +362,7 @@ jobs:
 
 
 * **階段二：編輯器核心與 Mermaid 依需求載入（Day 6 – Day 10）**
-* 整合 CodeMirror 6，配置 Markdown 語法高亮。
+* 整合 CodeMirror 6，設定 Markdown 語法高亮。
 * 實作動態非同步 `mermaid.js` 載入機制與輸入防彈跳處理。
 
 

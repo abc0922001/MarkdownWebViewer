@@ -6,7 +6,7 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
   let originalGetBBox: any;
 
   beforeEach(() => {
-    // 設置 JSDOM 缺失之 SVG getBBox 模擬，使 Mermaid 版面計算順暢執行
+    // 設定 JSDOM 缺失之 SVG getBBox 模擬，使 Mermaid 版面計算順暢執行
     if (typeof window !== 'undefined' && window.SVGElement) {
       originalGetBBox = (window.SVGElement.prototype as any).getBBox;
       (window.SVGElement.prototype as any).getBBox = () => ({ x: 0, y: 0, width: 100, height: 40 });
@@ -39,7 +39,7 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
       expect(getActiveTheme()).toBe('light');
     });
 
-    it('呼叫 setMermaidTheme 應正常運作不拋出異常', () => {
+    it('呼叫 setMermaidTheme 應正常運作不擲出例外', () => {
       expect(() => setMermaidTheme('dark')).not.toThrow();
       expect(() => setMermaidTheme('light')).not.toThrow();
     });
@@ -52,7 +52,7 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
       expect(result).toBe(true);
     });
 
-    it('冷啟動在淺色主題下點擊範例圖表時，應套用淺色樣式而非深色全黑樣式 (Issue #11)', async () => {
+    it('冷啟動在淺色主題下點選範例圖表時，應套用淺色樣式而非深色全黑樣式 (Issue #11)', async () => {
       // 模擬冷啟動進入 light 主題
       document.documentElement.className = 'light';
 

@@ -93,7 +93,7 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
     expect(app?.getAttribute('data-layout')).toBe('split');
   });
 
-  it('點擊分段控制器按鈕應正確觸發版面切換', () => {
+  it('點選分段控制器按鈕應正確觸發版面切換', () => {
     const btnPreview = document.getElementById('btn-layout-preview');
     btnPreview?.click();
     expect(switcher.getMode()).toBe('preview');
@@ -113,7 +113,7 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
     expect(notifiedMode).toBe('preview');
   });
 
-  describe('快捷鍵切換支援', () => {
+  describe('快速鍵切換支援', () => {
     it('按 Alt+1 應切換至純編輯模式', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: '1', altKey: true }));
       expect(switcher.getMode()).toBe('editor');
@@ -175,7 +175,7 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
       expect(pill?.hidden).toBe(false);
     });
 
-    it('點擊專注模式懸浮膠囊中的「雙欄對照」應退出專注模式並返回雙欄', () => {
+    it('點選專注模式懸浮膠囊中的「雙欄對照」應退出專注模式並返回雙欄', () => {
       switcher.setZenMode(true);
       expect(switcher.isZenMode()).toBe(true);
 
@@ -190,7 +190,7 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
       expect(app?.getAttribute('data-layout')).toBe('split');
     });
 
-    it('點擊專注模式懸浮膠囊中的「顯示工具列」應退出專注模式但維持純瀏覽', () => {
+    it('點選專注模式懸浮膠囊中的「顯示工具列」應退出專注模式但維持純瀏覽', () => {
       switcher.setZenMode(true);
       expect(switcher.isZenMode()).toBe(true);
 
@@ -262,7 +262,7 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
       expect(app?.classList.contains('header-peek')).toBe(false);
     });
 
-    it('若 app 根節點無預設 data-layout 屬性，初始化時應自動同步設置', () => {
+    it('若 app 根節點無預設 data-layout 屬性，初始化時應自動同步設定', () => {
       const app = document.getElementById('app');
       app?.removeAttribute('data-layout');
       expect(app?.hasAttribute('data-layout')).toBe(false);
