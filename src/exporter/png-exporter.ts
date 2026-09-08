@@ -100,13 +100,14 @@ export function exportPng(
     const originalBgColor = previewElement.style.backgroundColor;
 
     try {
-      // 若指定具體寬度（例如 800px 或 1200px），動態賦予樣式以重新計算排版與行高折行
+      // 若指定具體寬度（例如手機 412px 或平板 834px），動態賦予樣式以重新計算排版與行高折行
       if (typeof width === 'number') {
         previewElement.style.width = `${width}px`;
         previewElement.style.maxWidth = `${width}px`;
       }
       previewElement.style.boxSizing = 'border-box';
-      previewElement.style.padding = '32px';
+      // 依據裝置寬度動態適配內距（手機規格 <=500px 採用 20px 16px；平板或寬版採用 32px 28px）
+      previewElement.style.padding = typeof width === 'number' && width <= 500 ? '20px 16px' : '32px 28px';
       previewElement.style.backgroundColor = backgroundColor;
 
       // 依需求動態匯入 html-to-image 模組

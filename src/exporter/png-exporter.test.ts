@@ -163,5 +163,57 @@ describe('PNG Exporter (png-exporter)', () => {
 
       document.body.removeChild(container);
     });
+
+    it('匯出手機直式 (412px) 時，應設定 412px 寬度並適配 20px 16px 邊距且安全復原', async () => {
+      const container = document.createElement('div');
+      container.innerHTML = '<p>手機長圖內容</p>';
+      document.body.appendChild(container);
+
+      let capturedPadding = '';
+      let capturedWidth = '';
+      vi.mocked(htmlToImage.toBlob).mockImplementationOnce((node: HTMLElement) => {
+        capturedPadding = node.style.padding;
+        capturedWidth = node.style.width;
+        return Promise.resolve(new Blob(['mobile-png'], { type: 'image/png' }));
+      });
+
+      await exportPng(container, {
+        title: 'MobileDoc',
+        width: 412,
+      });
+
+      expect(capturedWidth).toBe('412px');
+      expect(capturedPadding).toBe('20px 16px');
+      expect(container.style.width).toBe('');
+      expect(container.style.padding).toBe('');
+
+      document.body.removeChild(container);
+    });
+
+    it('匯出平板直式 (834px) 時，應設定 834px 寬度並適配 32px 28px 邊距且安全復原', async () => {
+      const container = document.createElement('div');
+      container.innerHTML = '<p>平板長圖內容</p>';
+      document.body.appendChild(container);
+
+      let capturedPadding = '';
+      let capturedWidth = '';
+      vi.mocked(htmlToImage.toBlob).mockImplementationOnce((node: HTMLElement) => {
+        capturedPadding = node.style.padding;
+        capturedWidth = node.style.width;
+        return Promise.resolve(new Blob(['tablet-png'], { type: 'image/png' }));
+      });
+
+      await exportPng(container, {
+        title: 'TabletDoc',
+        width: 834,
+      });
+
+      expect(capturedWidth).toBe('834px');
+      expect(capturedPadding).toBe('32px 28px');
+      expect(container.style.width).toBe('');
+      expect(container.style.padding).toBe('');
+
+      document.body.removeChild(container);
+    });
   });
 });

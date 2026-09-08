@@ -454,8 +454,19 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        // 依據選項解析輸出寬度
-        const width = type === 'png-800' ? 800 : (type === 'png-1200' ? 1200 : 'auto');
+        // 依據選項解析輸出寬度（手機直式 412px 適配 6.3 吋 18:9 / 平板直式 834px 適配 11 吋 4:3 / 自適應寬度）
+        let width: number | 'auto' = 'auto';
+        if (type === 'png-mobile') {
+          width = 412;
+        } else if (type === 'png-tablet') {
+          width = 834;
+        } else if (type === 'png-800') {
+          width = 800;
+        } else if (type === 'png-1200') {
+          width = 1200;
+        } else {
+          width = 'auto';
+        }
         showToast('正在產生 3x 高解析長圖...', 'info', 3000);
 
         try {

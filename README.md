@@ -46,7 +46,7 @@
 - **Markdown (`.md`)**：標準 UTF-8 純文字檔案下載，即時釋放 Blob ObjectURL 避免記憶體洩漏。
 - **獨立自給 HTML (`.html`)**：內嵌全套 Linear 樣式表與 Mermaid 向量 SVG，無須任何網路連線即可於任何裝置離線開啟。
 - **列印級無損 PDF (`.pdf`)**：注入專屬 `@media print` 樣式，自動反轉高對比白底黑字，針對程式碼、表格與 Mermaid 圖表套用 `break-inside: avoid` 防止跨頁截斷。
-- **3x 超高清 PNG 圖片 (`.png`)**：動態依需求載入 `html-to-image` 渲染 3x Retina 級超高解析度長圖，支援 800px（標準閱讀）、1200px（寬版圖表）與自適應等寬規格，自動同步主題背景色並以精確至秒的時間戳記命名（`<Title>-YYYYMMDD-HHmmss.png`）。
+- **3x 超高清 PNG 圖片 (`.png`)**：動態依需求載入 `html-to-image` 渲染 3x Retina 級超高解析度長圖，支援手機直式 412px（適配 6.3 吋 18:9 全螢幕長圖閱讀）、平板直式 834px（適配 11 吋 4:3 最適閱讀比例）與自適應等寬規格，自動同步主題背景色並以精確至秒的時間戳記命名（`<Title>-YYYYMMDD-HHmmss.png`）。
 
 ### 7. 極致冷啟動與效能最佳化 (Lighthouse 全項滿分 100/100)
 - **即時掛載與隨選載入架構**：CodeMirror 6 於網頁開啟時即刻掛載並自動聚焦（Auto-Focus），開箱即用支援剪貼簿直接貼上與鍵盤輸入；Markdown 解析引擎則於瀏覽器閒置時預先擷取。
