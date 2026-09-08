@@ -106,6 +106,7 @@ describe('PNG Exporter (png-exporter)', () => {
       expect(clickedLink).not.toBeNull();
       expect(clickedLink?.download).toBe('Project Spec-20260908-192735.png');
       expect(clickedLink?.href).toContain('blob:mock-png-url');
+      expect(createdBlob).not.toBeNull();
 
       // 驗證 finally 是否成功復原 container 樣式
       expect(container.style.width).toBe('');

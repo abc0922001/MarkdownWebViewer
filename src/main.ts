@@ -381,6 +381,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // 匯出下拉選單展開與收合控制
   btnExportDropdown.addEventListener('click', (e) => {
     e.stopPropagation();
+    // 依據目前版面模式動態更新 PNG 圖片選項之可用狀態（純編輯模式下停用）
+    const isEditorMode = layoutSwitcher.getMode() === 'editor';
+    exportMenu.querySelectorAll<HTMLButtonElement>('.png-export-item').forEach((btn) => {
+      btn.disabled = isEditorMode;
+      btn.classList.toggle('disabled', isEditorMode);
+      if (isEditorMode) {
+        btn.title = '純編輯模式下預覽區未呈現，請切換至雙欄或純瀏覽模式';
+      } else {
+        btn.removeAttribute('title');
+      }
+    });
+
     const isOpen = dropdownWrapper.classList.toggle('open');
     exportMenu.hidden = !isOpen;
     btnExportDropdown.setAttribute('aria-expanded', String(isOpen));
@@ -406,9 +418,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 匯出格式選擇監聽（.md / .html / .pdf）
+  // 匯出格式選擇監聽（.md / .html / .pdf / .png）
   exportMenu.querySelectorAll<HTMLButtonElement>('.dropdown-item').forEach((item) => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', async () => {
       const type = item.dataset.export;
       const filename = docTitleInput.value.trim() || 'Untitled.md';
       dropdownWrapper.classList.remove('open');
@@ -428,6 +440,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         showToast('準備列印 / 匯出 PDF...', 'info');
         setTimeout(() => exportPdf(), 100);
+      } else if (type?.startsWith('png')) {
+        // 檢查是否處於純編輯模式
+        if (layoutSwitcher.getMode() === 'editor') {
+          showToast('請先切換至雙欄或純瀏覽模式以預覽與匯出圖片', 'info');
+          return;
+        }
+
+        // 檢查內容是否為空
+        const text = getEditorValue().trim();
+        if (!text) {
+          showToast('內容為空，無法匯出圖片', 'info');
+          return;
+        }
+
+        // 依據選項解析輸出寬度
+        const width = type === 'png-800' ? 800 : (type === 'png-1200' ? 1200 : 'auto');
+        showToast('正在產生 3x 高解析長圖...', 'info', 3000);
+
+        try {
+          const { exportPng } = await import('./exporter/png-exporter');
+          await exportPng(previewContent, {
+            title: filename,
+            theme: currentTheme,
+            width,
+            pixelRatio: 3,
+          });
+          showToast('已成功匯出 PNG 圖片', 'success');
+        } catch (err) {
+          console.error('[PNG Export Error]', err);
+          showToast('匯出 PNG 圖片失敗，請重試', 'error');
+        }
       }
     });
   });

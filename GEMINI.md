@@ -19,7 +19,7 @@
    * **隱形字元與空格清洗**：移除零寬空格（`\u200B`~`\u2060`）與置換不換行空格（`\u00A0`、`\u202F`）。
    * **語法修補**：補齊標題空格（`#標題` ➔ `# 標題`）、清單空格與核取方塊（`-[]` ➔ `- [ ] `）、未閉合反引號區塊（```）與多餘空行壓縮。
 4. **☀️ / 🌙 淺色與深色主題切換 (`Alt+T`)**：全站 UI、CodeMirror 6 編輯器（透過 Compartment 動態重配）、Highlight.js 語法著色與 Mermaid 向量圖表即時連動重繪。
-5. **純前端三合一多格式匯出**：匯出 UTF-8 `.md`、內嵌完整樣式與向量 SVG 的單一自給離線 `.html`、高解析列印級防截斷 `.pdf`。
+5. **純前端四合一多格式匯出**：匯出 UTF-8 `.md`、內嵌完整樣式與向量 SVG 的單一自給離線 `.html`、高解析列印級防截斷 `.pdf`、以及 **3x Retina 超高解析度 PNG 圖片長圖匯出**（支援 800px、1200px 與自適應寬度，自動同步主題背景並精確至秒時間戳記命名）。
 6. **極致冷啟動與效能最佳化 (Lighthouse 100/100)**：CodeMirror 6 延遲互動載入、Markdown 解析引擎延遲預擷取、Mermaid 依需求動態載入、建置期 CSS 自動內嵌消除渲染阻斷。
 7. **無障礙 (a11y) 與 SEO 全面支援**：按鈕具備明確 `aria-label`、符合 WCAG AA 高對比度標準、結構化語意標籤與 `robots.txt`。
 8. **嚴格無痕暫態生命週期 (Zero-Persistence)**：全流程純記憶體操作，嚴禁使用 `localStorage` / `sessionStorage` / `Cookie`，內建離開防誤觸保護。
@@ -39,6 +39,7 @@
 | **程式碼語法高亮** | highlight.js | 11.x | 採用 common 語言子集打包以最小化體積，支援深/淺雙主題色彩 |
 | **安全消毒過濾** | DOMPurify | 3.x | 嚴格防禦 XSS 攻擊，設定 SVG 與向量繪圖屬性白名單保留圖表 |
 | **向量圖表引擎** | mermaid.js | 11.x | **動態延遲非同步載入（Dynamic Import）**，未出現圖表時初次載入零體積負擔 |
+| **圖片渲染引擎** | html-to-image | 1.x | **動態延遲非同步載入**，無損繪製包含 SVG 圖表與排版之 3x 超高清 PNG 長圖 |
 | **圖示庫** | lucide | 1.x | 精緻簡約之 SVG 圖示，用於 GitHub Alerts 與工具列控制 |
 | **程式碼壓縮** | terser | 5.x | 生產環境 Minification，清除除錯符號以縮減檔案體積 |
 | **CI/CD 自動化** | GitHub Actions | v4 | Push 到 `main` 分支自動執行 `npm run build` 並部署到 GitHub Pages |
@@ -61,7 +62,8 @@ MarkdownWebViewer/
 │   ├── exporter/
 │   │   ├── html-exporter.ts  # 封裝單一獨立自給 .html 檔案 (內嵌 CSS 與 SVG 向量圖)
 │   │   ├── md-exporter.ts    # Blob 匯出純文字 .md 檔案 (釋放 ObjectURL 避免洩漏)
-│   │   └── pdf-exporter.ts   # window.print() 搭配 @media print 高解析列印與反白樣式
+│   │   ├── pdf-exporter.ts   # window.print() 搭配 @media print 高解析列印與反白樣式
+│   │   └── png-exporter.ts   # html-to-image 3x 超高清長圖匯出 (自訂寬度/主題同步/時間戳記命名)
 │   ├── layout/
 │   │   ├── resizer.ts        # 中央分割條拖曳與寬度限制 (15% ~ 85%)
 │   │   ├── switcher.ts       # 右上角三態版面狀態機 (Alt+1/2/3) 與 Segmented 指示條
@@ -175,10 +177,11 @@ MarkdownWebViewer/
 * **解析與著色**：透過 `markdown-it` 解析為 HTML，程式碼區塊由 `highlight.js`（common 子集）著色；Mermaid 區塊則透過自訂 `md.renderer.rules.fence` 轉換為純淨帶有 `data-raw` 屬性之預留位置節點。
 * **DOMPurify 嚴格安全過濾**：啟用 `USE_PROFILES: { svg: true, svgFilters: true, html: true }`，擴充包含 `<defs>`, `<marker>`, `<use>`, `<clipPath>`, `<filter>` 等完整 SVG 向量標籤與 `transform`, `filter`, `marker-start`, `marker-end` 等屬性白名單，徹底防禦 XSS 攻擊同時確保 Mermaid 複雜圖表零瑕疵呈現。
 
-### 6. 純前端三合一無損匯出機制 (`src/exporter/`)
+### 6. 純前端四合一無損匯出機制 (`src/exporter/`)
 * **`.md` 匯出**：以 UTF-8 編碼建立 `Blob`，透過虛擬 `<a>` 標籤觸發下載，並呼叫 `URL.revokeObjectURL` 即時釋放瀏覽器記憶體。
 * **`.html` 匯出**：將預覽區 HTML 連同全套 Linear 主題 CSS 樣式、高亮樣式表以及 Mermaid SVG 圖表整合打包為單一獨立自給檔案，離線直接開啟即可完整檢視。
 * **`.pdf` 匯出**：注入 `@media print` 專屬樣式，強制反轉為高對比白底黑字，針對程式碼、表格與 Mermaid 圖表套用 `break-inside: avoid` 防止跨頁截斷，呼叫 `window.print()` 產生列印級 PDF。
+* **`.png` 圖片長圖匯出**：透過 `html-to-image` 依需求動態載入（`await import`），支援 3x Retina 級超高解析度（Pixel Ratio = 3）無損長圖產出。具備 800px、1200px 與自適應目前預覽寬度選項、自動跟隨色彩主題（曜黑/紙白背景）緊密貼齊內文邊緣，並以精確至秒的時間戳記標準化命名（`<Title>-YYYYMMDD-HHmmss.png`）。整合純編輯模式防護（未渲染時停用並提示）與無痕記憶體釋放。
 
 ---
 
