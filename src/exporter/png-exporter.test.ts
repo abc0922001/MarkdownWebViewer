@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { formatTimestamp, formatPngFilename, exportPng } from './png-exporter';
+import { formatTimestamp, formatPngFilename, buildExportSandboxStyles, exportPng } from './png-exporter';
 import * as htmlToImage from 'html-to-image';
 
 vi.mock('html-to-image', () => ({
@@ -15,6 +15,7 @@ describe('PNG Exporter (png-exporter)', () => {
   let originalRevokeObjectURL: any;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     createdBlob = null;
     clickedLink = null;
 
@@ -80,8 +81,35 @@ describe('PNG Exporter (png-exporter)', () => {
     });
   });
 
+  describe('buildExportSandboxStyles', () => {
+    it('在淺色主題下應產生對應淺色 Surface 與 Hairline 色彩變數', () => {
+      const css = buildExportSandboxStyles(true, false, false);
+      expect(css).toContain('background: #F5F6F7 !important;');
+      expect(css).toContain('border: 1px solid #E5E7EB !important;');
+      expect(css).toContain('background-color: #EBECEE !important;');
+      expect(css).toContain('scrollbar-width: none !important;');
+    });
+
+    it('在深色主題下應產生對應深色曜黑 Surface 與 Hairline 色彩變數', () => {
+      const css = buildExportSandboxStyles(false, false, false);
+      expect(css).toContain('background: #0F1011 !important;');
+      expect(css).toContain('border: 1px solid #23252A !important;');
+      expect(css).toContain('background-color: #141516 !important;');
+      expect(css).toContain('color: #EDEDED !important;');
+    });
+
+    it('在手機直式規格 (<= 500px) 下應產生緊湊字級與防截斷換行規則', () => {
+      const css = buildExportSandboxStyles(true, true, false);
+      expect(css).toContain('font-size: 11px !important;');
+      expect(css).toContain('padding: 6px 6px !important;');
+      expect(css).toContain('word-break: break-word !important;');
+      expect(css).toContain('white-space: pre-wrap !important;');
+      expect(css).toContain('font-size: 1.45em !important;');
+    });
+  });
+
   describe('exportPng', () => {
-    it('應呼叫 html-to-image 並建立下載連結與正確檔名', async () => {
+    it('應呼叫 html-to-image 並建立下載連結與正確檔名，且不污染原始容器', async () => {
       const container = document.createElement('div');
       container.innerHTML = '<h1>測試標題</h1><p>測試內文</p>';
       document.body.appendChild(container);
@@ -95,7 +123,9 @@ describe('PNG Exporter (png-exporter)', () => {
       });
 
       expect(htmlToImage.toBlob).toHaveBeenCalledWith(
-        container,
+        expect.objectContaining({
+          className: expect.stringContaining('png-export-sandbox'),
+        }),
         expect.objectContaining({
           pixelRatio: 3,
           backgroundColor: '#FFFFFF',
@@ -108,10 +138,12 @@ describe('PNG Exporter (png-exporter)', () => {
       expect(clickedLink?.href).toContain('blob:mock-png-url');
       expect(createdBlob).not.toBeNull();
 
-      // 驗證 finally 是否成功復原 container 樣式
+      // 驗證原始 container 樣式完全未受污染
       expect(container.style.width).toBe('');
-      expect(container.style.maxWidth).toBe('');
-      expect(container.style.boxSizing).toBe('');
+      expect(container.style.padding).toBe('');
+
+      // 驗證 finally 是否徹底清除沙盒節點
+      expect(document.querySelector('.png-export-sandbox')).toBeNull();
 
       document.body.removeChild(container);
     });
@@ -130,7 +162,9 @@ describe('PNG Exporter (png-exporter)', () => {
       });
 
       expect(htmlToImage.toBlob).toHaveBeenCalledWith(
-        container,
+        expect.objectContaining({
+          className: expect.stringContaining('dark'),
+        }),
         expect.objectContaining({
           pixelRatio: 3,
           backgroundColor: '#010102',
@@ -139,7 +173,7 @@ describe('PNG Exporter (png-exporter)', () => {
       );
 
       expect(clickedLink?.download).toBe('DarkDocument-20260908-192735.png');
-      expect(container.style.width).toBe('');
+      expect(document.querySelector('.png-export-sandbox')).toBeNull();
 
       document.body.removeChild(container);
       document.documentElement.className = 'light';
@@ -160,11 +194,12 @@ describe('PNG Exporter (png-exporter)', () => {
 
       expect(htmlToImage.toPng).toHaveBeenCalled();
       expect(clickedLink?.href).toBe('data:image/png;base64,fallback-data');
+      expect(document.querySelector('.png-export-sandbox')).toBeNull();
 
       document.body.removeChild(container);
     });
 
-    it('匯出手機直式 (412px) 時，應設定 412px 寬度並適配 20px 16px 邊距且安全復原', async () => {
+    it('匯出手機直式 (412px) 時，應於沙盒設定 412px 寬度與 20px 16px 邊距且安全清除', async () => {
       const container = document.createElement('div');
       container.innerHTML = '<p>手機長圖內容</p>';
       document.body.appendChild(container);
@@ -185,12 +220,12 @@ describe('PNG Exporter (png-exporter)', () => {
       expect(capturedWidth).toBe('412px');
       expect(capturedPadding).toBe('20px 16px');
       expect(container.style.width).toBe('');
-      expect(container.style.padding).toBe('');
+      expect(document.querySelector('.png-export-sandbox')).toBeNull();
 
       document.body.removeChild(container);
     });
 
-    it('匯出平板直式 (834px) 時，應設定 834px 寬度並適配 32px 28px 邊距且安全復原', async () => {
+    it('匯出平板直式 (834px) 時，應於沙盒設定 834px 寬度與 32px 28px 邊距且安全清除', async () => {
       const container = document.createElement('div');
       container.innerHTML = '<p>平板長圖內容</p>';
       document.body.appendChild(container);
@@ -211,9 +246,10 @@ describe('PNG Exporter (png-exporter)', () => {
       expect(capturedWidth).toBe('834px');
       expect(capturedPadding).toBe('32px 28px');
       expect(container.style.width).toBe('');
-      expect(container.style.padding).toBe('');
+      expect(document.querySelector('.png-export-sandbox')).toBeNull();
 
       document.body.removeChild(container);
     });
   });
 });
+

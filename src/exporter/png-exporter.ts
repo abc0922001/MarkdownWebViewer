@@ -4,7 +4,19 @@
  * 專為 MarkdownWebViewer 打造之純前端高解析度長圖匯出器。
  * 透過依需求動態載入 html-to-image 函式庫，支援完整預覽內容（包含 Mermaid 向量圖表、
  * 程式碼區塊、表格、任務清單與警示區塊）之無損繪製。
- * 支援 3x Retina 級超高解析度（Pixel Ratio = 3）、主題色彩同步、自訂寬度排版與精確至秒的時間戳記命名。
+ *
+ * 具備以下核心架構升級：
+ * 1. 隔離沙盒重排架構 (Isolated Sandbox Reflow)：在 DOM 底層建立專屬離屏沙盒容器進行完整深層複製（Deep Clone），
+ *    徹底避免污染或修改主畫面實際預覽元素，消除畫面跳動（UI Flickering）與捲動震顫風險。
+ * 2. 寬度自適應與響應式排版 (Responsive Adaptive Layout)：支援手機直式 412px（適配 6.3 吋 18:9）、
+ *    平板直式 834px（適配 11 吋 4:3）與自適應等寬排版，動態計算標題字級、內文字距與適配內距。
+ * 3. 表格與程式碼防截斷保護 (Table & Pre Overflow Protection)：自動重設表格為標準 display: table 與
+ *    word-break: break-word 換行機制，徹底消除靜態圖片中無效之水平捲軸，確保所有資料欄位完整呈現。
+ * 4. 向量圖表自動縮放 (Mermaid SVG Auto-Scaling)：限制 Mermaid 向量圖表寬度不超出容器邊界，自適應縮放。
+ * 5. 3x Retina 級超高解析度 (3x High-DPI Rendering)：預設採用 pixelRatio = 3，確保文字筆觸與向量圖形清晰銳利。
+ * 6. 主題色彩精準契合 (Linear Surface Tokens Alignment)：曜黑深色（#010102）與紙白淺色（#FFFFFF）
+ *    嚴格對齊 Surface Ladder 與 Hairline 設計規範。
+ * 7. 安全記憶體與 DOM 生命週期管理：使用 Blob 與 Object URL 觸發瀏覽器原生下載，排程撤銷 URL，並在 finally 區塊 100% 清除沙盒節點。
  */
 
 export interface PngExportOptions {
@@ -17,7 +29,7 @@ export interface PngExportOptions {
    */
   theme?: 'dark' | 'light';
   /**
-   * 圖片寬度（像素數值如 800、1200，或 'auto' 自適應目前元素寬度），預設為 'auto'
+   * 圖片寬度（像素數值如 412、834、1200，或 'auto' 自適應目前預覽視窗寬度），預設為 'auto'
    */
   width?: number | 'auto';
   /**
@@ -65,14 +77,123 @@ export function formatPngFilename(title: string, date: Date = new Date()): strin
 }
 
 /**
+ * 產生隔離沙盒專屬之防截斷與響應式排版樣式字串。
+ *
+ * @param isLight 是否為淺色視覺主題
+ * @param isMobile 是否為手機直式窄寬度規格（寬度 <= 500px）
+ * @param isTablet 是否為平板直式規格（寬度 501px ~ 900px）
+ * @returns 內嵌於隔離沙盒容器內之 CSS 樣式字串
+ */
+export function buildExportSandboxStyles(
+  isLight: boolean,
+  isMobile: boolean,
+  isTablet: boolean
+): string {
+  const textColor = isLight ? '#1F2328' : '#EDEDED';
+  const surfaceColor = isLight ? '#F5F6F7' : '#0F1011';
+  const surfaceElevatedColor = isLight ? '#EBECEE' : '#141516';
+  const borderColor = isLight ? '#E5E7EB' : '#23252A';
+
+  const tableFontSize = isMobile ? '11px' : (isTablet ? '12.5px' : '13.5px');
+  const tableCellPadding = isMobile ? '6px 6px' : (isTablet ? '8px 10px' : '10px 14px');
+  const tableLineHeight = isMobile ? '1.4' : '1.5';
+
+  const preFontSize = isMobile ? '12px' : '13px';
+  const prePadding = isMobile ? '10px 12px' : '14px 18px';
+
+  const mermaidPadding = isMobile ? '12px' : (isTablet ? '16px' : '20px');
+
+  const h1Size = isMobile ? '1.45em' : (isTablet ? '1.7em' : '2em');
+  const h2Size = isMobile ? '1.25em' : (isTablet ? '1.35em' : '1.5em');
+  const h3Size = isMobile ? '1.1em' : (isTablet ? '1.18em' : '1.25em');
+
+  const bodyFontSize = isMobile ? '13px' : (isTablet ? '14px' : '14.5px');
+  const bodyLineHeight = isMobile ? '1.6' : '1.75';
+
+  return `
+    .png-export-sandbox, .png-export-sandbox * {
+      scrollbar-width: none !important;
+    }
+    .png-export-sandbox *::-webkit-scrollbar {
+      display: none !important;
+    }
+    .png-export-sandbox {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif !important;
+    }
+    .png-export-sandbox table {
+      display: table !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      table-layout: auto !important;
+      overflow: visible !important;
+      border-collapse: collapse !important;
+      margin: 1.5em 0 !important;
+      background: ${surfaceColor} !important;
+      border: 1px solid ${borderColor} !important;
+      border-radius: 8px !important;
+    }
+    .png-export-sandbox th, .png-export-sandbox td {
+      border: 1px solid ${borderColor} !important;
+      padding: ${tableCellPadding} !important;
+      word-break: break-word !important;
+      overflow-wrap: break-word !important;
+      white-space: normal !important;
+      font-size: ${tableFontSize} !important;
+      line-height: ${tableLineHeight} !important;
+    }
+    .png-export-sandbox th {
+      background-color: ${surfaceElevatedColor} !important;
+      color: ${textColor} !important;
+      font-weight: 600 !important;
+    }
+    .png-export-sandbox pre {
+      white-space: pre-wrap !important;
+      word-break: break-word !important;
+      overflow: visible !important;
+      padding: ${prePadding} !important;
+      font-size: ${preFontSize} !important;
+      border-radius: 12px !important;
+      background-color: ${surfaceColor} !important;
+      border: 1px solid ${borderColor} !important;
+    }
+    .png-export-sandbox .mermaid-wrapper {
+      overflow: visible !important;
+      padding: ${mermaidPadding} !important;
+      border-radius: 12px !important;
+      background: ${surfaceColor} !important;
+      border: 1px solid ${borderColor} !important;
+    }
+    .png-export-sandbox .mermaid-wrapper svg {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+    .png-export-sandbox h1 { font-size: ${h1Size} !important; }
+    .png-export-sandbox h2 { font-size: ${h2Size} !important; }
+    .png-export-sandbox h3 { font-size: ${h3Size} !important; }
+    .png-export-sandbox p, .png-export-sandbox li {
+      font-size: ${bodyFontSize} !important;
+      line-height: ${bodyLineHeight} !important;
+      word-break: break-word !important;
+      overflow-wrap: break-word !important;
+    }
+  `;
+}
+
+/**
  * 匯出包含完整預覽內容之高品質 PNG 長圖檔案。
  *
  * 具備以下核心技術特點：
- * 1. 依需求動態載入：僅在觸發匯出時非同步載入 html-to-image 模組，維持冷啟動零開銷。
- * 2. 3x 超高解析度：預設採用 pixelRatio = 3，確保高解析螢幕檢視與列印輸出皆銳利清晰。
- * 3. 乾淨自適應寬度：支援 800px、1200px 或 auto 寬度，透過 try...finally 安全動態重排，不污染實際畫面。
- * 4. 主題色彩契合：自動抓取當前深色或淺色主題之背景色，緊密貼齊內文邊緣無多餘留白。
- * 5. 安全記憶體管理：使用 Blob 與 Object URL 觸發瀏覽器原生下載，並自動排程釋放記憶體。
+ * 1. 隔離沙盒重排架構 (Isolated Sandbox Reflow)：在 DOM 底層建立專屬離屏沙盒容器進行完整深層複製（Deep Clone），
+ *    徹底避免污染或修改主畫面實際預覽元素，消除畫面跳動（UI Flickering）與捲動震顫風險。
+ * 2. 寬度自適應與響應式排版 (Responsive Adaptive Layout)：支援手機直式 412px（適配 6.3 吋 18:9）、
+ *    平板直式 834px（適配 11 吋 4:3）與自適應等寬排版，動態計算標題字級、內文字距與適配內距。
+ * 3. 表格與程式碼防截斷保護 (Table & Pre Overflow Protection)：自動重設表格為標準 display: table 與
+ *    word-break: break-word 換行機制，徹底消除靜態圖片中無效之水平捲軸，確保所有資料欄位完整呈現。
+ * 4. 向量圖表自動縮放 (Mermaid SVG Auto-Scaling)：限制 Mermaid 向量圖表寬度不超出容器邊界，自適應縮放。
+ * 5. 3x Retina 級超高解析度 (3x High-DPI Rendering)：預設採用 pixelRatio = 3，確保文字筆觸與向量圖形清晰銳利。
+ * 6. 主題色彩精準契合 (Linear Surface Tokens Alignment)：曜黑深色（#010102）與紙白淺色（#FFFFFF）
+ *    嚴格對齊 Surface Ladder 與 Hairline 設計規範。
+ * 7. 安全記憶體與 DOM 生命週期管理：使用 Blob 與 Object URL 觸發瀏覽器原生下載，排程撤銷 URL，並在 finally 區塊 100% 清除沙盒節點。
  *
  * @param previewElement 包含已渲染 Markdown 與圖表之預覽 DOM 容器
  * @param options PNG 匯出配置選項
@@ -88,27 +209,68 @@ export function exportPng(
     const theme = options.theme ?? (isDomDark ? 'dark' : 'light');
     const isLight = theme === 'light';
     const backgroundColor = isLight ? '#FFFFFF' : '#010102';
+    const textColor = isLight ? '#1F2328' : '#EDEDED';
     const pixelRatio = options.pixelRatio ?? 3;
-    const width = options.width ?? 'auto';
+    const requestedWidth = options.width ?? 'auto';
     const finalFilename = formatPngFilename(options.title ?? 'Untitled', options.date);
 
-    // 暫存既有樣式屬性，以便在 finally 區塊中完全恢復
-    const originalWidth = previewElement.style.width;
-    const originalMaxWidth = previewElement.style.maxWidth;
-    const originalBoxSizing = previewElement.style.boxSizing;
-    const originalPadding = previewElement.style.padding;
-    const originalBgColor = previewElement.style.backgroundColor;
+    // 解析目標輸出寬度與響應式內距（未顯式指定像素時，依據目前預覽容器實際寬度自適應）
+    const targetWidth = typeof requestedWidth === 'number'
+      ? requestedWidth
+      : Math.max(320, previewElement.offsetWidth || previewElement.clientWidth || 860);
+
+    const isMobile = targetWidth <= 500;
+    const isTablet = targetWidth > 500 && targetWidth <= 900;
+    const padding = isMobile ? '20px 16px' : (isTablet ? '32px 28px' : '36px 36px');
+
+    // 建立隔離沙盒容器，置於 body 底層進行真實重排，絕不污染實際視圖
+    const sandbox = document.createElement('div');
+    sandbox.className = `png-export-sandbox markdown-body ${theme}`;
+    sandbox.style.cssText = `
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: ${targetWidth}px;
+      max-width: ${targetWidth}px;
+      box-sizing: border-box;
+      padding: ${padding};
+      background-color: ${backgroundColor};
+      color: ${textColor};
+      z-index: -9999;
+      visibility: visible;
+      pointer-events: none;
+      margin: 0;
+    `;
+
+    // 深度複製預覽節點並重設外層盒模型約束，使其完全繼承沙盒之寬度排版
+    const clone = previewElement.cloneNode(true) as HTMLElement;
+    clone.style.cssText = `
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+      background-color: transparent !important;
+      overflow: visible !important;
+    `;
+
+    // 注入專屬長圖匯出防截斷與防捲軸樣式規則
+    const styleEl = document.createElement('style');
+    styleEl.textContent = buildExportSandboxStyles(isLight, isMobile, isTablet);
+
+    sandbox.appendChild(styleEl);
+    sandbox.appendChild(clone);
+    document.body.appendChild(sandbox);
 
     try {
-      // 若指定具體寬度（例如手機 412px 或平板 834px），動態賦予樣式以重新計算排版與行高折行
-      if (typeof width === 'number') {
-        previewElement.style.width = `${width}px`;
-        previewElement.style.maxWidth = `${width}px`;
+      // 等候瀏覽器完成重排 (Reflow)
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        await new Promise<void>((r) => {
+          window.requestAnimationFrame(() => {
+            setTimeout(r, 20);
+          });
+        });
       }
-      previewElement.style.boxSizing = 'border-box';
-      // 依據裝置寬度動態適配內距（手機規格 <=500px 採用 20px 16px；平板或寬版採用 32px 28px）
-      previewElement.style.padding = typeof width === 'number' && width <= 500 ? '20px 16px' : '32px 28px';
-      previewElement.style.backgroundColor = backgroundColor;
 
       // 依需求動態匯入 html-to-image 模組
       const { toBlob, toPng } = await import('html-to-image');
@@ -118,7 +280,7 @@ export function exportPng(
       let shouldRevoke = false;
 
       try {
-        const blob = await toBlob(previewElement, {
+        const blob = await toBlob(sandbox, {
           pixelRatio,
           backgroundColor,
           type: 'image/png',
@@ -129,14 +291,14 @@ export function exportPng(
           shouldRevoke = true;
         } else {
           // 若環境或瀏覽器無法產出 Blob，降級使用 toPng Data URL
-          downloadUrl = await toPng(previewElement, {
+          downloadUrl = await toPng(sandbox, {
             pixelRatio,
             backgroundColor,
           });
         }
       } catch (blobErr) {
         // 降級保護：若 toBlob 發生非預期錯誤，改以 toPng 重新嘗試
-        downloadUrl = await toPng(previewElement, {
+        downloadUrl = await toPng(sandbox, {
           pixelRatio,
           backgroundColor,
         });
@@ -162,12 +324,11 @@ export function exportPng(
       console.error('[PNG Exporter] 匯出圖片過程發生錯誤:', err);
       reject(err);
     } finally {
-      // 確保無論成功或失敗，皆 100% 恢復預覽元素之原始樣式
-      previewElement.style.width = originalWidth;
-      previewElement.style.maxWidth = originalMaxWidth;
-      previewElement.style.boxSizing = originalBoxSizing;
-      previewElement.style.padding = originalPadding;
-      previewElement.style.backgroundColor = originalBgColor;
+      // 確保無論成功或失敗，皆 100% 清除隔離沙盒容器，零 DOM 殘留
+      if (sandbox.parentNode) {
+        sandbox.parentNode.removeChild(sandbox);
+      }
     }
   });
 }
+
