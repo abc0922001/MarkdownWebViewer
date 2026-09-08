@@ -89,13 +89,16 @@ export function buildExportSandboxStyles(
   isMobile: boolean,
   isTablet: boolean
 ): string {
-  const textColor = isLight ? '#1F2328' : '#EDEDED';
+  const textColor = isLight ? '#08090A' : '#F7F8F8';
+  const textSecondaryColor = isLight ? '#4B5563' : '#D0D6E0';
+  const textTertiaryColor = isLight ? '#6B7280' : '#8A8F98';
   const surfaceColor = isLight ? '#F5F6F7' : '#0F1011';
   const surfaceElevatedColor = isLight ? '#EBECEE' : '#141516';
   const borderColor = isLight ? '#E5E7EB' : '#23252A';
+  const borderMediumColor = isLight ? '#D1D5DB' : '#34343A';
 
   const tableFontSize = isMobile ? '11px' : (isTablet ? '12.5px' : '13.5px');
-  const tableCellPadding = isMobile ? '6px 6px' : (isTablet ? '8px 10px' : '10px 14px');
+  const tableCellPadding = isMobile ? '6px 5px' : (isTablet ? '8px 10px' : '10px 14px');
   const tableLineHeight = isMobile ? '1.4' : '1.5';
 
   const preFontSize = isMobile ? '12px' : '13px';
@@ -111,70 +114,294 @@ export function buildExportSandboxStyles(
   const bodyLineHeight = isMobile ? '1.6' : '1.75';
 
   return `
+    .png-export-sandbox {
+      --bg-app: ${isLight ? '#FFFFFF' : '#010102'};
+      --bg-surface: ${surfaceColor};
+      --bg-surface-elevated: ${surfaceElevatedColor};
+      --border-subtle: ${borderColor};
+      --border-medium: ${borderMediumColor};
+      --text-primary: ${textColor};
+      --text-secondary: ${textSecondaryColor};
+      --text-tertiary: ${textTertiaryColor};
+      --accent-primary: #5E6AD2;
+      --accent-hover: ${isLight ? '#4F5AB8' : '#828FFF'};
+      --accent-surface: ${isLight ? 'rgba(94, 106, 210, 0.08)' : 'rgba(94, 106, 210, 0.14)'};
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif !important;
+      word-wrap: break-word !important;
+      overflow-wrap: anywhere !important;
+    }
     .png-export-sandbox, .png-export-sandbox * {
       scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+      box-sizing: border-box !important;
     }
     .png-export-sandbox *::-webkit-scrollbar {
       display: none !important;
-    }
-    .png-export-sandbox {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif !important;
+      width: 0 !important;
+      height: 0 !important;
     }
     .png-export-sandbox table {
       display: table !important;
       width: 100% !important;
       max-width: 100% !important;
       table-layout: auto !important;
-      overflow: visible !important;
-      border-collapse: collapse !important;
+      border-collapse: separate !important;
+      border-spacing: 0 !important;
       margin: 1.5em 0 !important;
       background: ${surfaceColor} !important;
       border: 1px solid ${borderColor} !important;
       border-radius: 8px !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
     }
     .png-export-sandbox th, .png-export-sandbox td {
-      border: 1px solid ${borderColor} !important;
+      border-top: none !important;
+      border-left: none !important;
+      border-right: 1px solid ${borderColor} !important;
+      border-bottom: 1px solid ${borderColor} !important;
       padding: ${tableCellPadding} !important;
-      word-break: break-word !important;
-      overflow-wrap: break-word !important;
+      word-break: ${isMobile ? 'break-all' : 'break-word'} !important;
+      overflow-wrap: anywhere !important;
       white-space: normal !important;
       font-size: ${tableFontSize} !important;
       line-height: ${tableLineHeight} !important;
+      vertical-align: top !important;
+    }
+    .png-export-sandbox th:last-child, .png-export-sandbox td:last-child {
+      border-right: none !important;
+    }
+    .png-export-sandbox tr:last-child td {
+      border-bottom: none !important;
     }
     .png-export-sandbox th {
       background-color: ${surfaceElevatedColor} !important;
       color: ${textColor} !important;
       font-weight: 600 !important;
     }
+    .png-export-sandbox tr:nth-child(even) {
+      background-color: ${isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)'} !important;
+    }
     .png-export-sandbox pre {
       white-space: pre-wrap !important;
       word-break: break-word !important;
+      overflow-wrap: anywhere !important;
       overflow: visible !important;
       padding: ${prePadding} !important;
       font-size: ${preFontSize} !important;
       border-radius: 12px !important;
       background-color: ${surfaceColor} !important;
       border: 1px solid ${borderColor} !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .png-export-sandbox pre code {
+      white-space: pre-wrap !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+      font-family: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace !important;
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      font-size: inherit !important;
+      color: ${textColor} !important;
+    }
+    .png-export-sandbox code:not(pre code) {
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+      font-family: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace !important;
+      font-size: 0.88em !important;
+      padding: 0.2em 0.45em !important;
+      background-color: ${surfaceElevatedColor} !important;
+      border: 1px solid ${borderColor} !important;
+      border-radius: 4px !important;
+      color: ${isLight ? '#1F2328' : '#E2E8F0'} !important;
+    }
+    .png-export-sandbox .hljs-keyword, .png-export-sandbox .hljs-selector-tag, .png-export-sandbox .hljs-subst {
+      color: ${isLight ? '#D73A49' : '#81A1C1'} !important;
+      font-weight: 500;
+    }
+    .png-export-sandbox .hljs-string, .png-export-sandbox .hljs-title.class_, .png-export-sandbox .hljs-section, .png-export-sandbox .hljs-attribute, .png-export-sandbox .hljs-literal, .png-export-sandbox .hljs-template-tag, .png-export-sandbox .hljs-template-variable, .png-export-sandbox .hljs-type, .png-export-sandbox .hljs-addition {
+      color: ${isLight ? '#22863A' : '#A3BE8C'} !important;
+    }
+    .png-export-sandbox .hljs-comment, .png-export-sandbox .hljs-quote, .png-export-sandbox .hljs-deletion, .png-export-sandbox .hljs-meta {
+      color: ${isLight ? '#6A737D' : '#616E88'} !important;
+      font-style: italic;
+    }
+    .png-export-sandbox .hljs-number, .png-export-sandbox .hljs-regexp, .png-export-sandbox .hljs-link {
+      color: ${isLight ? '#005CC5' : '#B48EAD'} !important;
+    }
+    .png-export-sandbox .hljs-variable, .png-export-sandbox .hljs-punctuation {
+      color: ${isLight ? '#24292E' : '#D8DEE9'} !important;
+    }
+    .png-export-sandbox .hljs-title, .png-export-sandbox .hljs-title.function_, .png-export-sandbox .hljs-attr {
+      color: ${isLight ? '#6F42C1' : '#88C0D0'} !important;
+    }
+    .png-export-sandbox .hljs-symbol, .png-export-sandbox .hljs-bullet {
+      color: ${isLight ? '#E36209' : '#EBCB8B'} !important;
     }
     .png-export-sandbox .mermaid-wrapper {
-      overflow: visible !important;
+      margin: 1.5em 0 !important;
       padding: ${mermaidPadding} !important;
       border-radius: 12px !important;
       background: ${surfaceColor} !important;
       border: 1px solid ${borderColor} !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: visible !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .png-export-sandbox .mermaid-wrapper .mermaid-diagram {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow: visible !important;
+      box-sizing: border-box !important;
     }
     .png-export-sandbox .mermaid-wrapper svg {
       max-width: 100% !important;
       height: auto !important;
+      display: block !important;
+      box-sizing: border-box !important;
     }
-    .png-export-sandbox h1 { font-size: ${h1Size} !important; }
-    .png-export-sandbox h2 { font-size: ${h2Size} !important; }
-    .png-export-sandbox h3 { font-size: ${h3Size} !important; }
+    .png-export-sandbox .mermaid-error {
+      max-width: 100% !important;
+      word-break: break-word !important;
+      box-sizing: border-box !important;
+    }
+    .png-export-sandbox .markdown-alert {
+      margin: 1.25em 0 !important;
+      padding: ${isMobile ? '10px 12px' : '12px 16px'} !important;
+      border-left: 4px solid ${borderMediumColor} !important;
+      border-radius: 0 8px 8px 0 !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+      box-sizing: border-box !important;
+      max-width: 100% !important;
+      background: ${surfaceColor} !important;
+    }
+    .png-export-sandbox .markdown-alert-title {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      margin-bottom: 4px !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-note {
+      border-left-color: #5E6AD2 !important;
+      background: ${isLight ? 'rgba(94, 106, 210, 0.08)' : 'rgba(94, 106, 210, 0.14)'} !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-note .markdown-alert-title {
+      color: ${isLight ? '#4F5AB8' : '#828FFF'} !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-tip {
+      border-left-color: #27A644 !important;
+      background: rgba(39, 166, 68, 0.12) !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-tip .markdown-alert-title {
+      color: #27A644 !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-important {
+      border-left-color: #A855F7 !important;
+      background: rgba(168, 85, 247, 0.12) !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-important .markdown-alert-title {
+      color: #C084FC !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-warning {
+      border-left-color: #F5A623 !important;
+      background: rgba(245, 166, 35, 0.12) !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-warning .markdown-alert-title {
+      color: #F5A623 !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-caution {
+      border-left-color: #F2555A !important;
+      background: rgba(242, 85, 90, 0.12) !important;
+    }
+    .png-export-sandbox .markdown-alert.markdown-alert-caution .markdown-alert-title {
+      color: #F2555A !important;
+    }
+    .png-export-sandbox blockquote {
+      margin: 1.25em 0 !important;
+      padding: ${isMobile ? '0.5em 0.8em' : '0.6em 1.2em'} !important;
+      color: ${textSecondaryColor} !important;
+      background: ${surfaceColor} !important;
+      border-left: 3px solid #5E6AD2 !important;
+      border-radius: 0 8px 8px 0 !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+      box-sizing: border-box !important;
+      max-width: 100% !important;
+    }
+    .png-export-sandbox h1 {
+      font-size: ${h1Size} !important;
+      border-bottom: 1px solid ${borderColor} !important;
+      padding-bottom: 0.3em !important;
+      margin-top: 1.5em !important;
+      margin-bottom: 0.6em !important;
+      color: ${textColor} !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+    }
+    .png-export-sandbox h2 {
+      font-size: ${h2Size} !important;
+      border-bottom: 1px solid ${borderColor} !important;
+      padding-bottom: 0.25em !important;
+      margin-top: 1.4em !important;
+      margin-bottom: 0.5em !important;
+      color: ${textColor} !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+    }
+    .png-export-sandbox h3 {
+      font-size: ${h3Size} !important;
+      margin-top: 1.3em !important;
+      margin-bottom: 0.5em !important;
+      color: ${textColor} !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+    }
+    .png-export-sandbox h4, .png-export-sandbox h5, .png-export-sandbox h6 {
+      color: ${textColor} !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+    }
     .png-export-sandbox p, .png-export-sandbox li {
       font-size: ${bodyFontSize} !important;
       line-height: ${bodyLineHeight} !important;
+      color: ${textColor} !important;
       word-break: break-word !important;
-      overflow-wrap: break-word !important;
+      overflow-wrap: anywhere !important;
+    }
+    .png-export-sandbox ul, .png-export-sandbox ol {
+      padding-left: ${isMobile ? '1.4em' : '1.75em'} !important;
+      box-sizing: border-box !important;
+    }
+    .png-export-sandbox hr {
+      border: 0 !important;
+      height: 1px !important;
+      background-color: ${borderColor} !important;
+      margin: 1.75em 0 !important;
+    }
+    .png-export-sandbox img {
+      max-width: 100% !important;
+      height: auto !important;
+      border-radius: 8px !important;
+      box-sizing: border-box !important;
+    }
+    .png-export-sandbox .task-list-item {
+      list-style-type: none !important;
+    }
+    .png-export-sandbox .task-list-item input[type="checkbox"] {
+      margin: 0 0.5em 0.2em -1.4em !important;
+      vertical-align: middle !important;
+      accent-color: #5E6AD2 !important;
     }
   `;
 }
@@ -188,11 +415,11 @@ export function buildExportSandboxStyles(
  * 2. 寬度自適應與響應式排版 (Responsive Adaptive Layout)：支援手機直式 412px（適配 6.3 吋 18:9）、
  *    平板直式 834px（適配 11 吋 4:3）與自適應等寬排版，動態計算標題字級、內文字距與適配內距。
  * 3. 表格與程式碼防截斷保護 (Table & Pre Overflow Protection)：自動重設表格為標準 display: table 與
- *    word-break: break-word 換行機制，徹底消除靜態圖片中無效之水平捲軸，確保所有資料欄位完整呈現。
- * 4. 向量圖表自動縮放 (Mermaid SVG Auto-Scaling)：限制 Mermaid 向量圖表寬度不超出容器邊界，自適應縮放。
+ *    overflow-wrap: anywhere、border-collapse: separate 換行圓角機制，徹底消除靜態圖片中無效之水平/垂直捲軸，確保所有資料欄位完整呈現。
+ * 4. 向量圖表自動縮放 (Mermaid SVG Auto-Scaling)：限制 Mermaid 向量圖表寬度不超出容器邊界，自適應縮放居中。
  * 5. 3x Retina 級超高解析度 (3x High-DPI Rendering)：預設採用 pixelRatio = 3，確保文字筆觸與向量圖形清晰銳利。
  * 6. 主題色彩精準契合 (Linear Surface Tokens Alignment)：曜黑深色（#010102）與紙白淺色（#FFFFFF）
- *    嚴格對齊 Surface Ladder 與 Hairline 設計規範。
+ *    嚴格對齊 Surface Ladder、Token 注入與 Hairline 設計規範。
  * 7. 安全記憶體與 DOM 生命週期管理：使用 Blob 與 Object URL 觸發瀏覽器原生下載，排程撤銷 URL，並在 finally 區塊 100% 清除沙盒節點。
  *
  * @param previewElement 包含已渲染 Markdown 與圖表之預覽 DOM 容器
@@ -209,7 +436,7 @@ export function exportPng(
     const theme = options.theme ?? (isDomDark ? 'dark' : 'light');
     const isLight = theme === 'light';
     const backgroundColor = isLight ? '#FFFFFF' : '#010102';
-    const textColor = isLight ? '#1F2328' : '#EDEDED';
+    const textColor = isLight ? '#08090A' : '#F7F8F8';
     const pixelRatio = options.pixelRatio ?? 3;
     const requestedWidth = options.width ?? 'auto';
     const finalFilename = formatPngFilename(options.title ?? 'Untitled', options.date);
@@ -220,7 +447,7 @@ export function exportPng(
       : Math.max(320, previewElement.offsetWidth || previewElement.clientWidth || 860);
 
     const isMobile = targetWidth <= 500;
-    const isTablet = targetWidth > 500 && targetWidth <= 900;
+    const isTablet = targetWidth > 500 && targetWidth <= 850;
     const padding = isMobile ? '20px 16px' : (isTablet ? '32px 28px' : '36px 36px');
 
     // 建立隔離沙盒容器，置於 body 底層進行真實重排，絕不污染實際視圖
@@ -242,8 +469,9 @@ export function exportPng(
       margin: 0;
     `;
 
-    // 深度複製預覽節點並重設外層盒模型約束，使其完全繼承沙盒之寬度排版
+    // 深度複製預覽節點並重設外層盒模型約束，使其完全繼承沙盒之寬度排版，並移除 ID 避免衝突
     const clone = previewElement.cloneNode(true) as HTMLElement;
+    clone.removeAttribute('id');
     clone.style.cssText = `
       width: 100% !important;
       max-width: 100% !important;
@@ -258,50 +486,59 @@ export function exportPng(
     const styleEl = document.createElement('style');
     styleEl.textContent = buildExportSandboxStyles(isLight, isMobile, isTablet);
 
-    sandbox.appendChild(styleEl);
+    // 保持正確 DOM 順序：clone 為沙盒首個主要節點，隨後掛載樣式
     sandbox.appendChild(clone);
+    sandbox.appendChild(styleEl);
     document.body.appendChild(sandbox);
 
     try {
-      // 等候瀏覽器完成重排 (Reflow)
-      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-        await new Promise<void>((r) => {
-          window.requestAnimationFrame(() => {
-            setTimeout(r, 20);
+      // 確保字型就緒並等候雙重繪製訊框 (Double-rAF) 完成瀏覽器真實重排
+      if (typeof window !== 'undefined') {
+        if (typeof document !== 'undefined' && 'fonts' in document && (document as any).fonts?.ready) {
+          try {
+            await (document as any).fonts.ready;
+          } catch {
+            // 忽略字型狀態非同步例外
+          }
+        }
+        if (typeof window.requestAnimationFrame === 'function') {
+          await new Promise<void>((r) => {
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => {
+                setTimeout(r, 40);
+              });
+            });
           });
-        });
+        }
       }
 
       // 依需求動態匯入 html-to-image 模組
       const { toBlob, toPng } = await import('html-to-image');
+
+      const renderConfig = {
+        width: targetWidth,
+        pixelRatio,
+        backgroundColor,
+        type: 'image/png' as const,
+      };
 
       // 優先採用 toBlob 產生二進位串流，規避超長 Data URL 可能觸發之瀏覽器長度限制
       let downloadUrl: string;
       let shouldRevoke = false;
 
       try {
-        const blob = await toBlob(sandbox, {
-          pixelRatio,
-          backgroundColor,
-          type: 'image/png',
-        });
+        const blob = await toBlob(sandbox, renderConfig);
 
         if (blob) {
           downloadUrl = URL.createObjectURL(blob);
           shouldRevoke = true;
         } else {
           // 若環境或瀏覽器無法產出 Blob，降級使用 toPng Data URL
-          downloadUrl = await toPng(sandbox, {
-            pixelRatio,
-            backgroundColor,
-          });
+          downloadUrl = await toPng(sandbox, renderConfig);
         }
       } catch (blobErr) {
         // 降級保護：若 toBlob 發生非預期錯誤，改以 toPng 重新嘗試
-        downloadUrl = await toPng(sandbox, {
-          pixelRatio,
-          backgroundColor,
-        });
+        downloadUrl = await toPng(sandbox, renderConfig);
       }
 
       // 建立虛擬 <a> 標籤並觸發點選下載

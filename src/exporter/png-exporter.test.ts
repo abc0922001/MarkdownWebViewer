@@ -84,27 +84,42 @@ describe('PNG Exporter (png-exporter)', () => {
   describe('buildExportSandboxStyles', () => {
     it('在淺色主題下應產生對應淺色 Surface 與 Hairline 色彩變數', () => {
       const css = buildExportSandboxStyles(true, false, false);
-      expect(css).toContain('background: #F5F6F7 !important;');
+      expect(css).toContain('--bg-surface: #F5F6F7;');
+      expect(css).toContain('--border-subtle: #E5E7EB;');
       expect(css).toContain('border: 1px solid #E5E7EB !important;');
-      expect(css).toContain('background-color: #EBECEE !important;');
+      expect(css).toContain('background: #F5F6F7 !important;');
       expect(css).toContain('scrollbar-width: none !important;');
+      expect(css).toContain('border-collapse: separate !important;');
+      expect(css).toContain('overflow-wrap: anywhere !important;');
     });
 
     it('在深色主題下應產生對應深色曜黑 Surface 與 Hairline 色彩變數', () => {
       const css = buildExportSandboxStyles(false, false, false);
+      expect(css).toContain('--bg-surface: #0F1011;');
+      expect(css).toContain('--border-subtle: #23252A;');
       expect(css).toContain('background: #0F1011 !important;');
       expect(css).toContain('border: 1px solid #23252A !important;');
       expect(css).toContain('background-color: #141516 !important;');
-      expect(css).toContain('color: #EDEDED !important;');
+      expect(css).toContain('--text-primary: #F7F8F8;');
+      expect(css).toContain('border-collapse: separate !important;');
     });
 
     it('在手機直式規格 (<= 500px) 下應產生緊湊字級與防截斷換行規則', () => {
       const css = buildExportSandboxStyles(true, true, false);
       expect(css).toContain('font-size: 11px !important;');
-      expect(css).toContain('padding: 6px 6px !important;');
-      expect(css).toContain('word-break: break-word !important;');
+      expect(css).toContain('padding: 6px 5px !important;');
+      expect(css).toContain('word-break: break-all !important;');
+      expect(css).toContain('overflow-wrap: anywhere !important;');
       expect(css).toContain('white-space: pre-wrap !important;');
       expect(css).toContain('font-size: 1.45em !important;');
+    });
+
+    it('應注入 GitHub Alerts 與 Highlight.js 著色樣式', () => {
+      const css = buildExportSandboxStyles(true, false, false);
+      expect(css).toContain('.png-export-sandbox .markdown-alert');
+      expect(css).toContain('.png-export-sandbox .markdown-alert.markdown-alert-note');
+      expect(css).toContain('.png-export-sandbox .hljs-keyword');
+      expect(css).toContain('.png-export-sandbox .hljs-string');
     });
   });
 
@@ -247,6 +262,51 @@ describe('PNG Exporter (png-exporter)', () => {
       expect(capturedPadding).toBe('32px 28px');
       expect(container.style.width).toBe('');
       expect(document.querySelector('.png-export-sandbox')).toBeNull();
+
+      document.body.removeChild(container);
+    });
+
+    it('應確保複製之節點移除原始 id 屬性以避免 DOM 衝突', async () => {
+      const container = document.createElement('article');
+      container.id = 'preview-content';
+      container.innerHTML = '<p>內容</p>';
+      document.body.appendChild(container);
+
+      let capturedCloneId: string | null = 'not-checked';
+      vi.mocked(htmlToImage.toBlob).mockImplementationOnce((node: HTMLElement) => {
+        const clonedArticle = node.querySelector('article');
+        capturedCloneId = clonedArticle ? clonedArticle.getAttribute('id') : null;
+        return Promise.resolve(new Blob(['id-check'], { type: 'image/png' }));
+      });
+
+      await exportPng(container, {
+        title: 'IdTest',
+        width: 412,
+      });
+
+      expect(capturedCloneId).toBeNull();
+      expect(container.id).toBe('preview-content');
+
+      document.body.removeChild(container);
+    });
+
+    it('應將精確的 targetWidth 傳遞給 html-to-image 確保圖片尺寸精準', async () => {
+      const container = document.createElement('div');
+      container.innerHTML = '<p>寬度測試</p>';
+      document.body.appendChild(container);
+
+      await exportPng(container, {
+        title: 'WidthCheck',
+        width: 412,
+      });
+
+      expect(htmlToImage.toBlob).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          width: 412,
+          pixelRatio: 3,
+        })
+      );
 
       document.body.removeChild(container);
     });
