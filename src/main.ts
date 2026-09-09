@@ -396,6 +396,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const isOpen = dropdownWrapper.classList.toggle('open');
     exportMenu.hidden = !isOpen;
     btnExportDropdown.setAttribute('aria-expanded', String(isOpen));
+    if (isOpen) {
+      layoutSwitcher.closeReadingModeMenu();
+    }
   });
 
   // 點選下拉選單外部自動關閉

@@ -378,13 +378,43 @@
   max-width: 260px;
 }
 
-/* 僅在純瀏覽模式下顯示專注閱讀模式按鈕 */
+/* 僅在純瀏覽模式下顯示閱讀視圖切換下拉選單與專注閱讀模式按鈕 */
+.reading-mode-dropdown-wrapper,
 .zen-toggle-btn {
   display: none;
 }
 
+.app-root[data-layout="preview"] .reading-mode-dropdown-wrapper {
+  display: block;
+}
+
 .app-root[data-layout="preview"] .zen-toggle-btn {
   display: flex;
+}
+
+.reading-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.reading-mode-btn:hover {
+  color: var(--text-primary);
+}
+
+.reading-mode-btn svg {
+  flex-shrink: 0;
+}
+
+.reading-mode-btn .reading-mode-text {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ==========================================================================

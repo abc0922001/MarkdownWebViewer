@@ -11,6 +11,19 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
         <header class="app-header">
           <div class="header-controls">
             <button id="btn-theme-toggle" class="action-btn"></button>
+            <div id="reading-mode-dropdown-wrapper" class="dropdown-wrapper reading-mode-dropdown-wrapper">
+              <button id="btn-reading-mode-dropdown" class="action-btn reading-mode-btn">
+                <svg id="reading-mode-icon-auto"></svg>
+                <svg id="reading-mode-icon-tablet" style="display: none;"></svg>
+                <svg id="reading-mode-icon-mobile" style="display: none;"></svg>
+                <span id="reading-mode-label">自適應</span>
+              </button>
+              <div id="reading-mode-menu" class="dropdown-menu" hidden>
+                <button class="dropdown-item active" data-reading-mode="auto">自適應</button>
+                <button class="dropdown-item" data-reading-mode="tablet">平板直式</button>
+                <button class="dropdown-item" data-reading-mode="mobile">手機直式</button>
+              </div>
+            </div>
             <button id="btn-zen-mode" class="action-btn zen-toggle-btn">
               <svg id="zen-icon-enter"></svg>
               <svg id="zen-icon-exit" style="display: none;"></svg>
@@ -36,7 +49,11 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
         <main id="app-workspace" class="workspace" data-layout="split">
           <section id="editor-pane" class="editor-pane"></section>
           <div id="pane-resizer" class="pane-resizer"></div>
-          <section id="preview-pane" class="preview-pane"></section>
+          <section id="preview-pane" class="preview-pane">
+            <div id="preview-scroll-container" class="preview-scroll-container">
+              <article id="preview-content" class="markdown-body"></article>
+            </div>
+          </section>
         </main>
 
         <footer id="app-statusbar" class="app-statusbar"></footer>
@@ -270,6 +287,167 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
       const newSwitcher = new LayoutSwitcher();
       expect(app?.getAttribute('data-layout')).toBe('split');
       expect(newSwitcher.getMode()).toBe('split');
+    });
+  });
+
+  describe('純瀏覽自訂閱讀模式 (ReadingMode: Tablet & Mobile)', () => {
+    it('初始預設閱讀模式應為自適應 (auto)', () => {
+      expect(switcher.getReadingMode()).toBe('auto');
+      const container = document.getElementById('preview-scroll-container');
+      expect(container?.hasAttribute('data-reading-mode')).toBe(false);
+      expect(document.getElementById('reading-mode-label')?.textContent).toBe('自適應');
+    });
+
+    it('切換至平板直式 (tablet) 模式時，preview-scroll-container 應設定 data-reading-mode="tablet" 且標籤正確更新', () => {
+      switcher.setReadingMode('tablet');
+      expect(switcher.getReadingMode()).toBe('tablet');
+
+      const container = document.getElementById('preview-scroll-container');
+      expect(container?.getAttribute('data-reading-mode')).toBe('tablet');
+      expect(document.getElementById('reading-mode-label')?.textContent).toBe('平板直式');
+      expect(document.getElementById('reading-mode-icon-tablet')?.style.display).toBe('block');
+      expect(document.getElementById('reading-mode-icon-auto')?.style.display).toBe('none');
+      expect(document.getElementById('reading-mode-icon-mobile')?.style.display).toBe('none');
+    });
+
+    it('切換至手機直式 (mobile) 模式時，preview-scroll-container 應設定 data-reading-mode="mobile" 且標籤正確更新', () => {
+      switcher.setReadingMode('mobile');
+      expect(switcher.getReadingMode()).toBe('mobile');
+
+      const container = document.getElementById('preview-scroll-container');
+      expect(container?.getAttribute('data-reading-mode')).toBe('mobile');
+      expect(document.getElementById('reading-mode-label')?.textContent).toBe('手機直式');
+      expect(document.getElementById('reading-mode-icon-mobile')?.style.display).toBe('block');
+      expect(document.getElementById('reading-mode-icon-auto')?.style.display).toBe('none');
+    });
+
+    it('切換回自適應模式時，preview-scroll-container 應移除 data-reading-mode 屬性', () => {
+      switcher.setReadingMode('mobile');
+      expect(switcher.getReadingMode()).toBe('mobile');
+
+      switcher.setReadingMode('auto');
+      expect(switcher.getReadingMode()).toBe('auto');
+      const container = document.getElementById('preview-scroll-container');
+      expect(container?.hasAttribute('data-reading-mode')).toBe(false);
+      expect(document.getElementById('reading-mode-label')?.textContent).toBe('自適應');
+    });
+
+    it('點選閱讀模式下拉按鈕應能展開與收合選單，並於展開時關閉匯出選單', () => {
+      const btn = document.getElementById('btn-reading-mode-dropdown');
+      const menu = document.getElementById('reading-mode-menu');
+      const wrapper = document.getElementById('reading-mode-dropdown-wrapper');
+      const exportMenu = document.getElementById('export-menu');
+
+      // 先將匯出選單設為開啟狀態
+      exportMenu!.hidden = false;
+
+      // 點擊展開閱讀模式選單
+      btn?.click();
+      expect(menu?.hidden).toBe(false);
+      expect(wrapper?.classList.contains('open')).toBe(true);
+      expect(btn?.getAttribute('aria-expanded')).toBe('true');
+      expect(exportMenu?.hidden).toBe(true);
+
+      // 再次點擊收合
+      btn?.click();
+      expect(menu?.hidden).toBe(true);
+      expect(wrapper?.classList.contains('open')).toBe(false);
+      expect(btn?.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('點選選單項目應設定對應閱讀模式並自動收合選單', () => {
+      const menu = document.getElementById('reading-mode-menu');
+      menu!.hidden = false;
+
+      const mobileItem = document.querySelector('.dropdown-item[data-reading-mode="mobile"]') as HTMLButtonElement | null;
+      mobileItem?.click();
+
+      expect(switcher.getReadingMode()).toBe('mobile');
+      expect(menu?.hidden).toBe(true);
+    });
+
+    it('在純瀏覽模式下按 Alt+M 快速鍵應依序循環切換 (auto -> tablet -> mobile -> auto)', () => {
+      switcher.setMode('preview');
+      expect(switcher.getReadingMode()).toBe('auto');
+
+      // 第一次按 Alt+M ➔ tablet
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', altKey: true }));
+      expect(switcher.getReadingMode()).toBe('tablet');
+
+      // 第二次按 Alt+M ➔ mobile
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', altKey: true }));
+      expect(switcher.getReadingMode()).toBe('mobile');
+
+      // 第三次按 Alt+M ➔ auto
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', altKey: true }));
+      expect(switcher.getReadingMode()).toBe('auto');
+    });
+
+    it('在非純瀏覽模式（如雙欄或編輯）下按 Alt+M 不應觸發閱讀模式循環切換', () => {
+      switcher.setMode('split');
+      expect(switcher.getReadingMode()).toBe('auto');
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', altKey: true }));
+      expect(switcher.getReadingMode()).toBe('auto');
+    });
+
+    it('切換離開純瀏覽模式（如返回雙欄 split 或純編輯 editor）時應自動重設閱讀模式為 auto', () => {
+      switcher.setMode('preview');
+      switcher.setReadingMode('mobile');
+      expect(switcher.getReadingMode()).toBe('mobile');
+
+      // 切換回雙欄
+      switcher.setMode('split');
+      expect(switcher.getReadingMode()).toBe('auto');
+      const container = document.getElementById('preview-scroll-container');
+      expect(container?.hasAttribute('data-reading-mode')).toBe(false);
+    });
+
+    it('進入專注閱讀模式 (Alt+Z) 時應保留當前選定的閱讀模式寬度', () => {
+      switcher.setMode('preview');
+      switcher.setReadingMode('tablet');
+      expect(switcher.getReadingMode()).toBe('tablet');
+
+      // 進入專注全螢幕
+      switcher.setZenMode(true);
+      expect(switcher.isZenMode()).toBe(true);
+      expect(switcher.getReadingMode()).toBe('tablet');
+
+      const container = document.getElementById('preview-scroll-container');
+      expect(container?.getAttribute('data-reading-mode')).toBe('tablet');
+    });
+
+    it('閱讀模式選單展開時按 Escape 鍵應關閉選單而不退出純瀏覽', () => {
+      switcher.setMode('preview');
+      const menu = document.getElementById('reading-mode-menu');
+      menu!.hidden = false;
+      document.getElementById('reading-mode-dropdown-wrapper')?.classList.add('open');
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      expect(menu?.hidden).toBe(true);
+      expect(switcher.getMode()).toBe('preview');
+    });
+
+    it('點選選單外部區域應自動關閉閱讀模式選單', () => {
+      const menu = document.getElementById('reading-mode-menu');
+      const wrapper = document.getElementById('reading-mode-dropdown-wrapper');
+      menu!.hidden = false;
+      wrapper?.classList.add('open');
+
+      // 點選 body 外部區域
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect(menu?.hidden).toBe(true);
+      expect(wrapper?.classList.contains('open')).toBe(false);
+    });
+
+    it('註冊 onReadingModeChange 監聽器應在閱讀模式變更時正確觸發', () => {
+      let triggeredMode = '';
+      switcher.onReadingModeChange((mode) => {
+        triggeredMode = mode;
+      });
+
+      switcher.setReadingMode('mobile');
+      expect(triggeredMode).toBe('mobile');
     });
   });
 });

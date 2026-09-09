@@ -112,6 +112,20 @@
   background-color: var(--bg-surface-active);
 }
 
+.dropdown-item.active {
+  background-color: var(--accent-surface);
+  color: var(--accent-primary);
+}
+
+.dropdown-item.active svg {
+  color: var(--accent-primary);
+}
+
+.dropdown-item.active .item-title {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
 .dropdown-item:disabled,
 .dropdown-item.disabled {
   opacity: 0.45;

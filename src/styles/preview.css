@@ -348,3 +348,187 @@ html.light .markdown-body code:not(pre code) {
   }
 }
 
+/* ==========================================================================
+   純瀏覽自訂閱讀模式 (Custom Reading Modes: Tablet 834px & Mobile 412px)
+   確保預覽呈現與 PNG 匯出長圖規格 100% 嚴格一致
+   ========================================================================== */
+
+/* 平板直式閱讀模式 (834px 適配 11 吋 4:3) */
+.preview-scroll-container[data-reading-mode="tablet"] {
+  padding: 32px 0 80px 0 !important;
+}
+
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body {
+  width: 834px !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 32px 28px !important;
+  box-sizing: border-box !important;
+}
+
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body h1 {
+  font-size: 1.7em !important;
+}
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body h2 {
+  font-size: 1.35em !important;
+}
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body h3 {
+  font-size: 1.18em !important;
+}
+
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body p,
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body li {
+  font-size: 14px !important;
+}
+
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body table {
+  display: table !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: auto !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body th,
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body td {
+  border-top: none !important;
+  border-left: none !important;
+  border-right: 1px solid var(--border-subtle) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  padding: 8px 10px !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+  vertical-align: top !important;
+}
+
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body th:last-child,
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body td:last-child {
+  border-right: none !important;
+}
+
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body tr:last-child td {
+  border-bottom: none !important;
+}
+
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body pre {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  overflow: visible !important;
+  padding: 14px 18px !important;
+  font-size: 13px !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+}
+
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body .mermaid-wrapper {
+  padding: 16px !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+}
+
+/* 手機直式閱讀模式 (412px 適配 6.3 吋 18:9) */
+.preview-scroll-container[data-reading-mode="mobile"] {
+  padding: 20px 0 80px 0 !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body {
+  width: 412px !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 20px 16px !important;
+  box-sizing: border-box !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body h1 {
+  font-size: 1.45em !important;
+}
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body h2 {
+  font-size: 1.25em !important;
+}
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body h3 {
+  font-size: 1.1em !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body p,
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body li {
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body ul,
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body ol {
+  padding-left: 1.4em !important;
+  box-sizing: border-box !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body table {
+  display: table !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: auto !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body th,
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body td {
+  border-top: none !important;
+  border-left: none !important;
+  border-right: 1px solid var(--border-subtle) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  padding: 6px 5px !important;
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  vertical-align: top !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body th:last-child,
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body td:last-child {
+  border-right: none !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body tr:last-child td {
+  border-bottom: none !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body pre {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  overflow: visible !important;
+  padding: 10px 12px !important;
+  font-size: 12px !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body .mermaid-wrapper {
+  padding: 12px !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body .markdown-alert {
+  padding: 10px 12px !important;
+}
+
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body blockquote {
+  padding: 0.5em 0.8em !important;
+}
+

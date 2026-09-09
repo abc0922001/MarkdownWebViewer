@@ -94,6 +94,40 @@
               <svg id="theme-icon-sun" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
             </button>
 
+            <!-- 閱讀視圖切換下拉選單 (純瀏覽模式專屬) -->
+            <div id="reading-mode-dropdown-wrapper" class="dropdown-wrapper reading-mode-dropdown-wrapper">
+              <button id="btn-reading-mode-dropdown" class="action-btn reading-mode-btn" aria-expanded="false" aria-haspopup="true" title="切換閱讀視圖模式 (快速鍵: Alt+M)" aria-label="切換閱讀視圖模式 (Alt+M)">
+                <svg id="reading-mode-icon-auto" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>
+                <svg id="reading-mode-icon-tablet" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><rect width="18" height="14" x="3" y="5" rx="2" ry="2"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                <svg id="reading-mode-icon-mobile" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>
+                <span id="reading-mode-label" class="reading-mode-text">自適應</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div id="reading-mode-menu" class="dropdown-menu" hidden>
+                <button class="dropdown-item active" data-reading-mode="auto">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>
+                  <div class="item-text">
+                    <span class="item-title">自適應寬度</span>
+                    <span class="item-desc">依視窗彈性置中排版 (預設)</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" data-reading-mode="tablet">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="14" x="3" y="5" rx="2" ry="2"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                  <div class="item-text">
+                    <span class="item-title">平板直式 (834px)</span>
+                    <span class="item-desc">適配 11 吋 4:3，圖表文字最適比例</span>
+                  </div>
+                </button>
+                <button class="dropdown-item" data-reading-mode="mobile">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>
+                  <div class="item-text">
+                    <span class="item-title">手機直式 (412px)</span>
+                    <span class="item-desc">適配 6.3 吋 18:9，適合手機長圖排版</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <!-- 專注閱讀模式切換按鈕 (隱藏頂部工具列) -->
             <button id="btn-zen-mode" class="action-btn zen-toggle-btn" title="切換專注閱讀模式 (快速鍵: Alt+Z)" aria-label="切換專注閱讀模式 (Alt+Z)">
               <svg id="zen-icon-enter" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
