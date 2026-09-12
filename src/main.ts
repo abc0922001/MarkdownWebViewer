@@ -34,6 +34,7 @@ import { SAMPLE_MARKDOWN } from './utils/sample';
 import { debounce } from './utils/debounce';
 import { showToast } from './utils/toast';
 import { fixMarkdownFormatting } from './utils/formatter';
+import { initVersionBadge } from './utils/version';
 
 /**
  * 應用程式進入點，於 DOMContentLoaded 完成後初始化全站介面與各功能模組。
@@ -179,6 +180,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 初始化版面切換器與分隔條拖曳調整器
   const layoutSwitcher = new LayoutSwitcher();
   new PaneResizer();
+
+  // 初始化版本徽章與快取檢查事件監聽
+  initVersionBadge();
 
   // 立即初始化 CodeMirror 6 編輯器核心
   editorInstance = new MarkdownEditor(editorMount, '', {

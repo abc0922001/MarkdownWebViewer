@@ -62,6 +62,33 @@
   white-space: nowrap;
 }
 
+.brand-version {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-tertiary);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 5px;
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.02em;
+  user-select: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.brand-version:hover {
+  color: var(--accent-contrast);
+  border-color: var(--accent-primary);
+  background-color: var(--accent-surface);
+}
+
+.brand-version:active {
+  transform: scale(0.96);
+}
+
 .doc-title-wrapper {
   display: flex;
   align-items: center;
@@ -556,6 +583,17 @@
   color: var(--accent-contrast);
 }
 
+.status-version {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.status-version:hover {
+  color: var(--accent-contrast);
+}
+
 /* ==========================================================================
    Responsive Design (Mobile & Tablet Adaptation)
    ========================================================================== */
@@ -809,6 +847,11 @@
   .brand {
     border-right: none;
     padding-right: 0;
+  }
+
+  .status-version,
+  .status-version + .status-divider {
+    display: none;
   }
 }
 

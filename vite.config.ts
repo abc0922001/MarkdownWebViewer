@@ -1,8 +1,26 @@
 import { defineConfig, Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'fs';
+import { execSync } from 'child_process';
+
+/** 讀取 package.json 取得專案語意化版本號 */
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
+
+/** 取得目前 Git Commit 簡短雜湊（若無 Git 資訊則回退為空字串） */
+let commitHash = '';
+try {
+  commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+} catch {
+  commitHash = '';
+}
+
+/** 格式化當前建置時間戳記 (YYYY-MM-DD HH:mm) */
+const now = new Date();
+const pad = (n: number) => String(n).padStart(2, '0');
+const buildTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
 /**
- * 自訂 Vite 外掛：將建置產出之 CSS 樣式直接內嵌（Inline）至 index.html。
+ * 自訂 Vite 外掛：將建置產出之 CSS 樣式直接內嵌（Inline）至 index.html，並替換靜態版本預留字串。
  *
  * 消除額外的外部 CSS 網路請求與渲染阻斷（Render-Blocking Resources），
  * 同時自產出清單中移除獨立 CSS 檔案以減少 HTTP 請求數。
@@ -14,8 +32,8 @@ function inlineCssPlugin(): Plugin {
     name: 'inline-css',
     enforce: 'post',
     transformIndexHtml(html, { bundle }) {
-      if (!bundle) return html;
-      let newHtml = html;
+      let newHtml = html.replace(/%APP_VERSION%/g, pkg.version);
+      if (!bundle) return newHtml;
       for (const [fileName, file] of Object.entries(bundle)) {
         if (fileName.endsWith('.css') && file.type === 'asset' && typeof file.source === 'string') {
           const re = new RegExp(`<link[^>]+href="[^"]*${fileName.replace(/\./g, '\\.')}"[^>]*>`);
@@ -36,6 +54,11 @@ function inlineCssPlugin(): Plugin {
 export default defineConfig({
   // 維持相對路徑，確保於 GitHub Pages 子路徑部署時資源連結正確
   base: './',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __COMMIT_HASH__: JSON.stringify(commitHash),
+    __BUILD_TIME__: JSON.stringify(buildTime),
+  },
   plugins: [
     inlineCssPlugin(),
     VitePWA({
