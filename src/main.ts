@@ -148,13 +148,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const html = renderMarkdownToHtml(markdownText);
       previewContent.innerHTML = html;
 
+      // 僅於解析結果中包含 LaTeX 數學公式時才動態載入並渲染 KaTeX
+      let katexSuccess = true;
+      if (previewContent.querySelector('.katex-math, .katex-math-block')) {
+        const { renderKatexMath } = await import('./renderer/katex');
+        katexSuccess = await renderKatexMath(previewContent);
+      }
+
       // 僅於解析結果中包含 Mermaid 圖表時才動態載入並渲染向量圖表
       let mermaidSuccess = true;
       if (previewContent.querySelector('.mermaid-diagram')) {
         const { renderMermaidDiagrams } = await import('./renderer/mermaid');
         mermaidSuccess = await renderMermaidDiagrams(previewContent, currentTheme);
       }
-      setRenderState(mermaidSuccess ? 'synced' : 'error');
+      setRenderState((mermaidSuccess && katexSuccess) ? 'synced' : 'error');
     } catch (err) {
       console.error('Rendering error:', err);
       setRenderState('error');

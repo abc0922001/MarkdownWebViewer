@@ -161,4 +161,65 @@ describe('Markdown Renderer (GFM & Alerts & Tasklists)', () => {
       expect(html).toContain('transform="rotate(45)"');
     });
   });
+
+  describe('LaTeX 數學公式語法解析 (mathPlugin)', () => {
+    it('應正確解析行內公式並生成帶有 data-math 之 .katex-math 節點', () => {
+      const md = '質能方程為 $E = mc^2$ 非常著名。';
+      const html = renderMarkdownToHtml(md);
+
+      expect(html).toContain('class="katex-math"');
+      expect(html).toContain('data-math="E%20%3D%20mc%5E2"');
+      expect(html).toContain('E = mc^2');
+    });
+
+    it('應正確解析單行獨立展示公式 ($$...$$)', () => {
+      const md = '$$a^2 + b^2 = c^2$$';
+      const html = renderMarkdownToHtml(md);
+
+      expect(html).toContain('class="katex-display-wrapper"');
+      expect(html).toContain('class="katex-math-block"');
+      expect(html).toContain('data-math="a%5E2%20%2B%20b%5E2%20%3D%20c%5E2"');
+    });
+
+    it('應正確解析多行獨立展示公式 ($$\\n...\\n$$)', () => {
+      const md = '$$\n\\sum_{i=1}^n i = \\frac{n(n+1)}{2}\n$$';
+      const html = renderMarkdownToHtml(md);
+
+      expect(html).toContain('class="katex-display-wrapper"');
+      expect(html).toContain('class="katex-math-block"');
+      expect(html).toContain('\\sum_{i=1}^n i = \\frac{n(n+1)}{2}');
+    });
+
+    it('應正確防禦貨幣符號誤判（如 $20 and $30 不應被解析為數學公式）', () => {
+      const md = '商品價格由 $20 上漲至 $30 元。';
+      const html = renderMarkdownToHtml(md);
+
+      expect(html).not.toContain('class="katex-math"');
+      expect(html).toContain('$20');
+      expect(html).toContain('$30');
+    });
+
+    it('公式起始或結尾含有多餘空白字元時不應解析為公式', () => {
+      const md = '這不是公式：$ x $ 或 $x $ 或 $ x$。';
+      const html = renderMarkdownToHtml(md);
+
+      expect(html).not.toContain('class="katex-math"');
+    });
+
+    it('已跳脫的反斜線錢字號 (\\$) 不應被識別為公式定界符號', () => {
+      const md = '價格為 \\$100 美元。';
+      const html = renderMarkdownToHtml(md);
+
+      expect(html).not.toContain('class="katex-math"');
+      expect(html).toContain('$100');
+    });
+
+    it('應支援公式內部含有跳脫錢字號 (\\$)', () => {
+      const md = '費用方程：$cost = \\$50$。';
+      const html = renderMarkdownToHtml(md);
+
+      expect(html).toContain('class="katex-math"');
+      expect(html).toContain('cost = \\$50');
+    });
+  });
 });

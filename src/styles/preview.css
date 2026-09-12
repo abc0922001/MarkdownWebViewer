@@ -255,6 +255,48 @@ html.light .markdown-body code:not(pre code) {
   width: 100%;
 }
 
+/* KaTeX LaTeX Math Container & Typography */
+.katex-display-wrapper {
+  margin: 1.5em 0;
+  padding: 16px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.katex-display-wrapper:hover {
+  border-color: var(--border-medium);
+}
+
+.katex-display-wrapper .katex-display {
+  margin: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.katex-math {
+  font-size: 1.05em;
+  padding: 0 2px;
+}
+
+.katex-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-danger, #F2555A);
+  background: var(--color-danger-bg, rgba(242, 85, 90, 0.12));
+  padding: 2px 8px;
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid rgba(242, 85, 90, 0.3);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
 /* Callout Alerts (GitHub / Markdown Style) */
 .markdown-alert {
   margin: 1.25em 0;
@@ -428,7 +470,8 @@ html.light .markdown-body code:not(pre code) {
   box-sizing: border-box !important;
 }
 
-.preview-scroll-container[data-reading-mode="tablet"] .markdown-body .mermaid-wrapper {
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body .mermaid-wrapper,
+.preview-scroll-container[data-reading-mode="tablet"] .markdown-body .katex-display-wrapper {
   padding: 16px !important;
   border-radius: 12px !important;
   box-sizing: border-box !important;
@@ -518,7 +561,8 @@ html.light .markdown-body code:not(pre code) {
   box-sizing: border-box !important;
 }
 
-.preview-scroll-container[data-reading-mode="mobile"] .markdown-body .mermaid-wrapper {
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body .mermaid-wrapper,
+.preview-scroll-container[data-reading-mode="mobile"] .markdown-body .katex-display-wrapper {
   padding: 12px !important;
   border-radius: 12px !important;
   box-sizing: border-box !important;

@@ -87,9 +87,24 @@ def calculate_metrics(text: str) -> dict:
 | :--- | :--- | :--- |
 | **編輯器核心** | CodeMirror 6 | 語法高亮、按鍵對應、自動換行控制 |
 | **Markdown 解析** | markdown-it + Highlight.js | 支援 GFM、程式碼暗色著色 |
+| **數學公式** | KaTeX (v0.16) | 出版級 LaTeX 渲染，按需動態載入 |
 | **向量圖表** | mermaid.js (v11) | Dynamic Import 依需求載入 |
 | **安全消毒** | DOMPurify | 嚴格防禦 XSS 腳本注入 |
 | **PDF 匯出** | CSS Paged Media | \`window.print()\` 搭配列印最佳化 |
+
+---
+
+## 📐 數學公式排版 (LaTeX & KaTeX)
+
+支援行內公式（如質能等價 $E = mc^2$ 或勾股定理 $a^2 + b^2 = c^2$），以及複雜之二維展示區塊公式：
+
+$$
+f(x) = \\int_{-\\infty}^{\\infty} \\hat{f}(\\xi) \\, e^{2 \\pi i \\xi x} \\, d\\xi
+$$
+
+$$
+x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}
+$$
 
 ---
 

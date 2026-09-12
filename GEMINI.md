@@ -12,19 +12,20 @@
 ### 核心功能清單：
 1. **雙欄即時預覽與雙向捲動同步**：左側 CodeMirror 6 編輯、右側 Markdown + Highlight.js + Mermaid 即時渲染，內建互斥鎖防止無窮遞迴捲動震顫。
 2. **Linear 風格三態版面切換、純瀏覽極簡排版與自訂閱讀模式**：右上角 Segmented Control（純編輯 `Alt+1`、雙欄對照 `Alt+2`、純瀏覽 `Alt+3`）與中央拖曳分隔條（15%~85% 範圍限制保護）。純瀏覽模式自動隱藏次要編輯動作、即時預覽次標題欄與底部狀態列，並支援專注全螢幕閱讀（`Alt+Z`）、自訂閱讀視圖切換（自適應、平板直式 834px、手機直式 412px，快速鍵 `Alt+M` 循環切換，排版規格 100% 嚴格對齊 PNG 匯出沙盒）與一鍵返回雙欄對照（`Alt+2` / `Escape`）。
-3. **AI / Gemini 排版智慧「✨ 自動修正」(`Alt+F`)**：
+3. **KaTeX 出版級 LaTeX 數學公式動態渲染 (Issue #16)**：支援行內公式（`$formula$`）與單行/多行獨立展示區塊公式（`$$formula$$`），嚴格防禦貨幣符號 `$20 and $30` 誤判。全流程採用**依需求非同步動態載入（Dynamic Import）**與遞增 Token 競態防禦，初次載入維持 0 KB 零負擔與 Lighthouse 100/100 滿分。
+4. **AI / Gemini 排版智慧「✨ 自動修正」(`Alt+F`)**：
    * **表格智慧修復**：自動縫合中斷資料列、剔除孤立 `|` 符號、補齊缺失之首尾管線字元。
    * **LaTeX 數學與比較符號標準化**：自動將自 AI 介面複製之 LaTeX 不等式與符號（如 `$\le$`、`$\ge$`、`$\neq$` 等）轉為對應標準 Unicode 符號（`≤`、`≥`、`≠` 等），並具備程式碼遮罩保護。
    * **粗體標籤格式校正**：閉合孤立星號、消除標記內側贅餘空格、智慧補齊中英文字界空格，並防止跨標記與跨行誤配。
    * **隱形字元與空格清洗**：移除零寬空格（`\u200B`~`\u2060`）與置換不換行空格（`\u00A0`、`\u202F`）。
    * **語法修補**：補齊標題空格（`#標題` ➔ `# 標題`）、清單空格與核取方塊（`-[]` ➔ `- [ ] `）、未閉合反引號區塊（```）與多餘空行壓縮。
-4. **☀️ / 🌙 淺色與深色主題切換 (`Alt+T`)**：全站 UI、CodeMirror 6 編輯器（透過 Compartment 動態重配）、Highlight.js 語法著色與 Mermaid 向量圖表即時連動重繪。
-5. **純前端四合一多格式匯出**：匯出 UTF-8 `.md`、內嵌完整樣式與向量 SVG 的單一自給離線 `.html`、高解析列印級防截斷 `.pdf`、以及 **3x Retina 超高解析度 PNG 圖片長圖匯出**（支援手機直式 412px 適配 6.3 吋 18:9、平板直式 834px 適配 11 吋 4:3 與自適應寬度，自動同步主題背景並精確至秒時間戳記命名）。
-6. **極致冷啟動與效能最佳化 (Lighthouse 100/100)**：CodeMirror 6 延遲互動載入、Markdown 解析引擎延遲預擷取、Mermaid 依需求動態載入、建置期 CSS 自動內嵌消除渲染阻斷。
-7. **無障礙 (a11y) 與 SEO 全面支援**：按鈕具備明確 `aria-label`、符合 WCAG AA 高對比度標準、結構化語意標籤與 `robots.txt`。
-8. **嚴格無痕暫態生命週期 (Zero-Persistence)**：全流程純記憶體操作，嚴禁使用 `localStorage` / `sessionStorage` / `Cookie`，內建離開防誤觸保護。
-9. **GitHub Pages 一鍵自動化部署**：基於 Vite 相對路徑（`base: './'`）建置與 GitHub Actions 自動化 CI/CD。
-10. **PWA 漸進式網頁應用與離線 App Shell**：支援安裝為桌面與行動裝置獨立視窗應用，Workbox 預快取包含 Mermaid 向量引擎在內之完整 App Shell，支援斷網離線繪圖與 Google Fonts 執行期快取，並維持無痕暫態（Zero-Persistence）。
+5. **☀️ / 🌙 淺色與深色主題切換 (`Alt+T`)**：全站 UI、CodeMirror 6 編輯器（透過 Compartment 動態重配）、Highlight.js 語法著色、Mermaid 向量圖表與 KaTeX 數學公式即時連動重繪。
+6. **純前端四合一多格式匯出**：匯出 UTF-8 `.md`、內嵌完整樣式與向量 SVG/KaTeX 的單一自給離線 `.html`、高解析列印級防截斷 `.pdf`、以及 **3x Retina 超高解析度 PNG 圖片長圖匯出**（支援手機直式 412px 適配 6.3 吋 18:9、平板直式 834px 適配 11 吋 4:3 與自適應寬度，自動同步主題背景並精確至秒時間戳記命名）。
+7. **極致冷啟動與效能最佳化 (Lighthouse 100/100)**：CodeMirror 6 延遲互動載入、Markdown 解析引擎延遲預擷取、Mermaid 與 KaTeX 依需求動態載入、建置期 CSS 自動內嵌消除渲染阻斷。
+8. **無障礙 (a11y) 與 SEO 全面支援**：按鈕具備明確 `aria-label`、符合 WCAG AA 高對比度標準、結構化語意標籤與 `robots.txt`。
+9. **嚴格無痕暫態生命週期 (Zero-Persistence)**：全流程純記憶體操作，嚴禁使用 `localStorage` / `sessionStorage` / `Cookie`，內建離開防誤觸保護。
+10. **GitHub Pages 一鍵自動化部署**：基於 Vite 相對路徑（`base: './'`）建置與 GitHub Actions 自動化 CI/CD。
+11. **PWA 漸進式網頁應用與離線 App Shell**：支援安裝為桌面與行動裝置獨立視窗應用，Workbox 預快取包含 Mermaid 向量引擎與 KaTeX 數學引擎在內之完整 App Shell，支援斷網離線繪圖與 Google Fonts 執行期快取，並維持無痕暫態（Zero-Persistence）。
 
 ---
 
@@ -36,6 +37,7 @@
 | **PWA / Service Worker** | vite-plugin-pwa | 1.x | 基於 Workbox 自動精準處理產物雜湊快取清單、Google Fonts 執行期快取與無感自動更新 |
 | **編輯器核心** | CodeMirror 6 | 6.x | 模組化設計、輕量、透過 Compartment 支援無重建模組主題、語法著色與自動換行動態重配 |
 | **Markdown 解析** | markdown-it | 15.x | 高效符合 CommonMark/GFM 規範，擴充彈性高，內建 TypeScript 型別支援，支援 typographer 與 breaks |
+| **數學公式引擎** | KaTeX | 0.16.x | **動態延遲非同步載入（Dynamic Import）**，出版級 LaTeX 數學排版，零初次載入負擔 |
 | **程式碼語法高亮** | highlight.js | 11.x | 採用 common 語言子集打包以最小化體積，支援深/淺雙主題色彩 |
 | **安全消毒過濾** | DOMPurify | 3.x | 嚴格防禦 XSS 攻擊，設定 SVG 與向量繪圖屬性白名單保留圖表 |
 | **向量圖表引擎** | mermaid.js | 11.x | **動態延遲非同步載入（Dynamic Import）**，未出現圖表時初次載入零體積負擔 |
@@ -69,7 +71,8 @@ MarkdownWebViewer/
 │   │   ├── switcher.ts       # 右上角三態版面狀態機 (Alt+1/2/3) 與 Segmented 指示條
 │   │   └── sync-scroll.ts    # 雙向等比捲動同步與 isScrolling 迴圈互斥鎖 (rAF 節流)
 │   ├── renderer/
-│   │   ├── markdown.ts       # markdown-it 設定、Highlight.js 著色、GitHub 警示區塊、DOMPurify 消毒
+│   │   ├── katex.ts          # 依需求動態載入 katex、防競態 Token、錯誤邊界、數學排版
+│   │   ├── markdown.ts       # markdown-it 設定、Highlight.js 著色、GitHub 警示區塊、LaTeX 公式解析、DOMPurify 消毒
 │   │   └── mermaid.ts        # 依需求動態載入 mermaid.js、主題重繪、防競態 Token、錯誤邊界
 │   ├── styles/
 │   │   ├── base.css          # 全域 Reset、自訂捲軸、Toast 動畫、[hidden] 全域保護
@@ -132,8 +135,8 @@ MarkdownWebViewer/
 為兼顧極致效能與即時開箱即用之輸入體驗（Zero-Friction UX），專案採用以下管線設計：
 * **CodeMirror 6 立即掛載與自動聚焦**：網頁開啟時即刻初始化 CodeMirror 6 編輯器核心，即刻呈現初始行號與編輯游標並自動聚焦（Auto-Focus），同時具備全域剪貼簿貼上（Global Paste）監聽與按鍵輸入轉發機制，支援使用者開啟網頁後無需任何額外點選即可直接貼上或鍵入 Markdown 內容。
 * **Markdown 解析引擎閒置預擷取**：於瀏覽器閒置時（`requestIdleCallback`）非同步預先載入 `markdown-it`、`highlight.js` 與 `DOMPurify`，確保首次排版渲染極速回饋。
-* **Mermaid 延遲管線與防競態機制**：
-  * Mermaid 體積較大（>2MB），僅當解析器於預覽區掃描到 `.mermaid-diagram` 時，才透過 `import('mermaid')` 動態載入。
+* **Mermaid 與 KaTeX 延遲管線與防競態機制**：
+  * 大型引擎（Mermaid >2MB、KaTeX >500KB）僅當解析器於預覽區掃描到對應標籤（`.mermaid-diagram`、`.katex-math`、`.katex-math-block`）時，才透過 `import('mermaid')` 與 `import('katex')` 動態非同步載入。
   * 每次繪圖持有獨立遞增的 **`currentRenderToken`**，避免使用者快速打字時舊渲染工作覆蓋新內容。
   * 遭遇未閉合或語法不完整之即時輸入，透過 Error Boundary 顯示微型警告條，不阻斷整體預覽。
 * **建置期 CSS 自動內嵌外掛 (`inlineCssPlugin`)**：
@@ -170,12 +173,12 @@ MarkdownWebViewer/
   * `wrapCompartment`：動態切換自動換行（`EditorView.lineWrapping`）與水平捲動（`[]`）。
 * 所有外觀與設定重配皆透過 `view.dispatch({ effects: [...] })` 完成，完全無須重新銷毀或重建編輯器視圖。
 
-### 5. 渲染防護與 GFM AST 擴充管線 (`src/renderer/markdown.ts`)
-* **預處理**：先經由 `fixMathSymbols` 轉換 LaTeX 符號。
+### 5. 渲染防護與 GFM / LaTeX AST 擴充管線 (`src/renderer/markdown.ts`)
+* **自行開發之 LaTeX 數學公式 AST 外掛 (`mathPlugin`)**：在 inline 與 block 階段精準辨識 `$formula$` 與 `$$formula$$`，輸出帶有 `data-math` 屬性之預留位置節點，並內建貨幣符號誤判防禦與跳脫字元支援。
 * **自行開發之 GFM Alerts AST 外掛 (`gfmAlertsPlugin`)**：在 `markdown-it` Core 階段遍歷 Token 串流，辨識 `> [!NOTE]`、`> [!TIP]`、`> [!IMPORTANT]`、`> [!WARNING]`、`> [!CAUTION]` 並動態轉為 Alert 容器標籤與 Lucide SVG 圖示。支援內部多段落、清單、表格與程式碼區塊等完整巢狀 Markdown 結構。
 * **自行開發之 GFM Tasklists AST 外掛 (`gfmTasklistsPlugin`)**：自動將 `- [ ]` 與 `- [x]` 轉譯為禁用狀態之 `<input type="checkbox">` 核取方塊元素，並注入 `.task-list-item` 類別。
-* **解析與著色**：透過 `markdown-it` 解析為 HTML，程式碼區塊由 `highlight.js`（common 子集）著色；Mermaid 區塊則透過自訂 `md.renderer.rules.fence` 轉換為純淨帶有 `data-raw` 屬性之預留位置節點。
-* **DOMPurify 嚴格安全過濾**：啟用 `USE_PROFILES: { svg: true, svgFilters: true, html: true }`，擴充包含 `<defs>`, `<marker>`, `<use>`, `<clipPath>`, `<filter>` 等完整 SVG 向量標籤與 `transform`, `filter`, `marker-start`, `marker-end` 等屬性白名單，徹底防禦 XSS 攻擊同時確保 Mermaid 複雜圖表零瑕疵呈現。
+* **解析與著色**：透過 `markdown-it` 解析為 HTML，程式碼區塊由 `highlight.js`（common 子集）著色；Mermaid 區塊透過自訂 `md.renderer.rules.fence` 轉換為帶有 `data-raw` 之預留節點。
+* **DOMPurify 嚴格安全過濾**：啟用 `USE_PROFILES: { svg: true, svgFilters: true, html: true }`，擴充包含 `<defs>`, `<marker>`, `<use>`, `<clipPath>`, `<filter>`, `<math>`, `<semantics>`, `<mrow>` 等完整 SVG 與 MathML 向量標籤與屬性白名單，徹底防禦 XSS 攻擊同時確保 Mermaid 複雜圖表與公式零瑕疵呈現。
 
 ### 6. 純前端四合一無損匯出機制 (`src/exporter/`)
 * **`.md` 匯出**：以 UTF-8 編碼建立 `Blob`，透過虛擬 `<a>` 標籤觸發下載，並呼叫 `URL.revokeObjectURL` 即時釋放瀏覽器記憶體。

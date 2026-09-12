@@ -72,8 +72,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,txt}'],
-        // 放寬預快取大小上限至 5MB，確保動態分割之大型 Mermaid 模組（約 2.5MB）得以順利預先快取
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,txt,woff,woff2,ttf}'],
+        // 放寬預快取大小上限至 5MB，確保動態分割之大型 Mermaid 與 KaTeX 模組得以順利預先快取
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
@@ -135,6 +135,9 @@ export default defineConfig({
           }
           if (id.includes('@codemirror') || id.includes('codemirror') || id.includes('w3c-keyname')) {
             return 'codemirror-bundle';
+          }
+          if (id.includes('katex')) {
+            return 'katex';
           }
         },
       },

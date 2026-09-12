@@ -80,4 +80,14 @@ describe('HTML Exporter (exportHtml)', () => {
     const darkHtml = await (createdBlob as Blob).text();
     expect(darkHtml).toContain('class="dark"');
   });
+
+  it('當渲染內容包含 KaTeX 數學公式時，匯出 HTML 應自動注入 KaTeX 樣式表連結', async () => {
+    const container = document.createElement('div');
+    container.innerHTML = '<p>公式：<span class="katex"><span class="katex-html">E = mc^2</span></span></p>';
+
+    exportHtml(container, '數學文件');
+    const htmlText = await (createdBlob as Blob).text();
+    expect(htmlText).toContain('katex.min.css');
+    expect(htmlText).toContain('.katex-display-wrapper');
+  });
 });

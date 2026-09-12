@@ -16,6 +16,7 @@ export function exportHtml(
   const renderedContent = previewElement.innerHTML;
   const finalFilename = title.endsWith('.html') ? title : `${title.replace(/\.[^/.]+$/, '')}.html`;
   const isLight = theme === 'light';
+  const hasKatex = renderedContent.includes('class="katex');
 
   // 組裝包含完整 Meta、內嵌主題 CSS 與預覽 DOM 的獨立 HTML 字串
   const standaloneHtml = `<!DOCTYPE html>
@@ -24,7 +25,7 @@ export function exportHtml(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}</title>
-  <style>
+  ${hasKatex ? '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">\n  ' : ''}<style>
     :root {
       --bg-app: ${isLight ? '#FFFFFF' : '#010102'};
       --bg-surface: ${isLight ? '#F5F6F7' : '#0F1011'};
@@ -138,6 +139,17 @@ export function exportHtml(
       overflow-x: auto;
     }
     .mermaid-wrapper svg { max-width: 100%; height: auto; }
+    .katex-display-wrapper {
+      margin: 1.5em 0;
+      padding: 16px 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+    .katex-display-wrapper .katex-display { margin: 0; width: 100%; text-align: center; }
     .markdown-alert {
       margin: 1.25em 0;
       padding: 12px 16px;
