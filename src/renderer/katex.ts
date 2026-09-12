@@ -87,6 +87,8 @@ export async function renderKatexMath(container: HTMLElement): Promise<boolean> 
           errorColor: '#F2555A',
           output: 'html',
         });
+        node.setAttribute('role', 'math');
+        node.setAttribute('aria-label', formula);
       } catch (err) {
         // 渲染發生例外時降級顯示友善錯誤標籤
         node.innerHTML = `<span class="katex-error" title="${escapeHtml(String(err))}">${escapeHtml(formula)}</span>`;

@@ -148,6 +148,7 @@ export function exportHtml(
       display: flex;
       justify-content: center;
       overflow-x: auto;
+    }
     .katex-display-wrapper .katex-display { margin: 0; width: 100%; text-align: center; }
     .katex .katex-mathml { clip: rect(1px, 1px, 1px, 1px) !important; clip-path: inset(50%) !important; height: 1px !important; overflow: hidden !important; position: absolute !important; padding: 0 !important; width: 1px !important; white-space: nowrap !important; }
     .markdown-alert {

@@ -104,13 +104,21 @@ describe('KaTeX 數學公式動態渲染模組 (renderKatexMath)', () => {
     const arrowNode = container.querySelector('#tc-0')!;
     expect(arrowNode.textContent?.trim()).toBe('→');
 
+    // 驗證無障礙屬性 role='math' 與 aria-label
+    expect(arrowNode.getAttribute('role')).toBe('math');
+    expect(arrowNode.getAttribute('aria-label')).toBe('\\rightarrow');
+
     // 驗證向下箭頭僅出現單一 "↓"
     const downArrowNode = container.querySelector('#tc-1')!;
     expect(downArrowNode.textContent?.trim()).toBe('↓');
+    expect(downArrowNode.getAttribute('role')).toBe('math');
+    expect(downArrowNode.getAttribute('aria-label')).toBe('\\downarrow');
 
     // 驗證區塊公式單行呈現
     const blockNode = container.querySelector('#tc-9')!;
     expect(blockNode.textContent?.trim()).toBe('λ=0.5');
+    expect(blockNode.getAttribute('role')).toBe('math');
+    expect(blockNode.getAttribute('aria-label')).toBe('\\lambda = 0.5');
   });
 
   it('端對端完整管線：從原文 Markdown 解析至 KaTeX 渲染，不應產生重複符號', async () => {

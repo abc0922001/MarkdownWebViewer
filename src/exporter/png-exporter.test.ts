@@ -121,6 +121,14 @@ describe('PNG Exporter (png-exporter)', () => {
       expect(css).toContain('.png-export-sandbox .hljs-keyword');
       expect(css).toContain('.png-export-sandbox .hljs-string');
     });
+
+    it('應注入 KaTeX display-wrapper 容器與 MathML 裁剪防禦樣式，防止圖片匯出時符號重複顯示', () => {
+      const css = buildExportSandboxStyles(true, false, false);
+      expect(css).toContain('.png-export-sandbox .katex-display-wrapper');
+      expect(css).toContain('.png-export-sandbox .katex-math');
+      expect(css).toContain('.png-export-sandbox .katex .katex-mathml');
+      expect(css).toContain('clip-path: inset(50%) !important;');
+    });
   });
 
   describe('exportPng', () => {

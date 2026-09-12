@@ -90,5 +90,8 @@ describe('HTML Exporter (exportHtml)', () => {
     expect(htmlText).toContain('katex.min.css');
     expect(htmlText).toContain('.katex-display-wrapper');
     expect(htmlText).toContain('.katex .katex-mathml');
+
+    // 驗證 .katex-display-wrapper 樣式區塊具備完整的大括號閉合，無語法截斷或嵌套錯誤
+    expect(htmlText).toMatch(/\.katex-display-wrapper\s*\{[^}]*overflow-x:\s*auto;\s*\}/);
   });
 });

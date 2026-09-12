@@ -273,6 +273,49 @@ export function buildExportSandboxStyles(
       word-break: break-word !important;
       box-sizing: border-box !important;
     }
+    .png-export-sandbox .katex-display-wrapper {
+      margin: 1.5em 0 !important;
+      padding: ${isMobile ? '12px !important' : (isTablet ? '16px !important' : '16px 20px !important')};
+      background: ${surfaceColor} !important;
+      border: 1px solid ${borderColor} !important;
+      border-radius: 12px !important;
+      display: flex !important;
+      justify-content: center !important;
+      overflow: visible !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .png-export-sandbox .katex-display-wrapper .katex-display {
+      margin: 0 !important;
+      width: 100% !important;
+      text-align: center !important;
+    }
+    .png-export-sandbox .katex-math {
+      padding: 0 2px !important;
+      font-size: 1.05em !important;
+    }
+    .png-export-sandbox .katex-error {
+      color: #F2555A !important;
+      background: rgba(242, 85, 90, 0.12) !important;
+      border: 1px solid rgba(242, 85, 90, 0.3) !important;
+      border-radius: 4px !important;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+      padding: 2px 8px !important;
+      font-size: 0.9em !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
+    .png-export-sandbox .katex .katex-mathml {
+      clip: rect(1px, 1px, 1px, 1px) !important;
+      clip-path: inset(50%) !important;
+      height: 1px !important;
+      overflow: hidden !important;
+      position: absolute !important;
+      padding: 0 !important;
+      width: 1px !important;
+      white-space: nowrap !important;
+    }
     .png-export-sandbox .markdown-alert {
       margin: 1.25em 0 !important;
       padding: ${isMobile ? '10px 12px' : '12px 16px'} !important;
