@@ -19,8 +19,10 @@ function inlineCssPlugin(): Plugin {
       for (const [fileName, file] of Object.entries(bundle)) {
         if (fileName.endsWith('.css') && file.type === 'asset' && typeof file.source === 'string') {
           const re = new RegExp(`<link[^>]+href="[^"]*${fileName.replace(/\./g, '\\.')}"[^>]*>`);
-          newHtml = newHtml.replace(re, `<style>${file.source}</style>`);
-          delete bundle[fileName];
+          if (re.test(newHtml)) {
+            newHtml = newHtml.replace(re, `<style>${file.source}</style>`);
+            delete bundle[fileName];
+          }
         }
       }
       return newHtml;

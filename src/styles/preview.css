@@ -297,6 +297,18 @@ html.light .markdown-body code:not(pre code) {
   font-size: 0.9em;
 }
 
+/* KaTeX MathML 輔助結構保護：防禦 MathML 於任何情況下（含樣式延遲載入或列印）外溢導致符號重複顯示 */
+.katex .katex-mathml {
+  clip: rect(1px, 1px, 1px, 1px) !important;
+  clip-path: inset(50%) !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  padding: 0 !important;
+  width: 1px !important;
+  white-space: nowrap !important;
+}
+
 /* Callout Alerts (GitHub / Markdown Style) */
 .markdown-alert {
   margin: 1.25em 0;

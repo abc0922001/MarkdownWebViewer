@@ -138,4 +138,9 @@
   html.dark .mermaid-wrapper svg {
     filter: invert(0.85) hue-rotate(180deg) !important;
   }
+
+  /* KaTeX MathML 輔助標籤於列印時隱藏，防禦重複符號列印輸出 */
+  .katex .katex-mathml {
+    display: none !important;
+  }
 }

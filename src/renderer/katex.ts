@@ -53,6 +53,7 @@ export async function getKatexInstance(): Promise<typeof katexType> {
  *
  * 支援 `.katex-math`（行內公式）與 `.katex-math-block`（獨立區塊展示公式），
  * 讀取節點之 `data-math` 屬性還原原始 LaTeX 代碼並套用對應排版。
+ * 輸出設定固定為 `output: 'html'`，防止 KaTeX 預設輸出 MathML 與 HTML 雙結構導致符號重複顯示。
  *
  * @param container 包含公式預留節點之父層 DOM 元素（如預覽容器）
  * @returns 渲染流程是否順利完成之 Promise（若遭新渲染中斷則回傳 false）
@@ -84,6 +85,7 @@ export async function renderKatexMath(container: HTMLElement): Promise<boolean> 
           displayMode: isDisplay,
           throwOnError: false,
           errorColor: '#F2555A',
+          output: 'html',
         });
       } catch (err) {
         // 渲染發生例外時降級顯示友善錯誤標籤

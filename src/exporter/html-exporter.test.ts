@@ -89,5 +89,6 @@ describe('HTML Exporter (exportHtml)', () => {
     const htmlText = await (createdBlob as Blob).text();
     expect(htmlText).toContain('katex.min.css');
     expect(htmlText).toContain('.katex-display-wrapper');
+    expect(htmlText).toContain('.katex .katex-mathml');
   });
 });
