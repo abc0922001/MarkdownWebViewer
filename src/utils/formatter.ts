@@ -42,11 +42,32 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     fixes.push('清除隱形零寬字元與非標準空格');
   }
 
+  // 2.1 修正自 Gemini 等複製產生之雙重嵌套超連結（例如：[[文字](URL)](URL) 轉為 [文字](URL)）
+  const beforeLinks = text;
+  text = fixGeminiDoubleLinks(text);
+  if (text !== beforeLinks) {
+    fixes.push('修復雙重嵌套超連結');
+  }
+
   // 2.2 修正 AI 複製之 LaTeX 數學與比較符號（例如：$\le$ 轉為 ≤、$\ge$ 轉為 ≥）
   const beforeMath = text;
   text = fixMathSymbols(text);
   if (text !== beforeMath) {
     fixes.push('校正數學與比較符號');
+  }
+
+  // 2.3 拆分行內黏合之多個清單項目（處理單行黏合變體）
+  const beforeInlinedLists = text;
+  text = fixInlinedLists(text);
+  if (text !== beforeInlinedLists) {
+    fixes.push('拆分行內黏合之清單項目');
+  }
+
+  // 2.4 修正父清單冒號後遺失之巢狀子清單縮排 (Issue #17)
+  const { result: nestedFixedText, changed: nestedChanged } = fixOrphanedNestedIndentation(text);
+  if (nestedChanged) {
+    text = nestedFixedText;
+    fixes.push('修復遺失縮排之巢狀子清單');
   }
 
   // 2.5 修正粗體標記格式（去除內側空格、清除空粗體、補齊中英文字界空格）
@@ -63,16 +84,23 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     fixes.push(`修復 ${tableFixedCount} 個破損或中斷的表格區塊`);
   }
 
+  // 4 & 5. 遮罩保護多行程式碼區塊，避免修改程式碼中的 # 註解或 * 運算子/解包語法
+  const listCodeSpans: string[] = [];
+  let processedNoCode = text.replace(/```[\s\S]*?```/g, (match) => {
+    listCodeSpans.push(match);
+    return `\x00CODEBLOCK_${listCodeSpans.length - 1}\x00`;
+  });
+
   // 4. 校正標題語法缺少空格（例如：#標題 轉為 # 標題）
-  const beforeHeading = text;
-  text = text.replace(/^(#{1,6})([^#\s\n])/gm, '$1 $2');
-  if (text !== beforeHeading) {
+  const beforeHeading = processedNoCode;
+  processedNoCode = processedNoCode.replace(/^(#{1,6})([^#\s\n])/gm, '$1 $2');
+  if (processedNoCode !== beforeHeading) {
     fixes.push('校正標題語法缺失之空格');
   }
 
   // 5. 校正無序/有序清單與任務核取方塊排版（補齊空格與標準化方括號狀態）
-  const beforeList = text;
-  text = text
+  const beforeList = processedNoCode;
+  processedNoCode = processedNoCode
     // 修正 "-項目" 轉為 "- 項目"
     .replace(/^(\s*[-*+])([^\s\-*+\d])/gm, '$1 $2')
     // 修正 "1.項目" 轉為 "1. 項目"
@@ -84,9 +112,12 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     .replace(/^(\s*(?:[-*+]|\d+\.))\s*\[[xX]\](?:[ \t]*([^\s\n].*)|[ \t]*$)/gm, (_, prefix, content) => {
       return content ? `${prefix} [x] ${content}` : `${prefix} [x]`;
     });
-  if (text !== beforeList) {
+  if (processedNoCode !== beforeList) {
     fixes.push('校正清單與核取方塊排版');
   }
+
+  // 還原程式碼區塊
+  text = processedNoCode.replace(/\x00CODEBLOCK_(\d+)\x00/g, (_, idx) => listCodeSpans[parseInt(idx, 10)]);
 
   // 6. 檢查程式碼區塊閉合性，若開閉標記個數為奇數則於文末補齊閉合反引號
   const codeBlockCount = (text.match(/^```/gm) || []).length;
@@ -108,6 +139,169 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     changed,
     fixesSummary: fixes,
   };
+}
+
+/**
+ * 修正自 Gemini 或 LLM 複製內容中出現的雙重嵌套超連結語法缺陷。
+ *
+ * 將 `[[文字](URL1)](URL2)` 結構自動收斂還原為標準單層超連結 `[文字](URL1)`。
+ * 支援內外 URL 完全一致之標準形態，並相容外層為 Google Redirect 跳轉包裝之情境（優先保留內層真實目標網址）。
+ * 同時保護多行程式碼區塊（```...```）與行內程式碼（`...`），防止程式碼內容遭誤改。
+ *
+ * @param text 待處理的文字內容
+ * @returns 修正超連結後的文字內容
+ */
+export function fixGeminiDoubleLinks(text: string): string {
+  // 保護多行程式碼區塊與行內程式碼，避免取代程式碼內容
+  const codeSpans: string[] = [];
+  const textWithoutCode = text.replace(/(```[\s\S]*?```|`[^`\r\n]+`)/g, (match) => {
+    codeSpans.push(match);
+    return `\x00CODE_${codeSpans.length - 1}\x00`;
+  });
+
+  let result = textWithoutCode;
+
+  // 1. 優先處理內外 URL 完全一致之標準 Gemini 雙重超連結：[[文字](URL)](URL) ➔ [文字](URL)
+  result = result.replace(/\[\[([^\]\r\n]+)\]\((https?:\/\/[^\s\)\r\n]+)\)\]\(\2\)/g, '[$1]($2)');
+
+  // 2. 相容處理外層為 Google Redirect 包裝或相異之雙重超連結：[[文字](URL1)](URL2) ➔ 優先保留內層真實 URL1
+  result = result.replace(/\[\[([^\]\r\n]+)\]\((https?:\/\/[^\s\)\r\n]+)\)\]\((?:https?:\/\/[^\s\)\r\n]+)\)/g, '[$1]($2)');
+
+  // 還原程式碼區塊
+  result = result.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);
+  return result;
+}
+
+/**
+ * 修正因自 LLM（如 Gemini）複製而黏合在同一行內之多個清單項目。
+ *
+ * 偵測在句子結束標點（。！？.!?）、粗體閉合（**）或冒號（:：）後方，
+ * 緊接半形空格與清單標記（如 ` * **標題**` 或 ` - **標題**`）之情境，並精準插入換行符號。
+ * 同時保護程式碼區塊並跳過表格行與標題行，避免誤傷正常文章或程式碼。
+ *
+ * @param text 待處理的文字內容
+ * @returns 拆分換行後之文字內容
+ */
+export function fixInlinedLists(text: string): string {
+  // 保護多行程式碼區塊與行內程式碼
+  const codeSpans: string[] = [];
+  const textWithoutCode = text.replace(/(```[\s\S]*?```|`[^`\r\n]+`)/g, (match) => {
+    codeSpans.push(match);
+    return `\x00CODE_${codeSpans.length - 1}\x00`;
+  });
+
+  const lines = textWithoutCode.split('\n');
+  const resultLines: string[] = [];
+
+  for (const line of lines) {
+    // 排除表格行
+    if (line.includes('|') && isPotentialTableRow(line)) {
+      resultLines.push(line);
+      continue;
+    }
+
+    // 排除標題行
+    if (/^#{1,6}\s+/.test(line)) {
+      resultLines.push(line);
+      continue;
+    }
+
+    // 搜尋行內黏合清單切入點：
+    // 前綴：標點符號 [。！？\.\?!]、粗體結束 \*\*、或冒號 [:：]
+    // 間隔：[ \t]+
+    // 後綴：[*+-]\s+\*\* 或 \d+\.\s+\*\* 或 [*+-]\s+\[[ xX]?\]
+    const splitRegex = /(?<=[。！？\.\?!:：]|\*\*)[ \t]+(?=[*+-]\s+\*\*|\d+\.\s+\*\*|[*+-]\s+\[[ xX]?\])/g;
+    if (splitRegex.test(line)) {
+      const parts = line.split(splitRegex);
+      resultLines.push(...parts);
+    } else {
+      resultLines.push(line);
+    }
+  }
+
+  let result = resultLines.join('\n');
+  result = result.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);
+  return result;
+}
+
+/**
+ * 修正因自 LLM（如 Gemini）複製而遺失之巢狀子清單縮排 (Issue #17)。
+ *
+ * 當父清單項目以半形或全形冒號（: 或 ：）結尾，且下方緊接未縮排之清單項目時，
+ * 自動判定為子清單項目並補齊 2 格半形空格縮排（'  '）。
+ * 具備以下防護機制：
+ * 1. 連續子項目群組維護：不因子項目本身以句號（。）結尾而提前中斷群組。
+ * 2. 遇新父項目重置：若當前行亦以冒號結尾（無內文之父項），維持同級第一層，不被誤縮排。
+ * 3. Lazy Continuation 保護：非清單行（包括普通文字延續行、空行、標題）立即退出群組。
+ * 4. 表格與程式碼隔離：遮罩程式碼區塊，遇表格行自動略過。
+ * 5. 嚴格冪等守衛：已有 2 格以上縮排（^\s{2,}）者直接跳過，重複執行保證無多餘縮排。
+ *
+ * @param text 已正規化換行之 Markdown 文字
+ * @returns 包含修正後文字與變更狀態之物件
+ */
+export function fixOrphanedNestedIndentation(text: string): { result: string; changed: boolean } {
+  // 保護多行程式碼區塊，避免修改程式碼中的冒號與縮排
+  const codeBlocks: string[] = [];
+  const textWithoutCode = text.replace(/```[\s\S]*?```/g, (match) => {
+    codeBlocks.push(match);
+    return `\x00CODEBLOCK_${codeBlocks.length - 1}\x00`;
+  });
+
+  const lines = textWithoutCode.split('\n');
+  let changed = false;
+  let inNestedGroup = false;
+
+  for (let i = 1; i < lines.length; i++) {
+    const prev = lines[i - 1];
+    const curr = lines[i];
+
+    // 排除表格行（若目前行包含管線且符合表格特徵，不進行清單縮排推導）
+    if (curr.includes('|') && isPotentialTableRow(curr)) {
+      inNestedGroup = false;
+      continue;
+    }
+
+    // 1. 檢查目前行是否為 Markdown 清單項目（無序或有序）
+    const currListMatch = curr.match(/^(\s*)([*+-]|\d+\.)\s+/);
+    if (!currListMatch) {
+      // 非清單行（包括普通文字、Lazy Continuation 段落行、空行、標題等）立即中斷子清單群組
+      inNestedGroup = false;
+      continue;
+    }
+
+    // 2. 冪等性守衛：若目前行已有 2 格以上縮排，表示已經是子清單，直接跳過並維持群組狀態
+    const existingIndent = currListMatch[1].length;
+    if (existingIndent >= 2) {
+      continue;
+    }
+
+    // 3. 檢查前一行與當前行之冒號結尾特徵
+    // 前一行必須是清單行，且去除尾部空白後以半形冒號 (:) 或全形冒號 (：) 結尾
+    const prevIsListItem = /^(\s*)([*+-]|\d+\.)\s+/.test(prev);
+    const prevEndsWithColon = prevIsListItem && /[:：]\s*$/.test(prev);
+    const currEndsWithColon = /[:：]\s*$/.test(curr);
+
+    // 若當前行本身以冒號結尾（無內文之父項目），代表前一巢狀群組在此結束，當前行作為同級父項不縮排
+    if (currEndsWithColon) {
+      inNestedGroup = false;
+      continue;
+    }
+
+    // 4. 群組觸發判定：前行為冒號父項（開啟新子群組），或目前處於連續子項目群組中
+    if (prevEndsWithColon || inNestedGroup) {
+      lines[i] = '  ' + curr;
+      inNestedGroup = true;
+      changed = true;
+    } else {
+      inNestedGroup = false;
+    }
+  }
+
+  let result = lines.join('\n');
+  // 還原程式碼區塊
+  result = result.replace(/\x00CODEBLOCK_(\d+)\x00/g, (_, idx) => codeBlocks[parseInt(idx, 10)]);
+
+  return { result, changed };
 }
 
 /**

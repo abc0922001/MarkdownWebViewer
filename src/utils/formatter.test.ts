@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { fixMarkdownFormatting, fixMathSymbols, fixBoldFormatting } from './formatter';
+import {
+  fixMarkdownFormatting,
+  fixMathSymbols,
+  fixBoldFormatting,
+  fixGeminiDoubleLinks,
+  fixInlinedLists,
+  fixOrphanedNestedIndentation,
+} from './formatter';
 
 describe('Markdown Formatter 智慧修復引擎', () => {
   describe('fixMathSymbols() — LaTeX 數學與比較符號標準化', () => {
@@ -51,6 +58,102 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       const input = '安排整天待在**海遊館（Kaiyukan）**是極為聰明的決定！海遊館是大阪最頂級的** A+ 級全室內避暑與雨備景點**';
       const output = fixBoldFormatting(input);
       expect(output).toBe('安排整天待在**海遊館（Kaiyukan）** 是極為聰明的決定！海遊館是大阪最頂級的 **A+ 級全室內避暑與雨備景點**');
+    });
+  });
+
+  describe('fixGeminiDoubleLinks() — Gemini 雙重嵌套超連結清洗', () => {
+    it('應將內外完全相同之雙重超連結收斂為單層標準超連結', () => {
+      const input = '參考來源：[[教養專家帥林老師](https://www.cw.com.tw/article/5142757)](https://www.cw.com.tw/article/5142757)指出的生活細節。';
+      const output = fixGeminiDoubleLinks(input);
+      expect(output).toBe('參考來源：[教養專家帥林老師](https://www.cw.com.tw/article/5142757)指出的生活細節。');
+    });
+
+    it('應支援外層為 Google Redirect 跳轉包裝之情境，優先保留內層真實目標網址', () => {
+      const input = '[[外部文件](https://example.com/target)](https://www.google.com/url?q=https://example.com/target)';
+      const output = fixGeminiDoubleLinks(input);
+      expect(output).toBe('[外部文件](https://example.com/target)');
+    });
+
+    it('應保護程式碼區塊不受雙重超連結清洗干擾', () => {
+      const input = '```markdown\n[[保留](https://test.com)](https://test.com)\n```\n行內 `[[保留代碼](url)](url)` 不應被改動。';
+      const output = fixGeminiDoubleLinks(input);
+      expect(output).toBe('```markdown\n[[保留](https://test.com)](https://test.com)\n```\n行內 `[[保留代碼](url)](url)` 不應被改動。');
+    });
+  });
+
+  describe('fixInlinedLists() — 行內黏合清單拆分', () => {
+    it('應正確拆分單行內以句號、粗體或冒號串接之多個清單項目', () => {
+      const input = '* **重點補充 (Key Highlights)**: * **心理安全感指標**：敢於胡鬧。 * **日常微小滿足**：能為下一餐期待。';
+      const output = fixInlinedLists(input);
+      expect(output).toBe('* **重點補充 (Key Highlights)**:\n* **心理安全感指標**：敢於胡鬧。\n* **日常微小滿足**：能為下一餐期待。');
+    });
+
+    it('應保護表格行與標題行不被行內拆分干擾', () => {
+      const input = '| 欄位 1 | * **說明 A** * **說明 B** |';
+      const output = fixInlinedLists(input);
+      expect(output).toBe(input);
+    });
+  });
+
+  describe('fixOrphanedNestedIndentation() — 遺失縮排之巢狀子清單修復 (Issue #17)', () => {
+    it('應正確將父項目冒號下方之未縮排子項目補上 2 格空格縮排', () => {
+      const input = `* **重點補充 (Key Highlights)**:
+* **心理安全感指標**：敢於胡鬧與睡姿放鬆。
+* **日常微小滿足**：能為下一餐期待。`;
+      const { result, changed } = fixOrphanedNestedIndentation(input);
+      expect(changed).toBe(true);
+      expect(result).toBe(`* **重點補充 (Key Highlights)**:
+  * **心理安全感指標**：敢於胡鬧與睡姿放鬆。
+  * **日常微小滿足**：能為下一餐期待。`);
+    });
+
+    it('應維持連續多個子項目群組，不因子項目結尾有句號而提前退出', () => {
+      const input = `* **父清單**:
+* 子項目 1。
+* 子項目 2。
+* 子項目 3。`;
+      const { result } = fixOrphanedNestedIndentation(input);
+      expect(result).toBe(`* **父清單**:
+  * 子項目 1。
+  * 子項目 2。
+  * 子項目 3。`);
+    });
+
+    it('遇到連續新一級父項目（以冒號結尾）應正確劃分群組，不將父項目誤縮排', () => {
+      const input = `* **父項目 1**:
+* **子項目 1-A**：內文 A。
+* **子項目 1-B**：內文 B。
+* **父項目 2**:
+* **子項目 2-A**：內文 2A。
+* **子項目 2-B**：內文 2B。`;
+      const { result } = fixOrphanedNestedIndentation(input);
+      expect(result).toBe(`* **父項目 1**:
+  * **子項目 1-A**：內文 A。
+  * **子項目 1-B**：內文 B。
+* **父項目 2**:
+  * **子項目 2-A**：內文 2A。
+  * **子項目 2-B**：內文 2B。`);
+    });
+
+    it('應保護 Lazy Continuation 延遲接續行，段落行不追加縮排且正確中斷清單群組', () => {
+      const input = `* **核心解答 (Direct Answer)**:
+這是一段接續前項目的說明文字，不帶星號標記。
+* **下一組獨立清單**:
+* 正常子項目`;
+      const { result } = fixOrphanedNestedIndentation(input);
+      expect(result).toBe(`* **核心解答 (Direct Answer)**:
+這是一段接續前項目的說明文字，不帶星號標記。
+* **下一組獨立清單**:
+  * 正常子項目`);
+    });
+
+    it('應具備嚴格冪等性，已縮排之項目直接略過', () => {
+      const input = `* **父項目**:
+  * **已縮排子項目 1**
+  * **已縮排子項目 2**`;
+      const { result, changed } = fixOrphanedNestedIndentation(input);
+      expect(changed).toBe(false);
+      expect(result).toBe(input);
     });
   });
 
@@ -381,6 +484,107 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       const run2 = fixMarkdownFormatting(run1.formatted);
       expect(run2.changed).toBe(false);
       expect(run2.formatted).toBe(run1.formatted);
+    });
+
+    it('應正確修復 Issue #17 之真實逐字稿（雙重超連結清洗與父項冒號後遺失縮排）', () => {
+      const rawIssue17 = `* **核心解答 (Direct Answer)**:
+[[教養專家帥林老師](https://www.cw.com.tw/article/5142757)](https://www.cw.com.tw/article/5142757)指出的 5 個生活細節為：**期待下一餐吃什麼**、**主動跟父母開玩笑／耍寶**、**不自覺地隨口哼歌**、**獨處做事時突然傻笑**，以及**睡姿毫無防備地亂七八糟**。
+* **重點補充 (Key Highlights)**:
+* **心理安全感指標**：敢於胡鬧與睡姿放鬆，象徵孩子在家庭環境中處於完全卸下防備的信任狀態。
+* **日常微小滿足**：能為下一餐期待、沉浸於自我小天地（哼歌與傻笑），代表心理滿足且具備自我調節快樂的能力，無需依賴昂貴行程或刻意安排。`;
+
+      const { formatted, changed, fixesSummary } = fixMarkdownFormatting(rawIssue17);
+      expect(changed).toBe(true);
+      expect(fixesSummary).toContain('修復雙重嵌套超連結');
+      expect(fixesSummary).toContain('修復遺失縮排之巢狀子清單');
+
+      // 驗證雙重超連結收斂為單層標準超連結
+      expect(formatted).toContain('[教養專家帥林老師](https://www.cw.com.tw/article/5142757)');
+      expect(formatted).not.toContain('[[教養專家');
+
+      // 驗證 Lazy Continuation 內文保持原樣
+      expect(formatted).toContain(
+        '* **核心解答 (Direct Answer)**:\n[教養專家帥林老師](https://www.cw.com.tw/article/5142757)指出的 5 個生活細節為：'
+      );
+
+      // 驗證父項目結尾冒號後，兩個子項目成功縮排 2 格
+      expect(formatted).toContain(
+        '* **重點補充 (Key Highlights)**:\n  * **心理安全感指標**：敢於胡鬧與睡姿放鬆，象徵孩子在家庭環境中處於完全卸下防備的信任狀態。\n  * **日常微小滿足**：能為下一餐期待、沉浸於自我小天地（哼歌與傻笑），代表心理滿足且具備自我調節快樂的能力，無需依賴昂貴行程或刻意安排。'
+      );
+
+      // 連續 5 次修復驗證嚴格冪等性
+      let current = formatted;
+      for (let i = 0; i < 5; i++) {
+        const next = fixMarkdownFormatting(current);
+        expect(next.changed).toBe(false);
+        expect(next.formatted).toBe(formatted);
+        current = next.formatted;
+      }
+    });
+
+    it('應正確處理 Windows CRLF (\\r\\n) 換行之清單與雙重超連結', () => {
+      const crlfInput = '* **項目 (Item)**:\r\n* **子項目**：說明。\r\n[[連結](https://test.com)](https://test.com)';
+      const { formatted, changed } = fixMarkdownFormatting(crlfInput);
+      expect(changed).toBe(true);
+      expect(formatted).toBe('* **項目 (Item)**:\n  * **子項目**：說明。\n[連結](https://test.com)');
+    });
+
+    it('應在長篇混合文檔（標題、表格、程式碼、斜體、乘號、既有清單）中精準修復 Issue #17 且其餘元素零副作用', () => {
+      const complexDocument = `# 系統架構檢討報告
+
+這是一段前言說明，內含乘法運算 3 * 5 = 15 與強調之 *斜體文字*。
+
+| 評估模組 | 運算式 | 說明 |
+| --- | --- | --- |
+| 模組 A | x * y | 包含 * 星號的表格內容 |
+| 模組 B | a * b | 另一個表格欄位 |
+
+\`\`\`python
+def calculate(a, b):
+    # 程式碼中的星號與縮排絕不被破壞
+    *rest, last = [1, 2, 3]
+    return a * b
+\`\`\`
+
+## 既有正常排版的清單
+- 正常項目 1
+  - 正常子項目 1-1
+- 正常項目 2
+
+## Gemini 複製出來的區塊 (Issue #17)
+* **核心解答 (Direct Answer)**:
+[[教養專家帥林老師](https://www.cw.com.tw/article/5142757)](https://www.cw.com.tw/article/5142757)指出的 5 個生活細節為：**期待下一餐吃什麼**。
+* **重點補充 (Key Highlights)**:
+* **心理安全感指標**：敢於胡鬧與睡姿放鬆。
+* **日常微小滿足**：能為下一餐期待。`;
+
+      const { formatted, changed } = fixMarkdownFormatting(complexDocument);
+      expect(changed).toBe(true);
+
+      // 驗證標題原樣保留
+      expect(formatted).toContain('# 系統架構檢討報告');
+      expect(formatted).toContain('## 既有正常排版的清單');
+      expect(formatted).toContain('## Gemini 複製出來的區塊 (Issue #17)');
+
+      // 驗證乘號與斜體原樣保留
+      expect(formatted).toContain('3 * 5 = 15');
+      expect(formatted).toContain('*斜體文字*');
+
+      // 驗證表格完整保留
+      expect(formatted).toContain('| 模組 A | x * y | 包含 * 星號的表格內容 |');
+      expect(formatted).toContain('| 模組 B | a * b | 另一個表格欄位 |');
+
+      // 驗證程式碼區塊完整保留
+      expect(formatted).toContain('    *rest, last = [1, 2, 3]\n    return a * b');
+
+      // 驗證既有縮排清單完整保留且未被重複縮排
+      expect(formatted).toContain('- 正常項目 1\n  - 正常子項目 1-1\n- 正常項目 2');
+
+      // 驗證 Issue #17 區塊被精準修復
+      expect(formatted).toContain('[教養專家帥林老師](https://www.cw.com.tw/article/5142757)');
+      expect(formatted).toContain(
+        '* **重點補充 (Key Highlights)**:\n  * **心理安全感指標**：敢於胡鬧與睡姿放鬆。\n  * **日常微小滿足**：能為下一餐期待。'
+      );
     });
   });
 });
