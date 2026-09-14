@@ -155,6 +155,33 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       expect(changed).toBe(false);
       expect(result).toBe(input);
     });
+
+    it('應正確將整行純粗體之標題清單項目（無行尾冒號）下方之內容項目補上 2 格縮排 (Issue #17 comment)', () => {
+      const input = `* **F.Bautista：控球拉上 160 產生立竿見影的「排毒效應」**
+* **100% 邊際守成**：在洗點前的 16 場比賽中，他狂吞 4 次 BS。
+* **OAVG 降至 .213 的物理真相**：控球升級至 160 後表現極佳。
+
+* **K.Jansen：第 7 局停損機制全面復甦**
+* 在新增的高達 27 場密集出賽中表現優秀。`;
+
+      const { result, changed } = fixOrphanedNestedIndentation(input);
+      expect(changed).toBe(true);
+      expect(result).toBe(`* **F.Bautista：控球拉上 160 產生立竿見影的「排毒效應」**
+  * **100% 邊際守成**：在洗點前的 16 場比賽中，他狂吞 4 次 BS。
+  * **OAVG 降至 .213 的物理真相**：控球升級至 160 後表現極佳。
+
+* **K.Jansen：第 7 局停損機制全面復甦**
+  * 在新增的高達 27 場密集出賽中表現優秀。`);
+    });
+
+    it('連續出現純粗體清單項時應視為平行同級項目，不誤加縮排（如購物清單防護）', () => {
+      const input = `* **蘋果**
+* **香蕉**
+* **橘子**`;
+      const { result, changed } = fixOrphanedNestedIndentation(input);
+      expect(changed).toBe(false);
+      expect(result).toBe(input);
+    });
   });
 
   describe('fixMarkdownFormatting() — 全流程 9 大修復管線', () => {
@@ -585,6 +612,46 @@ def calculate(a, b):
       expect(formatted).toContain(
         '* **重點補充 (Key Highlights)**:\n  * **心理安全感指標**：敢於胡鬧與睡姿放鬆。\n  * **日常微小滿足**：能為下一餐期待。'
       );
+    });
+
+    it('應正確修復 Issue #17 留言實例（三大關鍵戰況深度調查剖析之純粗體父項清單）', () => {
+      const input = `### 三大關鍵戰況深度調查剖析
+
+* **F.Bautista：控球拉上 160 產生立竿見影的「排毒效應」**
+* **100% 邊際守成**：在洗點前的 16 場比賽中，他狂吞 4 次 BS (自爆率高達 31.25%)；**洗點後的 8 場出賽，他以 100% 守成率連拿 8 次救援成功（累計達 20 SV），未曾失手任何一場**，邊際自爆率直接歸零。
+* **OAVG 降至 .213 的物理真相**：控球升級至 160 後，邊角速球與指叉球的進壘精確度大幅提升。打者無法再輕易猜中紅中失投球，強勁擊球率驟降，將 OAVG 一路打壓至極其優異的 **.213**。
+* **BB/9 自 9.82 降至 8.18 的數學解讀**：累計數據具有歷史重量，但在新增的 8 局投球中，這項指標能直接被拉低 1.64 個單位，意味著他**近期的邊際 BB/9 已經大幅腰斬至 5.0 左右**。隨著出賽局數持續擴大，前期的極端保送帳目將被快速稀釋，預計季末將自然回落至 3.5 以下正常區間。
+
+* **K.Jansen：第 7 局停損機制全面復甦**
+* 在新增的高達 27 場密集出賽中，Jansen 狂攬 **3 勝 0 敗、7 次中繼點**，僅出現 1 次 BS。
+* 累計 WHIP 從 1.779 **大幅修正至 1.653**，破壞代價暴露率（CF%）自 13.56% 壓低至 **10.47%**。這證明只要給予「調度偏積極（刻度 4）」保護，他就能在第 7 局築起可靠的攔截網，前期累積的 6 敗純屬開季隨機震盪。
+
+* **E.Gagne：跨越 65 場出賽的「絕對零度」**
+* 累計出賽達到 65 場，**BS 數依然維持無懈可擊的「0」**，WHIP 紋絲不動鎖定在 **1.382**。
+* 雖然在落後與延長賽苦戰中承擔了 3 敗，但他但在追擊組凍結比分的效能依然是全隊之冠，這套「控球 160 + 偏正面迎擊」的配置已證明是遊戲機制下的終端解。`;
+
+      const { formatted, changed, fixesSummary } = fixMarkdownFormatting(input);
+      expect(changed).toBe(true);
+      expect(fixesSummary).toContain('修復遺失縮排之巢狀子清單');
+
+      // 驗證三個父項目維持第 1 層（不被縮排）
+      expect(formatted).toContain('\n* **F.Bautista：控球拉上 160 產生立竿見影的「排毒效應」**\n');
+      expect(formatted).toContain('\n* **K.Jansen：第 7 局停損機制全面復甦**\n');
+      expect(formatted).toContain('\n* **E.Gagne：跨越 65 場出賽的「絕對零度」**\n');
+
+      // 驗證子項目成功縮排 2 格
+      expect(formatted).toContain('  * **100% 邊際守成**：在洗點前的 16 場比賽中');
+      expect(formatted).toContain('  * **OAVG 降至 .213 的物理真相**：控球升級至 160 後');
+      expect(formatted).toContain('  * **BB/9 自 9.82 降至 8.18 的數學解讀**：累計數據具有歷史重量');
+      expect(formatted).toContain('  * 在新增的高達 27 場密集出賽中，Jansen 狂攬');
+      expect(formatted).toContain('  * 累計 WHIP 從 1.779 **大幅修正至 1.653**');
+      expect(formatted).toContain('  * 累計出賽達到 65 場，**BS 數依然維持無懈可擊的「0」**');
+      expect(formatted).toContain('  * 雖然在落後與延長賽苦戰中承擔了 3 敗');
+
+      // 驗證連續修復之嚴格冪等性
+      const run2 = fixMarkdownFormatting(formatted);
+      expect(run2.changed).toBe(false);
+      expect(run2.formatted).toBe(formatted);
     });
   });
 });

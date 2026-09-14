@@ -227,14 +227,17 @@ export function fixInlinedLists(text: string): string {
 /**
  * 修正因自 LLM（如 Gemini）複製而遺失之巢狀子清單縮排 (Issue #17)。
  *
- * 當父清單項目以半形或全形冒號（: 或 ：）結尾，且下方緊接未縮排之清單項目時，
- * 自動判定為子清單項目並補齊 2 格半形空格縮排（'  '）。
+ * 支援以下兩種常見之父清單項目特徵推導，自動為下方未縮排之子項目補齊 2 格半形空格縮排（'  '）：
+ * 1. 冒號結尾父項：清單項以半形或全形冒號（: 或 ：）結尾且外側無後續內文。
+ * 2. 純粗體標題父項：清單項除標記外整行皆為純粗體（`* **標題**`），且下方緊鄰非純粗體之詳細內容項目。
+ *
  * 具備以下防護機制：
  * 1. 連續子項目群組維護：不因子項目本身以句號（。）結尾而提前中斷群組。
- * 2. 遇新父項目重置：若當前行亦以冒號結尾（無內文之父項），維持同級第一層，不被誤縮排。
- * 3. Lazy Continuation 保護：非清單行（包括普通文字延續行、空行、標題）立即退出群組。
- * 4. 表格與程式碼隔離：遮罩程式碼區塊，遇表格行自動略過。
- * 5. 嚴格冪等守衛：已有 2 格以上縮排（^\s{2,}）者直接跳過，重複執行保證無多餘縮排。
+ * 2. 遇新父項目重置：若當前行亦為父項目（冒號結尾或整行純粗體），維持同級第一層，不被誤縮排。
+ * 3. 平行純粗體清單防護：連續出現之純粗體清單項（如 `* **蘋果**\n* **香蕉**`）視為平行同級項目，不觸發縮排。
+ * 4. Lazy Continuation 保護：非清單行（包括普通文字延續行、空行、標題）立即退出群組。
+ * 5. 表格與程式碼隔離：遮罩程式碼區塊，遇表格行自動略過。
+ * 6. 嚴格冪等守衛：已有 2 格以上縮排（^\s{2,}）者直接跳過，重複執行保證無多餘縮排。
  *
  * @param text 已正規化換行之 Markdown 文字
  * @returns 包含修正後文字與變更狀態之物件
@@ -275,20 +278,36 @@ export function fixOrphanedNestedIndentation(text: string): { result: string; ch
       continue;
     }
 
-    // 3. 檢查前一行與當前行之冒號結尾特徵
-    // 前一行必須是清單行，且去除尾部空白後以半形冒號 (:) 或全形冒號 (：) 結尾
+    // 3. 檢查前一行與當前行之父項目特徵：
+    // (a) 特徵 1：以半形冒號 (:) 或全形冒號 (：) 結尾之清單行
+    // (b) 特徵 2：整行純粗體之標題清單項目（如 `* **F.Bautista：控球拉上 160 產生立竿見影的「排毒效應」**`，外側無其他內文）
+    const isPureBoldListItem = (line: string): boolean => {
+      const match = line.match(/^\s*([*+-]|\d+\.)\s+(.+)$/);
+      if (!match) return false;
+      const content = match[2].trim();
+      return (
+        content.startsWith('**') &&
+        content.endsWith('**') &&
+        content.length > 4 &&
+        content.slice(2, -2).indexOf('**') === -1
+      );
+    };
+
     const prevIsListItem = /^(\s*)([*+-]|\d+\.)\s+/.test(prev);
     const prevEndsWithColon = prevIsListItem && /[:：]\s*$/.test(prev);
-    const currEndsWithColon = /[:：]\s*$/.test(curr);
+    const prevIsPureBoldTitle = prevIsListItem && isPureBoldListItem(prev);
 
-    // 若當前行本身以冒號結尾（無內文之父項目），代表前一巢狀群組在此結束，當前行作為同級父項不縮排
-    if (currEndsWithColon) {
+    const currEndsWithColon = /[:：]\s*$/.test(curr);
+    const currIsPureBoldTitle = isPureBoldListItem(curr);
+
+    // 若當前行本身為父項目（以冒號結尾或整行純粗體標題），代表前一巢狀群組在此結束，當前行作為同級父項不縮排
+    if (currEndsWithColon || currIsPureBoldTitle) {
       inNestedGroup = false;
       continue;
     }
 
-    // 4. 群組觸發判定：前行為冒號父項（開啟新子群組），或目前處於連續子項目群組中
-    if (prevEndsWithColon || inNestedGroup) {
+    // 4. 群組觸發判定：前行為父項目（冒號結尾或純粗體標題），或目前處於連續子項目群組中
+    if (prevEndsWithColon || prevIsPureBoldTitle || inNestedGroup) {
       lines[i] = '  ' + curr;
       inNestedGroup = true;
       changed = true;
