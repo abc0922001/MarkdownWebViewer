@@ -36,13 +36,13 @@
 | 領域 / 模組 | 選用技術 | 版本 | 職責與選型理由 |
 | :--- | :--- | :--- | :--- |
 | **建置工具 / 語言** | Vite + TypeScript | Vite 8 / TS 7 | 極速 HMR、原生 ES 模組、靜態型別安全 |
-| **PWA / Service Worker** | vite-plugin-pwa | 1.x | 基於 Workbox 自動精準處理產物雜湊快取清單、Google Fonts 執行期快取與無感自動更新 |
+| **PWA / Service Worker** | vite-plugin-pwa | 2.x | 基於 Workbox 自動精準處理產物雜湊快取清單、Google Fonts 執行期快取與無感自動更新 |
 | **編輯器核心** | CodeMirror 6 | 6.x | 模組化設計、輕量、透過 Compartment 支援無重建模組主題、語法著色與自動換行動態重配 |
 | **Markdown 解析** | markdown-it | 15.x | 高效符合 CommonMark/GFM 規範，擴充彈性高，內建 TypeScript 型別支援，支援 typographer 與 breaks |
-| **數學公式引擎** | KaTeX | 0.16.x | **動態延遲非同步載入（Dynamic Import）**，出版級 LaTeX 數學排版，零初次載入負擔 |
+| **數學公式引擎** | KaTeX | 0.19.x | **動態延遲非同步載入（Dynamic Import）**，出版級 LaTeX 數學排版，零初次載入負擔 |
 | **程式碼語法高亮** | highlight.js | 11.x | 採用 common 語言子集打包以最小化體積，支援深/淺雙主題色彩 |
 | **安全消毒過濾** | DOMPurify | 3.x | 嚴格防禦 XSS 攻擊，設定 SVG 與向量繪圖屬性白名單保留圖表 |
-| **向量圖表引擎** | mermaid.js | 11.x | **動態延遲非同步載入（Dynamic Import）**，未出現圖表時初次載入零體積負擔 |
+| **向量圖表引擎** | mermaid.js | 12.x | **動態延遲非同步載入（Dynamic Import）**，未出現圖表時初次載入零體積負擔 |
 | **圖片渲染引擎** | html-to-image | 1.x | **動態延遲非同步載入**，無損繪製包含 SVG 圖表與排版之 3x 超高清 PNG 長圖 |
 | **圖示庫** | lucide | 1.x | 精緻簡約之 SVG 圖示，用於 GitHub Alerts 與工具列控制 |
 | **程式碼壓縮** | terser | 5.x | 生產環境 Minification，清除除錯符號以縮減檔案體積 |
