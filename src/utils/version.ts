@@ -12,7 +12,7 @@ declare const __COMMIT_HASH__: string;
 declare const __BUILD_TIME__: string;
 
 /** 目前應用程式語意化版本號（預設相依於 package.json） */
-export const APP_VERSION: string = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.1';
+export const APP_VERSION: string = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.2';
 
 /** 建置時當前 Git Commit 簡短雜湊值（若本機無 Git 則為空字串） */
 export const COMMIT_HASH: string = typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : '';

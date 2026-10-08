@@ -27,7 +27,7 @@
 9. **嚴格無痕暫態生命週期 (Zero-Persistence)**：全流程純記憶體操作，嚴禁使用 `localStorage` / `sessionStorage` / `Cookie`，內建離開防誤觸保護。
 10. **GitHub Pages 一鍵自動化部署**：基於 Vite 相對路徑（`base: './'`）建置與 GitHub Actions 自動化 CI/CD。
 11. **PWA 漸進式網頁應用與離線 App Shell**：支援安裝為桌面與行動裝置獨立視窗應用，Workbox 預快取包含 Mermaid 向量引擎與 KaTeX 數學引擎在內之完整 App Shell，支援斷網離線繪圖與 Google Fonts 執行期快取，並維持無痕暫態（Zero-Persistence）。
-12. **即時版本指示器與 Service Worker 快取狀態檢查**：頂部品牌標題旁與底部狀態列皆提供語意化版本徽章（如 `v1.1.1`），建置期由 Vite 自動注入版本號、Git Commit 雜湊與打包時間戳記；支援懸浮提示完整資訊與點選觸發 Service Worker 快取更新差異檢查，徹底解決使用者因 PWA 快取難以辨識當前版本之痛點。
+12. **即時版本指示器與 Service Worker 快取狀態檢查**：頂部品牌標題旁與底部狀態列皆提供語意化版本徽章（如 `v1.1.2`），建置期由 Vite 自動注入版本號、Git Commit 雜湊與打包時間戳記；支援懸浮提示完整資訊與點選觸發 Service Worker 快取更新差異檢查，徹底解決使用者因 PWA 快取難以辨識當前版本之痛點。
 
 ---
 
