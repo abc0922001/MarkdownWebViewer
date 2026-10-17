@@ -63,6 +63,13 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     fixes.push('拆分行內黏合之清單項目');
   }
 
+  // 2.35 修正自 Gemini 等複製含有超連結之粗體字時，粗體閉合標記錯置於連結方括號內的問題 (Issue #18)
+  const beforeBoldLinks = text;
+  text = fixMisplacedBoldLinks(text);
+  if (text !== beforeBoldLinks) {
+    fixes.push('修正含有超連結之粗體標記錯位');
+  }
+
   // 2.4 修正父清單冒號後遺失之巢狀子清單縮排 (Issue #17)
   const { result: nestedFixedText, changed: nestedChanged } = fixOrphanedNestedIndentation(text);
   if (nestedChanged) {
@@ -167,6 +174,99 @@ export function fixGeminiDoubleLinks(text: string): string {
   // 2. 相容處理外層為 Google Redirect 包裝或相異之雙重超連結：[[文字](URL1)](URL2) ➔ 優先保留內層真實 URL1
   result = result.replace(/\[\[([^\]\r\n]+)\]\((https?:\/\/[^\s\)\r\n]+)\)\]\((?:https?:\/\/[^\s\)\r\n]+)\)/g, '[$1]($2)');
 
+  // 還原程式碼區塊
+  result = result.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);
+  return result;
+}
+
+/**
+ * 修正自 Gemini 等 LLM 複製含有超連結之粗體字時，粗體標記 `**` 錯置於超連結方括號內部導致語法破損的問題 (Issue #18)。
+ *
+ * 常見錯誤樣態：
+ * 1. 外層粗體包裹整段文字，結尾粗體 `**` 卻落入最後一個超連結文字末尾：
+ *    `**替代 [Google Keep](URL1)：[Notesnook**](URL2)` ➔ `**替代 [Google Keep](URL1)：[Notesnook](URL2)**`
+ * 2. 外層粗體包裹整段文字，開頭粗體 `**` 卻落入第一個超連結文字開頭：
+ *    `[**Google Keep](URL1) 替代方案**` ➔ `**[Google Keep](URL1) 替代方案**`
+ * 3. 單一超連結本身的粗體標記一內一外錯位：
+ *    `[**Notesnook](URL)**` 或 `**[Notesnook**](URL)` ➔ `**[Notesnook](URL)**`
+ *
+ * 演算法說明：
+ * - 保護多行程式碼區塊（```...```）與行內反引號程式碼（`...`）。
+ * - 逐行掃描超連結結構 `[linkText](url)`：
+ *   - 若 `linkText` 以 `**` 結尾（且內部無成對之開啟 `**`）且 `](url)` 後方並未緊接 `**`，
+ *     代表該 `**` 為前方外層開啟之粗體閉合標記錯置於 `]` 內側，自動將其移至 `(url)` 外側：`[linkText](url)**`。
+ *   - 若 `linkText` 以 `**` 開頭（且內部無成對之閉合 `**`）且 `[` 前方並未緊接 `**`，
+ *     代表該 `**` 為後方外層閉合之粗體開啟標記錯置於 `[` 內側，自動將其移至 `[` 外側：` **[linkText](url)`。
+ *
+ * @param text 待處理的文字內容
+ * @returns 修正粗體超連結邊界後的文字內容
+ */
+export function fixMisplacedBoldLinks(text: string): string {
+  // 保護多行程式碼區塊與行內程式碼，避免取代程式碼內容
+  const codeSpans: string[] = [];
+  const textWithoutCode = text.replace(/(```[\s\S]*?```|`[^`\r\n]+`)/g, (match) => {
+    codeSpans.push(match);
+    return `\x00CODE_${codeSpans.length - 1}\x00`;
+  });
+
+  // 輔助函式：計算有效粗體星號序列（長度為 2 或 3；長度 >= 4 為空粗體 **** 不參與配對）
+  const countValidBoldRuns = (str: string): number =>
+    findAsteriskRuns(str).filter((r) => r.length === 2 || r.length === 3).length;
+
+  const lines = textWithoutCode.split('\n');
+  const fixedLines = lines.map((line) => {
+    let currentLine = line;
+
+    // 使用迴圈處理同一行內可能存在多個錯位粗體超連結之情境（每次狀態更新後重新計算前後星號配對數）
+    let changedInPass = true;
+    let safetyCounter = 0;
+    while (changedInPass && safetyCounter < 10) {
+      changedInPass = false;
+      safetyCounter++;
+
+      // 情況 1：超連結文字末尾帶有未配對的 `**` 或 `***`，例如 `[Notesnook**](https://affine.pro/)` 或 `[App [v2]**](url)`
+      const afterCase1 = currentLine.replace(
+        /\[((?:[^\[\]\r\n]|\[[^\[\]\r\n]*\])*?)(\*{2,3})([ \t]*)\]\(((?:[^()\s\r\n]+|\([^()\s\r\n]*\))+(?:\s+"[^"\r\n]*")?)\)/g,
+        (fullMatch, innerText: string, stars: string, trailingSpace: string, urlPart: string, offset: number, wholeLine: string) => {
+          // 檢查 innerText 內部已有的有效粗體星號數量：若為奇數個，代表末尾的星號是為了閉合 innerText 內部的粗體（如 `[**完整粗體**](url)`），屬於合法內部粗體，不搬移
+          if (countValidBoldRuns(innerText) % 2 === 1) {
+            return fullMatch;
+          }
+          // 檢查該超連結之前的文字是否含有奇數個有效粗體星號（即存在等待閉合的外層開啟粗體）
+          const beforeLink = wholeLine.slice(0, offset);
+          if (countValidBoldRuns(beforeLink) % 2 === 1) {
+            changedInPass = true;
+            return `[${innerText}${trailingSpace}](${urlPart})${stars}`;
+          }
+          return fullMatch;
+        }
+      );
+      currentLine = afterCase1;
+
+      // 情況 2：超連結文字開頭帶有未配對的 `**` 或 `***`，例如 `[**Google Keep](url) 替代方案**` 或 `[**App [v2]](url) 替代方案**`
+      const afterCase2 = currentLine.replace(
+        /\[([ \t]*)(\*{2,3})((?:[^\[\]\r\n]|\[[^\[\]\r\n]*\])*?)\]\(((?:[^()\s\r\n]+|\([^()\s\r\n]*\))+(?:\s+"[^"\r\n]*")?)\)/g,
+        (fullMatch, leadingSpace: string, stars: string, innerText: string, urlPart: string, offset: number, wholeLine: string) => {
+          // 檢查 innerText 內部已有的有效粗體星號數量：若為奇數個，代表開頭的星號在 innerText 內部已有配對閉合（如 `[**局部粗體** 文字](url)`），不搬移
+          if (countValidBoldRuns(innerText) % 2 === 1) {
+            return fullMatch;
+          }
+          // 檢查該超連結之後的文字是否含有奇數個有效粗體星號（即存在等待配對的外層閉合粗體）
+          const afterLink = wholeLine.slice(offset + fullMatch.length);
+          if (countValidBoldRuns(afterLink) % 2 === 1) {
+            changedInPass = true;
+            return `${stars}[${leadingSpace}${innerText}](${urlPart})`;
+          }
+          return fullMatch;
+        }
+      );
+      currentLine = afterCase2;
+    }
+
+    return currentLine;
+  });
+
+  let result = fixedLines.join('\n');
   // 還原程式碼區塊
   result = result.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);
   return result;

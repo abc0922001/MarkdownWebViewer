@@ -4,6 +4,7 @@ import {
   fixMathSymbols,
   fixBoldFormatting,
   fixGeminiDoubleLinks,
+  fixMisplacedBoldLinks,
   fixInlinedLists,
   fixOrphanedNestedIndentation,
 } from './formatter';
@@ -652,6 +653,97 @@ def calculate(a, b):
       const run2 = fixMarkdownFormatting(formatted);
       expect(run2.changed).toBe(false);
       expect(run2.formatted).toBe(formatted);
+    });
+
+    it('應正確修復 Issue #18 之真實逐字稿（含有超連結之粗體標記錯位與巢狀清單縮排連動）', () => {
+      const rawIssue18 = `* **替代 [Google Keep](https://www.xda-developers.com/tag/google-keep/)：[Notesnook**](https://affine.pro/)
+* **預設端到端加密**：免費版即支援端到端加密與單則筆記鎖定，適合存放敏感資訊。
+* **更強大的編輯器**：支援 LaTeX 數學式、程式碼區塊、表格、Markdown 語法及筆記本/標籤多層分類，解決 Keep 筆記變長後的結構痛點。
+* **唯一代價**：失去 Keep 隨手彩色便條紙的直覺視覺排列。
+
+
+* **替代 [Obsidian](https://www.xda-developers.com/i-tried-dozens-of-personal-knowledge-management-apps-and-i-keep-coming-back-to-this-tool/)：[AFFiNE**](https://affine.pro/)
+* **開箱即用完整度高**：內建資料庫（表格、日曆、看板視圖切換）與白板（Edgeless / 心智圖模式），無須像 Obsidian 依賴容易缺乏維護的第三方外掛。
+* **自主託管支援**：支援 Docker 自架私有伺服器，但筆記儲存偏向資料庫結構，較不易直接被外部工具讀取純 Markdown。`;
+
+      const { formatted, changed, fixesSummary } = fixMarkdownFormatting(rawIssue18);
+      expect(changed).toBe(true);
+      expect(fixesSummary).toContain('修正含有超連結之粗體標記錯位');
+      expect(fixesSummary).toContain('修復遺失縮排之巢狀子清單');
+
+      // 驗證粗體標記移出超連結外，恢復正常粗體與連結語法
+      expect(formatted).toContain(
+        '* **替代 [Google Keep](https://www.xda-developers.com/tag/google-keep/)：[Notesnook](https://affine.pro/)**\n'
+      );
+      expect(formatted).toContain(
+        '* **替代 [Obsidian](https://www.xda-developers.com/i-tried-dozens-of-personal-knowledge-management-apps-and-i-keep-coming-back-to-this-tool/)：[AFFiNE](https://affine.pro/)**\n'
+      );
+
+      // 驗證修復粗體後，該行被識別為純粗體父清單，下方子項目自動縮排 2 格
+      expect(formatted).toContain('  * **預設端到端加密**：免費版即支援端到端加密與單則筆記鎖定，適合存放敏感資訊。');
+      expect(formatted).toContain('  * **更強大的編輯器**：支援 LaTeX 數學式');
+      expect(formatted).toContain('  * **唯一代價**：失去 Keep 隨手彩色便條紙的直覺視覺排列。');
+      expect(formatted).toContain('  * **開箱即用完整度高**：內建資料庫');
+      expect(formatted).toContain('  * **自主託管支援**：支援 Docker 自架私有伺服器');
+
+      // 驗證連續修復之嚴格冪等性
+      const run2 = fixMarkdownFormatting(formatted);
+      expect(run2.changed).toBe(false);
+      expect(run2.formatted).toBe(formatted);
+    });
+  });
+
+  describe('fixMisplacedBoldLinks() — Gemini 含有超連結之粗體標記錯位修復 (Issue #18)', () => {
+    it('應將超連結文字末尾未配對的 ** 移至超連結右括號外側', () => {
+      const input = '* **替代 [Google Keep](https://www.xda-developers.com/tag/google-keep/)：[Notesnook**](https://affine.pro/)';
+      const output = fixMisplacedBoldLinks(input);
+      expect(output).toBe(
+        '* **替代 [Google Keep](https://www.xda-developers.com/tag/google-keep/)：[Notesnook](https://affine.pro/)**'
+      );
+    });
+
+    it('應將超連結文字開頭未配對的 ** 移至超連結左方括號外側', () => {
+      const input = '* [**Google Keep](https://www.xda-developers.com/tag/google-keep/) 替代方案**';
+      const output = fixMisplacedBoldLinks(input);
+      expect(output).toBe('* **[Google Keep](https://www.xda-developers.com/tag/google-keep/) 替代方案**');
+    });
+
+    it('不應動到超連結內部本來就成對閉合的粗體（如 [**完整粗體**](url) 或 [文字 **局部粗體**](url)）', () => {
+      const input = '請參考 [**官方文件**](https://example.com) 與 [前往 **下載頁面**](https://example.com/dl)。';
+      const output = fixMisplacedBoldLinks(input);
+      expect(output).toBe(input);
+    });
+
+    it('當外層已有未閉合 ** 且超連結內部同時有成對粗體與末尾錯位 ** 時，仍應正確修復', () => {
+      const input = '**前導文字 [**內部粗體** 與尾端**](https://example.com)';
+      const output = fixMisplacedBoldLinks(input);
+      expect(output).toBe('**前導文字 [**內部粗體** 與尾端](https://example.com)**');
+    });
+
+    it('應保護程式碼區塊與行內程式碼中的錯位語法不被修改', () => {
+      const input = '```markdown\n* **替代：[Notesnook**](https://affine.pro/)\n```\n行內 `**替代：[Notesnook**](url)` 不應被改動。';
+      const output = fixMisplacedBoldLinks(input);
+      expect(output).toBe(input);
+    });
+
+    it('應支援網址本身含有括號（如 Wikipedia 連結）以及同行多組錯位粗體超連結之修復', () => {
+      const input = '1. **工具 A：[Link1**](https://en.wikipedia.org/wiki/Markdown_(syntax)) 與 **工具 B：[Link2**](https://example.com)';
+      const output = fixMisplacedBoldLinks(input);
+      expect(output).toBe(
+        '1. **工具 A：[Link1](https://en.wikipedia.org/wiki/Markdown_(syntax))** 與 **工具 B：[Link2](https://example.com)**'
+      );
+    });
+
+    it('應支援超連結文字內部含有單層方括號（如 [Notesnook [v2]**](url)）之錯位粗體修復', () => {
+      const input = '* **替代方案：[Notesnook [v2]**](https://affine.pro/) 與 [**App [Beta]](https://example.com) 說明**';
+      const output = fixMisplacedBoldLinks(input);
+      expect(output).toBe('* **替代方案：[Notesnook [v2]](https://affine.pro/)** 與 **[App [Beta]](https://example.com) 說明**');
+    });
+
+    it('應支援三星號粗斜體（***）錯置於超連結邊界之修復與空粗體（****）干擾排除', () => {
+      const input = '**** **替代：[Notesnook**](https://affine.pro/) 以及 ***強調：[AFFiNE***](https://affine.pro/)';
+      const output = fixMisplacedBoldLinks(input);
+      expect(output).toBe('**** **替代：[Notesnook](https://affine.pro/)** 以及 ***強調：[AFFiNE](https://affine.pro/)***');
     });
   });
 });
