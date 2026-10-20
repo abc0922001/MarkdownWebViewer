@@ -108,8 +108,13 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
   // 5. 校正無序/有序清單與任務核取方塊排版（補齊空格與標準化方括號狀態）
   const beforeList = processedNoCode;
   processedNoCode = processedNoCode
-    // 修正 "-項目" 轉為 "- 項目"
-    .replace(/^(\s*[-*+])([^\s\-*+\d])/gm, '$1 $2')
+    // 修正 "-項目" 轉為 "- 項目"（若為 "*" 開頭，需排除 "*斜體*" 語法避免誤拆，參見 Issue #19）
+    .replace(/^(\s*([-*+]))([^\s\-*+\d].*)$/gm, (fullMatch, prefix: string, marker: string, rest: string) => {
+      if (marker === '*' && isStartsWithItalicAsterisk(fullMatch)) {
+        return fullMatch;
+      }
+      return `${prefix} ${rest}`;
+    })
     // 修正 "1.項目" 轉為 "1. 項目"
     .replace(/^(\s*\d+\.)([^\s\d])/gm, '$1 $2')
     // 修正任務核取方塊排版（如 "-[]", "-[x]", "- [ ]", "- [x]" 等，補齊空格並標準化方括號狀態，確保冪等性）
@@ -515,6 +520,36 @@ function findAsteriskRuns(text: string): { index: number; length: number }[] {
     }
   }
   return runs;
+}
+
+/**
+ * 判斷以單一星號 `*` 開頭之文字行是否為 Markdown 斜體語法（如 `*斜體*：`），而非漏掉空格的無序清單（如 `*項目`）。
+ *
+ * 依據 CommonMark 強調語法規範 (Issue #19)：
+ * - 先遮罩行內反引號程式碼（`...`），防止程式碼內部的星號干擾配對。
+ * - 掃描行內所有未逸出的星號序列（Asterisk Runs）：
+ *   若首個星號序列長度為 1，且後續存在第一個奇數長度（1 或 3）之星號序列，
+ *   同時該閉合星號序列左側緊鄰非空白字元（具備 Right-Flanking 閉合特性），則判定為合法斜體開頭。
+ *
+ * @param line 待檢查之單行文字
+ * @returns 若行首星號屬於成對斜體語法則回傳 true，否則回傳 false
+ */
+function isStartsWithItalicAsterisk(line: string): boolean {
+  const withoutInlineCode = line.replace(/(`+)([\s\S]*?)\1/g, (m) => 'a'.repeat(m.length));
+  const runs = findAsteriskRuns(withoutInlineCode);
+  if (runs.length < 2 || runs[0].length !== 1) return false;
+
+  // 尋找與行首單一星號配對的下一個奇數長度星號序列（略過中間成對的 ** 粗體）
+  for (let i = 1; i < runs.length; i++) {
+    if (runs[i].length % 2 === 1) {
+      const closeIndex = runs[i].index;
+      const prevChar = withoutInlineCode[closeIndex - 1];
+      // 若下一個單星號左側為非空白字元，代表它成功閉合了行首的斜體星號；
+      // 若左側為空白字元（如 `*清單項目 *內部斜體*`），代表它是新一段斜體的起點，行首星號並未閉合。
+      return Boolean(prevChar && !/\s/.test(prevChar));
+    }
+  }
+  return false;
 }
 
 /**

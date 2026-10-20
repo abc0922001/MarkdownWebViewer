@@ -691,6 +691,48 @@ def calculate(a, b):
       expect(run2.changed).toBe(false);
       expect(run2.formatted).toBe(formatted);
     });
+
+    it('應正確保留 Issue #19 之行首斜體語法（*斜體*：），不誤判為漏空格之無序清單項目', () => {
+      const rawIssue19 = `*大檔案與循序讀取表現*：
+
+* 64 執行緒讀取 64 KiB 大 Folio（k MiB/s）：Huge tmpfs 由 96-100 飆升至 1370-1390（近 14 倍）；ext4 由 756-775 提升至 1355-1373。
+* 256 MiB 檔案循序讀取：單執行緒效能落於基準線 ±1% 內，16 執行緒表現持平。
+* 記憶體抖動負載：持續重覆發生 Page Fault 的工作負載會有約 4-6% 的輕微回退。`;
+
+      const { formatted, changed } = fixMarkdownFormatting(rawIssue19);
+      expect(changed).toBe(false);
+      expect(formatted).toBe(rawIssue19);
+      expect(formatted).not.toContain('* 大檔案與循序讀取表現*：');
+    });
+
+    it('應正確區分行首斜體各種變體與真正漏掉空格之 * 無序清單項目 (Issue #19 邊界測試)', () => {
+      // 1. 各種斜體變體應原樣保留不被拆開
+      const italicsInput = [
+        '*整行純斜體*',
+        '*重點一*：說明文字，以及 *重點二*。',
+        '*斜體內部含 **粗體** 文字*：',
+        '  *縮排斜體文字*：'
+      ].join('\n\n');
+
+      const italicsResult = fixMarkdownFormatting(italicsInput);
+      expect(italicsResult.changed).toBe(false);
+      expect(italicsResult.formatted).toBe(italicsInput);
+
+      // 2. 真正漏掉空格之 * 清單項目應補齊空格
+      const listInput = [
+        '*項目 1',
+        '*項目 1 *斜體補充*',
+        '*項目 1 **粗體補充**'
+      ].join('\n');
+
+      const listResult = fixMarkdownFormatting(listInput);
+      expect(listResult.changed).toBe(true);
+      expect(listResult.formatted).toBe([
+        '* 項目 1',
+        '* 項目 1 *斜體補充*',
+        '* 項目 1 **粗體補充**'
+      ].join('\n'));
+    });
   });
 
   describe('fixMisplacedBoldLinks() — Gemini 含有超連結之粗體標記錯位修復 (Issue #18)', () => {
