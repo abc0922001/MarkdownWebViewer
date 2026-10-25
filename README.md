@@ -1,9 +1,10 @@
 # Markdown & Mermaid Web Viewer
 
-> 一套基於 **Linear Design System (`DESIGN.md`)** 規格打造、具備極速冷啟動（Cold Start）、純記憶體無痕暫態（Zero-Persistence）、Lighthouse 全項滿分（100/100）與 **AI / Gemini 複製排版智慧「✨ 自動修正」** 特性的純前端 Markdown & Mermaid 即時檢視器與排版工具。
+> 一套基於 **Linear Design System (`DESIGN.md`)** 規格打造、具備極速冷啟動（Cold Start）、純記憶體無痕暫態（Zero-Persistence）、Lighthouse 全項滿分（100/100）、**Ondine Rust/WASM 圖表編譯引擎**與 **AI / Gemini 複製排版智慧「✨ 自動修正」** 特性的純前端 Markdown & Mermaid 即時檢視器與排版工具。
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue?logo=typescript)
 ![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite)
+![Ondine](https://img.shields.io/badge/Mermaid%20Engine-Ondine%20(Rust%20WASM)-black?logo=webassembly)
 ![Design System](https://img.shields.io/badge/Design%20System-Linear%20(DESIGN.md)-5E6AD2)
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-100%2F100-success?logo=lighthouse)
 ![JSDoc](https://img.shields.io/badge/JSDoc-100%25-blue)
@@ -20,57 +21,81 @@
 - **CodeMirror 6 現代編輯器**：支援 Markdown 語法著色、行號、自動換行切換、本機檔案拖曳載入，以及行數、字數、字元數與游標動態統計。
 - **等比雙向捲動同步**：左右雙向平滑捲動，內建互斥鎖與 `requestAnimationFrame` 節流，徹底杜絕無窮遞迴震顫。
 
-### 2. ✨ AI / Gemini 排版智慧「自動修正」引擎 (`Alt + F`)
-- **LaTeX 數學與比較符號標準化**：自動將自 AI 介面複製之 LaTeX 不等式與符號（如 `$\le$`、`$\ge$`、`$\neq$`、`$\approx$`、`$\pm$`、`$\times$`、`$\div$` 等）轉為對應標準 Unicode 符號（`≤`、`≥`、`≠`、`≈`、`±`、`×`、`÷` 等），支援行內公式運算子取代，並具備多行與行內程式碼遮罩保護。
-- **粗體標籤格式校正**：閉合孤立星號、消除標記內側贅餘空格，在中文字元與英數字元交界處智慧補齊標準半形空格，嚴格限制單行配對以防止跨行合併與跨標記跑版。
-- **表格智慧修復**：一鍵修復自 Gemini / ChatGPT 等 AI 介面複製時常發生的**表格列間空行**與**孤立 `|` 符號**，並為缺失首尾直線符號的資料列補齊 `| ` 與 ` |`。
-- **語法修補與隱形字元清洗**：自動清除零寬字元（`\u200B`~`\u2060`）與置換不換行空格（`\u00A0`），修補標題空格（`#標題` ➔ `# 標題`）、清單待辦核取方塊（`-[]` ➔ `- [ ] `）、未閉合反引號區塊（```）並壓縮連續空行。
+### 2. ⚡ Mermaid 向量圖表支援（Ondine Rust WASM 編譯與 210B 輕量掛載）
+- **Ondine Rust/WASM 高速編譯器 (`ondine/compiler/wasm`)**：以高效能 Rust 編譯之 WebAssembly 模組（`all.wasm`）依需求串流編譯 Mermaid 圖表語法（原生相容 `flowchart`、`sequence`、`class`、`state`、`er`、`gantt`、`pie`、`c4` 等 33 種圖表類型），徹底移除原先體積龐大（~2.5 MB）之 client-side renderer。
+- **210B 極致輕量掛載 Runtime (`ondine`)**：編譯產出之惰性向量 SVG 透過 210 位元組微型 Runtime 直接掛載，無 DOM 震顫與 layout thrashing。
+- **`--ondine-*` CSS 變數即時主題切換**：圖表填色、線條、邊框與文字完全由 `--ondine-*` CSS 自訂屬性驅動，深淺色主題切換零延遲、無須重複呼叫編譯器。
+- **`RenderError` 行列精準錯誤邊界**：語法錯誤時提供精確行號與欄位提示（如 `[行 2, 欄 5]`），且無任何全域殘留 DOM 污染。
+- **GFM Alerts 完整巢狀支援**：自行開發之零外部相依 Token Stream Ruler，原生支援 `[!NOTE]`、`[!TIP]`、`[!IMPORTANT]`、`[!WARNING]`、`[!CAUTION]`，支援內部多段落、清單、表格與程式碼區塊等無限制巢狀 Markdown 排版。
+- **GFM Tasklists 核取清單**：自動將 `- [ ]` 與 `- [x]` 轉譯為標準 HTML 核取方塊元素，完美符合 Linear 主題樣式。
 
-### 3. ☀️ 淺色／🌙 深色主題即時切換 (`Alt + T`)
-- **全站系統同步連動**：全站 UI、CodeMirror 6 編輯器（透過 Compartment 動態重配）、Highlight.js 程式碼著色與 Mermaid 向量圖表皆即時重繪以完整支援。
+### 3. ✨ AI / Gemini 排版智慧「自動修正」引擎 (`Alt + F`)
+- **Gemini 雙重超連結清洗**：自動收斂自 Gemini「複製回覆」產生之 `[[文字](URL)](URL)` 雙重嵌套超連結，相容 Google Redirect 跳轉包裝並具備程式碼遮罩保護。
+- **粗體超連結邊界錯位修復**：修正粗體標記錯置於超連結方括號內之缺陷（如 `**替代：[Notesnook**](URL)` ➔ `**替代：[Notesnook](URL)**`），還原外層粗體結構。
+- **遺失縮排之巢狀子清單智慧推導**：當父清單項以冒號結尾或為純粗體父項時，自動辨識下方遺失縮排之子項目並補齊 2 格空格縮排，支援行內黏合清單換行拆分，完美還原階層圓點清單。
+- **LaTeX 數學與比較符號標準化**：自動將自 AI 介面複製之 LaTeX 不等式與符號（如 `$\le$`、`$\ge$`、`$\neq$`、`$\approx$`、`$\pm$`、`$\times$`、`$\div$` 等）轉為對應標準 Unicode 符號（`≤`、`≥`、`≠`、`≈`、`±`、`×`、`÷` 等），支援行內公式運算子取代，並具備多行與行內程式碼遮罩保護。
+- **表格智慧修復**：自動縫合中斷資料列、剔除表格夾帶之無意義空行與孤立 `|` 符號，並為缺失首尾管線的資料列自動補齊 `| ` 與 ` |`。
+- **粗體標籤格式校正**：閉合孤立星號、消除標記內側贅餘空格，在中文字元與英數字元交界處智慧補齊標準半形空格，嚴格限制單行配對以防止跨行合併與跨標記跑版。
+- **語法修補與隱形字元清洗**：自動清除零寬字元（`\u200B`~`\u2060`、`\uFEFF`）與置換不換行空格（`\u00A0`、`\u202F`），修補標題空格（`#標題` ➔ `# 標題`）、清單待辦核取方塊（`-[]` ➔ `- [ ] `）、未閉合反引號區塊（```）並壓縮連續空行。
+
+### 4. ☀️ 淺色／🌙 深色主題即時切換 (`Alt + T`)
+- **全站系統同步連動**：全站 UI、CodeMirror 6 編輯器（透過 Compartment 動態重配）、Highlight.js 程式碼著色、KaTeX 數學公式與 Ondine 向量圖表皆即時連動套用。
 - **嚴格遵循 DESIGN.md**：深色模式呈現 `#010102` 黑曜底色與 `#5E6AD2` Lavender 點綴；淺色模式呈現純淨 `#FFFFFF` / `#F5F6F7` 高對比紙張質感。
 
-### 4. Linear 風格三態版面切換與自訂閱讀模式 (`Alt + 1 / 2 / 3 / M`)
+### 5. Linear 風格三態版面切換與自訂閱讀模式 (`Alt + 1 / 2 / 3 / M`)
 - **右上角 Segmented Control**：一鍵切換「**純編輯** (`Alt+1`)」、「**雙欄對照** (`Alt+2`)」與「**純瀏覽** (`Alt+3`)」，具備滑動指示條。
 - **純瀏覽極簡無干擾排版**：切換至「純瀏覽」時自動隱藏次要編輯按鈕、即時預覽次標題欄與底部狀態列，釋放全螢幕閱讀空間；支援 `Alt+2` 或 `Escape` 鍵一鍵無縫返回雙欄對照。
 - **自訂設備閱讀視圖切換 (`Alt + M`)**：純瀏覽模式下提供「**自適應寬度**」、「**平板直式** (834px，適配 11 吋 4:3)」與「**手機直式** (412px，適配 6.3 吋 18:9)」下拉選單切換，排版規格、字級內距與防截斷機制 100% 嚴格對齊 3x PNG 圖片長圖匯出效果，並支援 `Alt+M` 鍵盤快速鍵依序循環切換。
 - **專注全螢幕閱讀模式 (`Alt + Z`)**：支援一鍵隱藏頂部工具列進行沈浸式文件閱讀，保留選定之閱讀寬度，並提供懸浮膠囊控制項隨時返回雙欄對照或顯示工具列。
 - **中央彈性拖曳分隔條**：支援滑鼠與觸控拖曳調整欄寬比例（15% ~ 85% 範圍限制保護）。
 
-### 5. Mermaid 向量圖表延遲載入 & GFM Alerts 完整巢狀支援
-- **初次載入零體積負擔**：僅當文件中出現 ````mermaid` 區塊時才透過 Dynamic Import 動態載入模組。
-- **防競態 Token 與錯誤邊界**：快速打字時不會被舊非同步任務覆蓋，語法未完成時顯示微型錯誤提示，不中斷預覽體驗。
-- **GFM Alerts 完整巢狀支援**：自行開發之零外部相依 Token Stream Ruler，原生支援 `[!NOTE]`、`[!TIP]`、`[!IMPORTANT]`、`[!WARNING]`、`[!CAUTION]`，支援內部多段落、清單、表格與程式碼區塊等無限制巢狀 Markdown 排版。
-- **GFM Tasklists 核取清單**：自動將 `- [ ]` 與 `- [x]` 轉譯為標準 HTML 核取方塊元素，完美符合 Linear 主題樣式。
-
 ### 6. 純前端四合一多格式匯出
 - **Markdown (`.md`)**：標準 UTF-8 純文字檔案下載，即時釋放 Blob ObjectURL 避免記憶體洩漏。
-- **獨立自給 HTML (`.html`)**：內嵌全套 Linear 樣式表與 Mermaid 向量 SVG，無須任何網路連線即可於任何裝置離線開啟。
-- **列印級無損 PDF (`.pdf`)**：注入專屬 `@media print` 樣式，自動反轉高對比白底黑字，針對程式碼、表格與 Mermaid 圖表套用 `break-inside: avoid` 防止跨頁截斷。
-- **3x 超高清 PNG 圖片 (`.png`)**：動態依需求載入 `html-to-image` 渲染 3x Retina 級超高解析度長圖，支援手機直式 412px（適配 6.3 吋 18:9 全螢幕長圖閱讀）、平板直式 834px（適配 11 吋 4:3 最適閱讀比例）與自適應等寬規格，自動同步主題背景色並以精確至秒的時間戳記命名（`<Title>-YYYYMMDD-HHmmss.png`）。
+- **獨立自給 HTML (`.html`)**：內嵌全套 Linear 樣式表、Ondine SVG 與 `--ondine-*` CSS 變數，無須任何外部相依或網路連線即可於任何裝置離線開啟。
+- **列印級無損 PDF (`.pdf`)**：注入專屬 `@media print` 樣式，自動反轉高對比白底黑字，針對程式碼、表格與 Ondine 圖表套用 `break-inside: avoid` 防止跨頁截斷，徹底捨棄傳統反色濾鏡。
+- **3x 超高清 PNG 圖片 (`.png`)**：動態依需求載入 `html-to-image` 於離屏沙盒中深層複製重排，渲染 3x Retina 級超高解析度長圖，支援手機直式 412px（適配 6.3 吋 18:9 全螢幕長圖閱讀）、平板直式 834px（適配 11 吋 4:3 最適閱讀比例）與自適應等寬規格，自動同步主題背景色與 `--ondine-*` 變數，並以精確至秒的時間戳記命名（`<Title>-YYYYMMDD-HHmmss.png`）。
 
-### 7. 極致冷啟動與效能最佳化 (Lighthouse 全項滿分 100/100)
+### 7. KaTeX 出版級 LaTeX 數學公式動態非同步渲染
+- **出版級排版支援**：原生支援行內公式（`$formula$`）與獨立展示區塊公式（`$$formula$$`），嚴格防禦貨幣符號誤判。
+- **動態按需載入（Dynamic Import）**：未出現公式時維持 0 KB 初次載入零負擔，具備渲染 Token 防競態與錯誤邊界。
+
+### 8. 極致冷啟動與效能最佳化 (Lighthouse 全項滿分 100/100)
 - **即時掛載與隨選載入架構**：CodeMirror 6 於網頁開啟時即刻掛載並自動聚焦（Auto-Focus），開箱即用支援剪貼簿直接貼上與鍵盤輸入；Markdown 解析引擎則於瀏覽器閒置時預先擷取。
 - **消除渲染阻斷請求**：建置期 CSS 自動內嵌外掛將樣式直接注入 HTML，搭配 Highlight.js common 語言子集精簡打包。
 - **無障礙 (a11y) 與 SEO 全面支援**：全站按鈕具備明確 `aria-label`、符合 WCAG AA 高對比度標準、結構化語意標籤與 `robots.txt`。
 
-### 8. 嚴格無痕暫態生命週期 (Zero-Persistence)
+### 9. 嚴格無痕暫態生命週期 (Zero-Persistence)
 - **零本機儲存**：全流程純記憶體生命週期，嚴禁使用 `localStorage`、`sessionStorage`、`IndexedDB` 或 `Cookie`。
 - **防誤關閉防護**：內容編輯後若未手動匯出，重新整理或關閉分頁前會彈出原生確認對話方塊。
 
-### 9. PWA 漸進式網頁應用程式 (Progressive Web App)
+### 10. PWA 漸進式網頁應用程式 (Progressive Web App)
 - **桌面與行動裝置獨立視窗安裝**：支援透過 Chrome / Edge / Safari 原生安裝至桌面或主畫面，以獨立 App 視窗執行。
-- **完整離線 App Shell**：透過 Workbox Service Worker 預先快取完整應用核心（含 CodeMirror、Markdown 解析器與大型 Mermaid.js 繪圖引擎），在飛機上或無網路環境中仍可 100% 正常檢視與繪製圖表。
+- **完整離線 App Shell**：透過 Workbox Service Worker 預先快取完整應用核心（含 CodeMirror、Markdown 解析器、KaTeX 數學引擎與 Ondine Rust/WASM 圖表編譯模組），在斷網或離線環境中仍可 100% 正常檢視與繪製圖表。
 - **無感背景自動更新**：新版本靜默於背景快取，於使用者下一次開啟應用時生效，絕不突然重新整理以保護記憶體中未匯出的文件。
 - **堅守 Zero-Persistence**：快取僅限應用程式靜態程式碼，文件資料依然純記憶體操作、絕無本機殘留。
-
-### 10. KaTeX 出版級 LaTeX 數學公式動態非同步渲染
-- **出版級排版支援**：原生支援行內公式（`$formula$`）與獨立展示區塊公式（`$$formula$$`），嚴格防禦貨幣符號誤判。
-- **動態按需載入（Dynamic Import）**：未出現公式時維持 0 KB 初次載入零負擔，具備渲染 Token 防競態與錯誤邊界。
 
 ### 11. 📦 即時版本指示器與 Service Worker 快取狀態檢查
 - **雙重版本徽章**：頂部品牌標題旁與底部狀態列皆提供語意化版本徽章（如 `v1.2.1`），建置期由 Vite 自動注入版本號、Git Commit 簡短雜湊與打包時間戳記。
 - **快取狀態一鍵檢查**：點選版本徽章可即時檢視完整建置時間與 Commit 雜湊，並主動觸發 Service Worker 快取差異檢查；若背景偵測到新版本快取，自動透過 Toast 提示使用者，徹底解決因瀏覽器快取無法判斷新舊版本之痛點。
+
+---
+
+## 🛠️ 技術選型矩陣 (Tech Stack)
+
+| 領域 / 模組 | 選用技術 | 版本 | 職責與選型理由 |
+| :--- | :--- | :--- | :--- |
+| **建置工具 / 語言** | Vite + TypeScript | Vite 8 / TS 7 | 極速 HMR、原生 ES 模組、靜態型別安全 |
+| **PWA / Service Worker** | vite-plugin-pwa | 2.x | 基於 Workbox 自動快取產物雜湊清單（含 `.wasm`）、Google Fonts 執行期快取與無感自動更新 |
+| **編輯器核心** | CodeMirror 6 | 6.x | 模組化設計、輕量、透過 Compartment 支援無重建模組主題、語法著色與自動換行動態重配 |
+| **Markdown 解析** | markdown-it | 15.x | 高效符合 CommonMark/GFM 規範，擴充彈性高，內建 TypeScript 型別支援，支援 typographer 與 breaks |
+| **向量圖表編譯** | Ondine (`wevm/ondine`) | 0.0.3 | **Rust WASM 依需求串流編譯**，相容 33 種 Mermaid 圖表，搭配 210B 輕量掛載 Runtime 與 `--ondine-*` CSS 變數主題 |
+| **數學公式引擎** | KaTeX | 0.19.x | **動態延遲非同步載入（Dynamic Import）**，出版級 LaTeX 數學排版，零初次載入負擔 |
+| **程式碼語法高亮** | highlight.js | 11.x | 採用 common 語言子集打包以最小化體積，支援深/淺雙主題色彩 |
+| **安全消毒過濾** | DOMPurify | 3.x | 嚴格防禦 XSS 攻擊，設定 SVG 與向量繪圖屬性白名單保留圖表 |
+| **圖片渲染引擎** | html-to-image | 1.x | **動態延遲非同步載入**，無損繪製包含 SVG 圖表與排版之 3x 超高清 PNG 長圖 |
+| **圖示庫** | lucide | 1.x | 精緻簡約之 SVG 圖示，用於 GitHub Alerts 與工具列控制 |
+| **程式碼壓縮** | terser | 5.x | 生產環境 Minification，清除除錯符號以縮減檔案體積 |
+| **CI/CD 自動化** | GitHub Actions | v4 | Push 到 `main` 分支自動執行 `npm run build` 並部署到 GitHub Pages |
 
 ---
 
@@ -84,7 +109,7 @@
 | **`Alt + M`** | 循環切換「閱讀模式」 (自適應 ➔ 平板直式 834px ➔ 手機直式 412px) |
 | **`Alt + Z`** | 切換「專注全螢幕閱讀」模式 (隱藏頂部工具列) |
 | **`Escape`** | 於純瀏覽或專注模式下快速返回雙欄對照模式 |
-| **`Alt + F`** | 執行「✨ 自動修正」Markdown 排版與修復表格 |
+| **`Alt + F`** | 執行「✨ 自動修正」Markdown 排版、修復表格與粗體超連結 |
 | **`Alt + T`** | 切換「☀️ 淺色／🌙 深色」主題 |
 | **`Ctrl / Cmd + Z`** | 復原 (Undo) |
 | **`Ctrl / Cmd + Y`** | 重做 (Redo) |
@@ -154,30 +179,34 @@ MarkdownWebViewer/
 │   ├── editor/
 │   │   └── codemirror.ts     # CodeMirror 6 實例、Linear 深淺主題、Compartments、拖曳檔案、統計指標
 │   ├── exporter/
-│   │   ├── html-exporter.ts  # 封裝單一獨立自給 .html 檔案 (內嵌 CSS 與 SVG 向量圖)
+│   │   ├── html-exporter.ts  # 封裝單一獨立自給 .html 檔案 (內嵌 CSS、Ondine SVG 與 --ondine-* 變數)
 │   │   ├── md-exporter.ts    # Blob 匯出純文字 .md 檔案 (釋放 ObjectURL 避免洩漏)
-│   │   └── pdf-exporter.ts   # window.print() 搭配 @media print 高解析列印與反白樣式
+│   │   ├── pdf-exporter.ts   # window.print() 搭配 @media print 高解析列印、Ondine 白底黑字樣式
+│   │   └── png-exporter.ts   # html-to-image 3x 超高清長圖匯出 (自訂寬度沙盒/主題同步/時間戳記命名)
 │   ├── layout/
 │   │   ├── resizer.ts        # 中央分割條拖曳與寬度限制 (15% ~ 85%)
 │   │   ├── switcher.ts       # 右上角三態版面狀態機 (Alt+1/2/3) 與 Segmented 指示條
 │   │   └── sync-scroll.ts    # 雙向等比捲動同步與 isScrolling 迴圈互斥鎖 (rAF 節流)
 │   ├── renderer/
-│   │   ├── markdown.ts       # markdown-it 設定、Highlight.js 著色、GitHub 警示區塊、DOMPurify 消毒
-│   │   └── mermaid.ts        # 視需求動態載入 mermaid.js、主題重繪、防競態 Token、錯誤邊界
+│   │   ├── katex.ts          # 依需求動態載入 katex、防競態 Token、錯誤邊界、數學排版
+│   │   ├── markdown.ts       # markdown-it 設定、Highlight.js 著色、GitHub 警示區塊、LaTeX 公式解析、DOMPurify 消毒
+│   │   └── mermaid.ts        # Ondine (Rust WASM) 依需求串流編譯、210B mount 掛載、--ondine-* 主題變數、RenderError 錯誤邊界
 │   ├── styles/
 │   │   ├── base.css          # 全域 Reset、自訂捲軸、Toast 動畫、[hidden] 全域保護
 │   │   ├── dropdown.css      # Linear 懸浮選單與彈出動畫
 │   │   ├── editor.css        # CodeMirror 6 自訂樣式與 Gutters
 │   │   ├── layout.css        # 工具列、雙欄容器、狀態列版面與響應式斷點
 │   │   ├── preview.css       # 技術文件排版、表格、程式碼、深淺色 Highlight.js、Mermaid 容器
-│   │   ├── print.css         # @media print 高對比白底列印、防跨頁截斷 (break-inside: avoid)
-│   │   └── tokens.css        # DESIGN.md 權威 Design Tokens (深色與淺色變數)
+│   │   ├── print.css         # @media print 高對比白底列印、防跨頁截斷 (break-inside: avoid)、Ondine 高對比樣式
+│   │   └── tokens.css        # DESIGN.md 權威 Design Tokens (深色與淺色變數、--ondine-* 圖表變數)
 │   ├── utils/
 │   │   ├── debounce.ts       # 120ms Debounce 防彈跳排程器
-│   │   ├── formatter.ts      # Gemini / AI Markdown 壞格式智慧修復引擎 (含 LaTeX 數學符號轉換)
+│   │   ├── formatter.ts      # Gemini / AI Markdown 壞格式智慧修復引擎 (雙重連結/縮排/LaTeX/表格修復)
 │   │   ├── sample.ts         # 初始範例 Markdown 模板 (含流程圖、時序圖、表格、程式碼、公式)
-│   │   └── toast.ts          # 非侵入式 Toast 輕量通知模組 (支援 success / info / error)
-│   └── main.ts               # 應用程式進入點，即時掛載與自動聚焦、生命週期管線、快速鍵與全域事件
+│   │   ├── toast.ts          # 非侵入式 Toast 輕量通知模組 (支援 success / info / error)
+│   │   └── version.ts        # 全站版本號、Commit 雜湊、建置時間與 Service Worker 快取更新檢查模組
+│   ├── main.ts               # 應用程式進入點，即時掛載與自動聚焦、生命週期管線、快速鍵與全域事件
+│   └── vite-env.d.ts         # Vite 環境型別擴充宣告
 ├── DESIGN.md                 # Linear 設計系統權威分析與 Token 定義文件
 ├── GEMINI.md                 # LLM & 開發者全域上下文指引文件
 ├── index.html                # 靜態 HTML Shell (含預設輕量預留位置與 SEO meta)

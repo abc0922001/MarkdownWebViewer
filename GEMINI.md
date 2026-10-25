@@ -26,7 +26,7 @@
 8. **無障礙 (a11y) 與 SEO 全面支援**：按鈕具備明確 `aria-label`、符合 WCAG AA 高對比度標準、結構化語意標籤與 `robots.txt`。
 9. **嚴格無痕暫態生命週期 (Zero-Persistence)**：全流程純記憶體操作，嚴禁使用 `localStorage` / `sessionStorage` / `Cookie`，內建離開防誤觸保護。
 10. **GitHub Pages 一鍵自動化部署**：基於 Vite 相對路徑（`base: './'`）建置與 GitHub Actions 自動化 CI/CD。
-11. **PWA 漸進式網頁應用與離線 App Shell**：支援安裝為桌面與行動裝置獨立視窗應用，Workbox 預快取包含 Mermaid 向量引擎與 KaTeX 數學引擎在內之完整 App Shell，支援斷網離線繪圖與 Google Fonts 執行期快取，並維持無痕暫態（Zero-Persistence）。
+11. **PWA 漸進式網頁應用與離線 App Shell**：支援安裝為桌面與行動裝置獨立視窗應用，Workbox 預快取包含 Ondine Rust/WASM 圖表引擎與 KaTeX 數學引擎在內之完整 App Shell，支援斷網離線繪圖與 Google Fonts 執行期快取，並維持無痕暫態（Zero-Persistence）。
 12. **即時版本指示器與 Service Worker 快取狀態檢查**：頂部品牌標題旁與底部狀態列皆提供語意化版本徽章（如 `v1.2.1`），建置期由 Vite 自動注入版本號、Git Commit 雜湊與打包時間戳記；支援懸浮提示完整資訊與點選觸發 Service Worker 快取更新差異檢查，徹底解決使用者因 PWA 快取難以辨識當前版本之痛點。
 
 ---
@@ -42,7 +42,7 @@
 | **數學公式引擎** | KaTeX | 0.19.x | **動態延遲非同步載入（Dynamic Import）**，出版級 LaTeX 數學排版，零初次載入負擔 |
 | **程式碼語法高亮** | highlight.js | 11.x | 採用 common 語言子集打包以最小化體積，支援深/淺雙主題色彩 |
 | **安全消毒過濾** | DOMPurify | 3.x | 嚴格防禦 XSS 攻擊，設定 SVG 與向量繪圖屬性白名單保留圖表 |
-| **向量圖表引擎** | mermaid.js | 12.x | **動態延遲非同步載入（Dynamic Import）**，未出現圖表時初次載入零體積負擔 |
+| **向量圖表編譯** | Ondine (`wevm/ondine`) | 0.0.3 | **Rust WASM 依需求串流編譯**，相容 33 種 Mermaid 圖表，搭配 210B 輕量掛載 Runtime 與 `--ondine-*` CSS 變數主題 |
 | **圖片渲染引擎** | html-to-image | 1.x | **動態延遲非同步載入**，無損繪製包含 SVG 圖表與排版之 3x 超高清 PNG 長圖 |
 | **圖示庫** | lucide | 1.x | 精緻簡約之 SVG 圖示，用於 GitHub Alerts 與工具列控制 |
 | **程式碼壓縮** | terser | 5.x | 生產環境 Minification，清除除錯符號以縮減檔案體積 |
@@ -75,7 +75,7 @@ MarkdownWebViewer/
 │   ├── renderer/
 │   │   ├── katex.ts          # 依需求動態載入 katex、防競態 Token、錯誤邊界、數學排版
 │   │   ├── markdown.ts       # markdown-it 設定、Highlight.js 著色、GitHub 警示區塊、LaTeX 公式解析、DOMPurify 消毒
-│   │   └── mermaid.ts        # 依需求動態載入 mermaid.js、主題重繪、防競態 Token、錯誤邊界
+│   │   └── mermaid.ts        # Ondine (Rust WASM) 依需求串流編譯、210B mount 掛載、--ondine-* 主題變數、RenderError 錯誤邊界
 │   ├── styles/
 │   │   ├── base.css          # 全域 Reset、自訂捲軸、Toast 動畫、[hidden] 全域保護
 │   │   ├── dropdown.css      # Linear 懸浮選單與彈出動畫
