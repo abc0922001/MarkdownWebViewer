@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { SAMPLE_MARKDOWN } from './sample';
 import {
   fixMarkdownFormatting,
   fixMathSymbols,
@@ -786,6 +787,15 @@ def calculate(a, b):
       const input = '**** **替代：[Notesnook**](https://affine.pro/) 以及 ***強調：[AFFiNE***](https://affine.pro/)';
       const output = fixMisplacedBoldLinks(input);
       expect(output).toBe('**** **替代：[Notesnook](https://affine.pro/)** 以及 ***強調：[AFFiNE](https://affine.pro/)***');
+    });
+  });
+
+  describe('SAMPLE_MARKDOWN 範例模板排版品質驗證', () => {
+    it('範例模板本身應符合所有排版與格式標準，執行 fixMarkdownFormatting 應回傳 changed: false', () => {
+      const result = fixMarkdownFormatting(SAMPLE_MARKDOWN);
+      expect(result.changed).toBe(false);
+      expect(result.fixesSummary).toEqual([]);
+      expect(result.formatted).toBe(SAMPLE_MARKDOWN);
     });
   });
 });
