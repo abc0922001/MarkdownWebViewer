@@ -126,6 +126,18 @@ export function buildExportSandboxStyles(
       --accent-primary: #5E6AD2;
       --accent-hover: ${isLight ? '#4F5AB8' : '#828FFF'};
       --accent-surface: ${isLight ? 'rgba(94, 106, 210, 0.08)' : 'rgba(94, 106, 210, 0.14)'};
+      --ondine-bg: ${surfaceColor};
+      --ondine-fg: ${textColor};
+      --ondine-surface: ${isLight ? '#FFFFFF' : surfaceElevatedColor};
+      --ondine-surface-alt: ${isLight ? 'rgba(94, 106, 210, 0.08)' : 'rgba(94, 106, 210, 0.14)'};
+      --ondine-border: #5E6AD2;
+      --ondine-line: ${isLight ? '#4B5563' : '#8A8F98'};
+      --ondine-muted: ${textSecondaryColor};
+      --ondine-accent: ${isLight ? '#4F5AB8' : '#828FFF'};
+      --ondine-critical: ${isLight ? '#DC2626' : '#F2555A'};
+      --ondine-font: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+      --ondine-radius: 6px;
+      --ondine-stroke: 1.75px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif !important;
       word-wrap: break-word !important;
       overflow-wrap: anywhere !important;

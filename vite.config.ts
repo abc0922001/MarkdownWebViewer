@@ -97,8 +97,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,txt,woff,woff2,ttf}'],
-        // 放寬預快取大小上限至 5MB，確保動態分割之大型 Mermaid 與 KaTeX 模組得以順利預先快取
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,txt,woff,woff2,ttf,wasm}'],
+        // 放寬預快取大小上限至 5MB，確保動態分割之大型 Ondine WASM 與 KaTeX 模組得以順利預先快取
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {

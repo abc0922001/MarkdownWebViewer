@@ -68,6 +68,20 @@
   --header-height: 52px;
   --statusbar-height: 32px;
   --pane-header-height: 38px;
+
+  /* Ondine Diagram Tokens (DESIGN.md Dark) */
+  --ondine-bg: #0F1011;
+  --ondine-fg: #F7F8F8;
+  --ondine-surface: #141516;
+  --ondine-surface-alt: rgba(94, 106, 210, 0.14);
+  --ondine-border: #5E6AD2;
+  --ondine-line: #8A8F98;
+  --ondine-muted: #D0D6E0;
+  --ondine-accent: #828FFF;
+  --ondine-critical: #F2555A;
+  --ondine-font: var(--font-mono);
+  --ondine-radius: 6px;
+  --ondine-stroke: 1.75px;
 }
 
 /* Light Theme Variables */
@@ -117,4 +131,18 @@ html.light {
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--border-subtle);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--border-medium);
   --shadow-dropdown: 0 16px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-medium);
+
+  /* Ondine Diagram Tokens (DESIGN.md Light) */
+  --ondine-bg: #F5F6F7;
+  --ondine-fg: #08090A;
+  --ondine-surface: #FFFFFF;
+  --ondine-surface-alt: rgba(94, 106, 210, 0.08);
+  --ondine-border: #5E6AD2;
+  --ondine-line: #4B5563;
+  --ondine-muted: #4B5563;
+  --ondine-accent: #4F5AB8;
+  --ondine-critical: #DC2626;
+  --ondine-font: var(--font-mono);
+  --ondine-radius: 6px;
+  --ondine-stroke: 1.75px;
 }

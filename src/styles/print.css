@@ -131,12 +131,18 @@
     border: 1px solid #E2E8F0 !important;
   }
 
+  .mermaid-wrapper,
   .mermaid-wrapper svg {
+    --ondine-bg: #FAFAFA !important;
+    --ondine-fg: #0F172A !important;
+    --ondine-surface: #FFFFFF !important;
+    --ondine-surface-alt: rgba(94, 106, 210, 0.08) !important;
+    --ondine-border: #4F5AB8 !important;
+    --ondine-line: #334155 !important;
+    --ondine-muted: #475569 !important;
+    --ondine-accent: #4F5AB8 !important;
+    --ondine-critical: #DC2626 !important;
     filter: none !important;
-  }
-
-  html.dark .mermaid-wrapper svg {
-    filter: invert(0.85) hue-rotate(180deg) !important;
   }
 
   /* KaTeX MathML 輔助標籤於列印時隱藏，防禦重複符號列印輸出 */

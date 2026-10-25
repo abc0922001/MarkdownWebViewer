@@ -27,7 +27,7 @@ export const SAMPLE_MARKDOWN = `# Markdown & Mermaid Web Viewer
 \`\`\`mermaid
 graph TD
     A[使用者輸入 Markdown] --> B{包含 Mermaid 語法?}
-    B -- 是 --> C[非同步載入 mermaid.js]
+    B -- 是 --> C[非同步載入 Ondine WASM]
     B -- 否 --> D[markdown-it + highlight.js]
     C --> E[SVG 向量圖形繪製]
     D --> F[DOMPurify 消毒過濾]
@@ -44,13 +44,13 @@ sequenceDiagram
     actor User as 使用者
     participant CM as CodeMirror 6
     participant Parser as Markdown 引擎
-    participant Mermaid as Mermaid 模組
+    participant Ondine as Ondine 模組
     participant Preview as 預覽視窗
 
     User->>CM: 輸入或貼上內容
     CM-->>Parser: 觸發 Debounce (120ms)
-    Parser->>Mermaid: 偵測到圖表標籤並渲染 SVG
-    Mermaid-->>Preview: 注入 SVG 向量節點
+    Parser->>Ondine: 偵測到圖表標籤並渲染 SVG
+    Ondine-->>Preview: 注入 SVG 向量節點
     Parser-->>Preview: 注入乾淨 HTML
     Preview-->>User: 呈現高對比預覽畫面
 \`\`\`
@@ -88,7 +88,7 @@ def calculate_metrics(text: str) -> dict:
 | **編輯器核心** | CodeMirror 6 | 語法高亮、按鍵對應、自動換行控制 |
 | **Markdown 解析** | markdown-it + Highlight.js | 支援 GFM、程式碼暗色著色 |
 | **數學公式** | KaTeX (v0.16) | 出版級 LaTeX 渲染，按需動態載入 |
-| **向量圖表** | mermaid.js (v11) | Dynamic Import 依需求載入 |
+| **向量圖表** | Ondine (Rust WASM) | 210B Runtime 搭配 \`--ondine-*\` 變數主題 |
 | **安全消毒** | DOMPurify | 嚴格防禦 XSS 腳本注入 |
 | **PDF 匯出** | CSS Paged Media | \`window.print()\` 搭配列印最佳化 |
 

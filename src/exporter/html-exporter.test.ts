@@ -47,6 +47,8 @@ describe('HTML Exporter (exportHtml)', () => {
     expect(htmlText).toContain('--bg-app: #FFFFFF');
     expect(htmlText).toContain('--bg-surface: #F5F6F7');
     expect(htmlText).toContain('--text-primary: #08090A');
+    expect(htmlText).toContain('--ondine-bg: #F5F6F7');
+    expect(htmlText).toContain('--ondine-fg: #08090A');
     expect(htmlText).toContain('測試標題');
   });
 
@@ -64,6 +66,8 @@ describe('HTML Exporter (exportHtml)', () => {
     expect(htmlText).toContain('--bg-app: #010102');
     expect(htmlText).toContain('--bg-surface: #0F1011');
     expect(htmlText).toContain('--text-primary: #F7F8F8');
+    expect(htmlText).toContain('--ondine-bg: #0F1011');
+    expect(htmlText).toContain('--ondine-fg: #F7F8F8');
   });
 
   it('未顯式指定主題時，應依據 DOM 根節點狀態自動解析主題', async () => {

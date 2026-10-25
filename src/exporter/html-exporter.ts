@@ -38,6 +38,18 @@ export function exportHtml(
       --accent-hover: ${isLight ? '#4F5AB8' : '#828FFF'};
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, monospace;
+      --ondine-bg: ${isLight ? '#F5F6F7' : '#0F1011'};
+      --ondine-fg: ${isLight ? '#08090A' : '#F7F8F8'};
+      --ondine-surface: ${isLight ? '#FFFFFF' : '#141516'};
+      --ondine-surface-alt: ${isLight ? 'rgba(94, 106, 210, 0.08)' : 'rgba(94, 106, 210, 0.14)'};
+      --ondine-border: #5E6AD2;
+      --ondine-line: ${isLight ? '#4B5563' : '#8A8F98'};
+      --ondine-muted: ${isLight ? '#4B5563' : '#D0D6E0'};
+      --ondine-accent: ${isLight ? '#4F5AB8' : '#828FFF'};
+      --ondine-critical: ${isLight ? '#DC2626' : '#F2555A'};
+      --ondine-font: var(--font-mono);
+      --ondine-radius: 6px;
+      --ondine-stroke: 1.75px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {

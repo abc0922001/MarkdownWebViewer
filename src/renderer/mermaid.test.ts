@@ -1,24 +1,25 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getActiveTheme, setMermaidTheme, renderMermaidDiagrams } from './mermaid';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { wasm as allWasm } from 'ondine/compiler/wasm/all';
+import {
+  getActiveTheme,
+  setMermaidTheme,
+  initOndineRenderer,
+  renderMermaidDiagrams,
+} from './mermaid';
 
-describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
-  let originalGetBBox: any;
+describe('Mermaid / Ondine Renderer (主題切換與圖表渲染防護)', () => {
+  beforeAll(() => {
+    // 於單元測試環境注入內嵌 Base64 WASM 模組，免除外部 HTTP Fetch 相依
+    initOndineRenderer(allWasm);
+  });
 
   beforeEach(() => {
-    // 設定 JSDOM 缺失之 SVG getBBox 模擬，使 Mermaid 版面計算順暢執行
-    if (typeof window !== 'undefined' && window.SVGElement) {
-      originalGetBBox = (window.SVGElement.prototype as any).getBBox;
-      (window.SVGElement.prototype as any).getBBox = () => ({ x: 0, y: 0, width: 100, height: 40 });
-    }
     document.documentElement.className = 'light';
     document.body.innerHTML = '';
   });
 
   afterEach(() => {
-    if (typeof window !== 'undefined' && window.SVGElement && originalGetBBox) {
-      (window.SVGElement.prototype as any).getBBox = originalGetBBox;
-    }
     document.documentElement.className = 'light';
     document.body.innerHTML = '';
   });
@@ -45,15 +46,14 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
     });
   });
 
-  describe('圖表渲染管線 (renderMermaidDiagrams)', () => {
+  describe('圖表渲染管線 (renderMermaidDiagrams with Ondine)', () => {
     it('容器內無任何 .mermaid-diagram 時，應快速返回 true', async () => {
       const container = document.createElement('div');
       const result = await renderMermaidDiagrams(container);
       expect(result).toBe(true);
     });
 
-    it('冷啟動在淺色主題下點選範例圖表時，應套用淺色樣式而非深色全黑樣式 (Issue #11)', async () => {
-      // 模擬冷啟動進入 light 主題
+    it('冷啟動在淺色主題下渲染流程圖，應透過 Ondine 產生具備 ondine-flowchart 類別與 light 主題標記之 SVG', async () => {
       document.documentElement.className = 'light';
 
       const container = document.createElement('div');
@@ -66,17 +66,18 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
       const result = await renderMermaidDiagrams(container, 'light');
       expect(result).toBe(true);
       expect(diagramEl.classList.contains('rendered')).toBe(true);
+      expect(diagramEl.dataset.theme).toBe('light');
 
       const svg = diagramEl.querySelector('svg');
       expect(svg).not.toBeNull();
+      expect(svg?.classList.contains('ondine')).toBe(true);
+      expect(svg?.classList.contains('ondine-flowchart')).toBe(true);
+      expect(svg?.getAttribute('data-theme')).toBe('light');
+      expect(svg?.textContent).toContain('開始');
+      expect(svg?.textContent).toContain('結束');
+    });
 
-      // 檢查樣式：深色主題時節點 rect fill 為 #1f2020（全黑），淺色主題下應為淺色紫色系 #ECECFF
-      const styleContent = svg?.querySelector('style')?.textContent || '';
-      expect(styleContent).toContain('fill:#ECECFF');
-      expect(styleContent).not.toContain('fill:#1f2020');
-    }, 20000);
-
-    it('切換至深色主題後，應自動套用深色圖表樣式', async () => {
+    it('切換至深色主題後，應自動套用 dark 主題標記並渲染 Ondine SVG', async () => {
       document.documentElement.className = 'dark';
 
       const container = document.createElement('div');
@@ -89,15 +90,15 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
       const result = await renderMermaidDiagrams(container, 'dark');
       expect(result).toBe(true);
       expect(diagramEl.classList.contains('rendered')).toBe(true);
+      expect(diagramEl.dataset.theme).toBe('dark');
 
       const svg = diagramEl.querySelector('svg');
       expect(svg).not.toBeNull();
-
-      const styleContent = svg?.querySelector('style')?.textContent || '';
-      expect(styleContent).toContain('fill:#1f2020');
+      expect(svg?.classList.contains('ondine')).toBe(true);
+      expect(svg?.getAttribute('data-theme')).toBe('dark');
     });
 
-    it('切換至深色主題後再切回淺色主題，應正確恢復淺色樣式', async () => {
+    it('切換至深色主題後再切回淺色主題，應正確更新為 light 主題標記', async () => {
       // 1. 先設為深色並渲染
       document.documentElement.className = 'dark';
       const containerDark = document.createElement('div');
@@ -108,6 +109,7 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
       document.body.appendChild(containerDark);
 
       await renderMermaidDiagrams(containerDark, 'dark');
+      expect(diagramDark.dataset.theme).toBe('dark');
 
       // 2. 切回淺色並渲染
       document.documentElement.className = 'light';
@@ -121,16 +123,14 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
       const result = await renderMermaidDiagrams(containerLight, 'light');
       expect(result).toBe(true);
       expect(diagramLight.classList.contains('rendered')).toBe(true);
+      expect(diagramLight.dataset.theme).toBe('light');
 
       const svg = diagramLight.querySelector('svg');
       expect(svg).not.toBeNull();
-
-      const styleContent = svg?.querySelector('style')?.textContent || '';
-      expect(styleContent).toContain('fill:#ECECFF');
-      expect(styleContent).not.toContain('fill:#1f2020');
+      expect(svg?.getAttribute('data-theme')).toBe('light');
     });
 
-    it('冷啟動在淺色主題下渲染時序圖 (sequenceDiagram)，應成功產生 SVG 且不拋錯', async () => {
+    it('冷啟動在淺色主題下渲染時序圖 (sequenceDiagram)，應成功產生 ondine-sequence SVG 且不拋錯', async () => {
       document.documentElement.className = 'light';
 
       const seqCode = `sequenceDiagram
@@ -153,9 +153,11 @@ describe('Mermaid Renderer (主題切換與圖表渲染防護)', () => {
 
       const svg = diagramEl.querySelector('svg');
       expect(svg).not.toBeNull();
+      expect(svg?.classList.contains('ondine')).toBe(true);
+      expect(svg?.classList.contains('ondine-sequence')).toBe(true);
     });
 
-    it('當語法不完整或錯誤時，應觸發 Error Boundary 並清除殘留 DOM 節點', async () => {
+    it('當語法不完整或錯誤時，應攔截 RenderError 並觸發 Error Boundary 提示', async () => {
       const container = document.createElement('div');
       const diagramEl = document.createElement('div');
       diagramEl.className = 'mermaid-diagram';

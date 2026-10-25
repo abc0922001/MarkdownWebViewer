@@ -86,6 +86,8 @@ describe('PNG Exporter (png-exporter)', () => {
       const css = buildExportSandboxStyles(true, false, false);
       expect(css).toContain('--bg-surface: #F5F6F7;');
       expect(css).toContain('--border-subtle: #E5E7EB;');
+      expect(css).toContain('--ondine-bg: #F5F6F7;');
+      expect(css).toContain('--ondine-fg: #08090A;');
       expect(css).toContain('border: 1px solid #E5E7EB !important;');
       expect(css).toContain('background: #F5F6F7 !important;');
       expect(css).toContain('scrollbar-width: none !important;');

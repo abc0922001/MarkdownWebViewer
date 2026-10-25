@@ -24,7 +24,7 @@
     "katex": "^0.19.0",
     "lucide": "^1.53.0",
     "markdown-it": "^15.0.2",
-    "mermaid": "^12.1.0"
+    "ondine": "0.0.3"
   },
   "devDependencies": {
     "@types/jsdom": "^30.0.0",
