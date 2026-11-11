@@ -43,9 +43,9 @@
 | **程式碼語法高亮** | highlight.js | 11.12.x | 採用 `lib/common` 語言子集打包以最小化體積，支援深/淺雙主題色彩 |
 | **安全消毒過濾** | DOMPurify | 3.4.x | 嚴格防禦 XSS 攻擊，自訂 SVG、MathML 與 `data-*` 屬性白名單保留向量圖表與公式節點 |
 | **圖片渲染引擎** | html-to-image | 1.11.x | **動態延遲非同步載入**，於離屏沙盒深層複製並無損繪製 3x Retina 超高解析度 PNG 長圖 |
-| **圖示庫** | lucide | 1.53.x | 簡約 SVG 圖示，用於 GitHub Alerts 標題圖示與介面控制 |
+| **圖示庫** | lucide | 1.72.x | 簡約 SVG 圖示，用於 GitHub Alerts 標題圖示與介面控制 |
 | **程式碼壓縮** | terser | 5.51.x | 生產環境 Minification，自動清除 `debugger` 符號以縮減產物體積 |
-| **單元測試框架** | Vitest + jsdom | Vitest 5.0 / jsdom 30 | 完整涵蓋格式修復、AST 解析、Ondine WASM 圖表、KaTeX、匯出器、版面狀態機與版本檢查之自動化測試 |
+| **單元測試框架** | Vitest + jsdom | Vitest 5.1 / jsdom 31 | 完整涵蓋格式修復、AST 解析、Ondine WASM 圖表、KaTeX、匯出器、版面狀態機與版本檢查之自動化測試 |
 | **CI/CD 自動化** | GitHub Actions | v4 | Push 至 `main` 分支自動執行 `npm run build` 並部署至 GitHub Pages |
 
 ---
@@ -219,7 +219,7 @@ MarkdownWebViewer/
 本節彙整專案目前的穩定狀態、歷次重大演進脈絡與標準作業程序（SOP），供接手開發之 AI Agent 快速進入狀況：
 
 ### 1. 目前專案狀態快照 (Current Project Snapshot)
-* **當前穩定版本**：`v1.3.2`（定義於 `package.json`）。
+* **當前穩定版本**：`v1.3.3`（定義於 `package.json`）。
 * **單元測試覆蓋**：共 **8 個測試檔案**（`formatter.test.ts`、`markdown.test.ts`、`mermaid.test.ts`、`katex.test.ts`、`html-exporter.test.ts`、`png-exporter.test.ts`、`switcher.test.ts`、`version.test.ts`），全數通過 Vitest 自動化驗證。
 * **預設主題與介面狀態**：`index.html` 預設掛載 `class="light"`（淺色紙張主題）與 `data-layout="split"`（雙欄對照模式）。
 
