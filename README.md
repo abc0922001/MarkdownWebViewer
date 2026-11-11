@@ -2,7 +2,7 @@
 
 > 一套基於 **Linear 極簡設計美學**打造的純前端 Markdown、Mermaid 圖表與 LaTeX 數學公式即時檢視與排版工具。具備**開箱即用免安裝**、**AI / Gemini 複製格式一鍵自動修正**、**多裝置閱讀視圖切換**、**四合一無損匯出（含 3x Retina 超高解析度手機／平板長圖）**與**純記憶體無痕隱私保護**。
 
-![Version](https://img.shields.io/badge/Version-v1.3.1-5E6AD2)
+![Version](https://img.shields.io/badge/Version-v1.3.2-5E6AD2)
 ![PWA](https://img.shields.io/badge/PWA-支援離線安裝-success?logo=pwa)
 ![Privacy](https://img.shields.io/badge/隱私安全-無痕暫態%20(Zero--Persistence)-27A644)
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-100%2F100-success?logo=lighthouse)
@@ -128,7 +128,7 @@
   * 在電腦版 Chrome / Edge 網址列右側點擊「**安裝 Markdown & Mermaid Web Viewer**」圖示，或在手機瀏覽器選擇「**加入主畫面**」，即可將本工具安裝為獨立視窗應用程式。
   * 安裝後具備完整離線支援：即使在飛機上或無網路環境中，依然能正常編輯、使用 AI 自動修正、渲染 Mermaid 圖表與數學公式並匯出檔案。
 * **版本徽章與更新檢查**：
-  * 畫面左上角品牌標題旁與底部狀態列皆顯示目前版本號（如 `v1.3.1`）。
+  * 畫面左上角品牌標題旁與底部狀態列皆顯示目前版本號（如 `v1.3.2`）。
   * **將滑鼠移至版本號上**可查看建置時間與版本資訊；**直接點擊版本號**可顯示完整版本詳情，並主動向伺服器檢查是否有新版本可供更新。
 
 ---
