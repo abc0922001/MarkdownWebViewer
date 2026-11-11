@@ -63,6 +63,13 @@ export function fixMarkdownFormatting(rawText: string): FixResult {
     fixes.push('拆分行內黏合之清單項目');
   }
 
+  // 2.34 修正自 Gemini 等複製含有行內程式碼之粗體字時，粗體標記錯置於反引號內的問題 (Issue #20)
+  const beforeBoldInlineCode = text;
+  text = fixMisplacedBoldInlineCode(text);
+  if (text !== beforeBoldInlineCode) {
+    fixes.push('修正含有行內程式碼之粗體標記錯位');
+  }
+
   // 2.35 修正自 Gemini 等複製含有超連結之粗體字時，粗體閉合標記錯置於連結方括號內的問題 (Issue #18)
   const beforeBoldLinks = text;
   text = fixMisplacedBoldLinks(text);
@@ -182,6 +189,172 @@ export function fixGeminiDoubleLinks(text: string): string {
   // 還原程式碼區塊
   result = result.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);
   return result;
+}
+
+/**
+ * 修正自 Gemini 等 LLM 複製含有行內程式碼（`` `...` ``）之粗體字時，粗體標記 `**` 錯置於反引號內部導致語法破損的問題 (Issue #20)。
+ *
+ * 常見錯誤樣態：
+ * 1. 外層粗體包裹整段文字，結尾粗體 `**` 卻落入最後一個行內程式碼末尾：
+ *    `` **絕對不要點選 `Wipe data/factory reset**` `` ➔ `` **絕對不要點選 `Wipe data/factory reset`** ``
+ * 2. 外層粗體包裹整段文字，開頭粗體 `**` 卻落入第一個行內程式碼開頭：
+ *    `` `**Wipe data/factory reset` 絕對不要點選** `` ➔ `` **`Wipe data/factory reset` 絕對不要點選** ``
+ * 3. 單一行內程式碼本身的粗體標記一內一外錯位：
+ *    `` **`Apply update from ADB**` `` 或 `` `**Apply update from ADB`** `` ➔ `` **`Apply update from ADB`** ``
+ *
+ * 演算法說明：
+ * - 先遮罩多行圍欄程式碼區塊（```` ```...``` ```` 與 `~~~...~~~`），避免觸碰區塊程式碼。
+ * - 逐行解析所有行內反引號片段（`` (`+)([^\r\n]*?)\1 ``），並以等長反引號佔位字串遮罩以保留真實索引與首尾反引號字元。
+ * - 擷取行外所有長度為 2 或 3 的有效粗體星號序列，依 CommonMark 強調規則與 CJK 標點容錯判定開合特性並透過堆疊先行配對：
+ *   - 若行外所有粗體皆已成對閉合（如合法的 `` **使用 `char**` 陣列** ``、`` **檢查 `src/**` 目錄** ``、`` **傳遞 `**kwargs` 參數** ``），
+ *     或行外無任何未配對粗體（如獨立的 `` `char**` ``、`` `**粗體**` ``），則完全不改動行內程式碼。
+ *   - 若存在未配對的外層開啟粗體，於其作用區間內尋找最後一個末尾帶有未配對 `**`/`***`（且緊鄰非空白、非 `*` 實質內容）之行內程式碼，將星號移至閉合反引號外側。
+ *   - 若存在未配對的外層閉合粗體，於其作用區間內尋找第一個開頭帶有未配對 `**`/`***`（且緊鄰非空白、非 `*` 實質內容）之行內程式碼，將星號移至開啟反引號外側。
+ *
+ * @param text 待處理的文字內容
+ * @returns 修正粗體與行內程式碼邊界後的文字內容
+ */
+export function fixMisplacedBoldInlineCode(text: string): string {
+  // 保護多行圍欄程式碼區塊（```...``` 或 ~~~...~~~）
+  const fencedBlocks: string[] = [];
+  const textWithoutFenced = text.replace(/(`{3,}|~{3,})[\s\S]*?\1/g, (match) => {
+    fencedBlocks.push(match);
+    return `\x00FENCED_${fencedBlocks.length - 1}\x00`;
+  });
+
+  // 輔助函式：計算有效粗體星號序列（長度為 2 或 3；長度 >= 4 為空粗體 **** 不參與配對）
+  const countValidBoldRuns = (str: string): number =>
+    findAsteriskRuns(str).filter((r) => r.length === 2 || r.length === 3).length;
+
+  const fixedLines = textWithoutFenced.split('\n').map((line) => {
+    let currentLine = line;
+
+    for (let pass = 0; pass < 10; pass++) {
+      // 收集當前行內所有反引號程式碼片段（支援單反引號與多反引號）
+      const spans: { start: number; end: number; ticks: string; inner: string; raw: string }[] = [];
+      const codeRegex = /(`+)([^\r\n]*?)\1/g;
+      let match: RegExpExecArray | null;
+      while ((match = codeRegex.exec(currentLine)) !== null) {
+        spans.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          ticks: match[1],
+          inner: match[2],
+          raw: match[0],
+        });
+      }
+      if (spans.length === 0) break;
+
+      // 將行內程式碼替換為等長反引號佔位字串（`aaa...`），維持外部索引與首尾反引號字元一致
+      let masked = '';
+      let cursor = 0;
+      for (const sp of spans) {
+        masked += currentLine.slice(cursor, sp.start);
+        masked += '`' + 'a'.repeat(Math.max(0, sp.raw.length - 2)) + (sp.raw.length >= 2 ? '`' : '');
+        cursor = sp.end;
+      }
+      masked += currentLine.slice(cursor);
+
+      // 掃描外部所有長度為 2 或 3 之粗體星號序列，判定開合能力
+      const runs = findAsteriskRuns(masked)
+        .filter((r) => r.length === 2 || r.length === 3)
+        .map((r) => {
+          const prev = r.index > 0 ? masked[r.index - 1] : '';
+          const next = r.index + r.length < masked.length ? masked[r.index + r.length] : '';
+          const prevWs = !prev || /\s/.test(prev);
+          const nextWs = !next || /\s/.test(next);
+          const prevPunct = isUnicodePunctuation(prev);
+          const nextPunct = isUnicodePunctuation(next);
+          const canOpen =
+            !nextWs && (!nextPunct || prevWs || prevPunct || /[`「『【《〈（(“"'\[$]/.test(next));
+          const canClose =
+            !prevWs && (!prevPunct || nextWs || nextPunct || /[`」』】》〉）)”"'\]$%+]/.test(prev));
+          return { ...r, end: r.index + r.length, canOpen, canClose };
+        });
+
+      if (runs.length === 0) break;
+
+      // 先以堆疊配對外部已經合法閉合的粗體區間，避免誤傷合法粗體內的程式碼（如 `char**`、`src/**`、`**kwargs`）
+      const openStack: number[] = [];
+      const pairedIndices = new Set<number>();
+      for (let idx = 0; idx < runs.length; idx++) {
+        const r = runs[idx];
+        if (r.canClose && openStack.length > 0) {
+          const openIdx = openStack.pop()!;
+          pairedIndices.add(openIdx);
+          pairedIndices.add(idx);
+        } else if (r.canOpen) {
+          openStack.push(idx);
+        }
+      }
+
+      let mutated = false;
+      for (let idx = 0; idx < runs.length; idx++) {
+        if (pairedIndices.has(idx)) continue;
+        const r = runs[idx];
+        const rightBound = idx + 1 < runs.length ? runs[idx + 1].index : currentLine.length;
+        const leftBound = idx > 0 ? runs[idx - 1].end : 0;
+
+        // 情況 1：未配對的外層開啟粗體 ➔ 檢查其右側作用區間內最後一個以 `**`/`***` 結尾的行內程式碼
+        if (r.canOpen) {
+          const trailingCandidates = spans.filter((sp) => {
+            if (sp.start < r.end || sp.end > rightBound) return false;
+            const trailMatch = sp.inner.match(/^([\s\S]*?\S)(\*{2,3})$/);
+            if (!trailMatch) return false;
+            const innerRest = trailMatch[1];
+            if (innerRest.endsWith('*')) return false;
+            return countValidBoldRuns(innerRest) % 2 === 0;
+          });
+          if (trailingCandidates.length > 0) {
+            const target = trailingCandidates[trailingCandidates.length - 1];
+            const trailMatch = target.inner.match(/^([\s\S]*?\S)(\*{2,3})$/)!;
+            currentLine =
+              currentLine.slice(0, target.start) +
+              target.ticks +
+              trailMatch[1] +
+              target.ticks +
+              trailMatch[2] +
+              currentLine.slice(target.end);
+            mutated = true;
+            break;
+          }
+        }
+
+        // 情況 2：未配對的外層閉合粗體 ➔ 檢查其左側作用區間內第一個以 `**`/`***` 開頭的行內程式碼
+        if (r.canClose) {
+          const leadingCandidates = spans.filter((sp) => {
+            if (sp.start < leftBound || sp.end > r.index) return false;
+            const leadMatch = sp.inner.match(/^(\*{2,3})(\S[\s\S]*)$/);
+            if (!leadMatch) return false;
+            const innerRest = leadMatch[2];
+            if (innerRest.startsWith('*')) return false;
+            return countValidBoldRuns(innerRest) % 2 === 0;
+          });
+          if (leadingCandidates.length > 0) {
+            const target = leadingCandidates[0];
+            const leadMatch = target.inner.match(/^(\*{2,3})(\S[\s\S]*)$/)!;
+            currentLine =
+              currentLine.slice(0, target.start) +
+              leadMatch[1] +
+              target.ticks +
+              leadMatch[2] +
+              target.ticks +
+              currentLine.slice(target.end);
+            mutated = true;
+            break;
+          }
+        }
+      }
+
+      if (!mutated) break;
+    }
+
+    return currentLine;
+  });
+
+  return fixedLines
+    .join('\n')
+    .replace(/\x00FENCED_(\d+)\x00/g, (_, idx) => fencedBlocks[parseInt(idx, 10)]);
 }
 
 /**
@@ -553,16 +726,17 @@ function isStartsWithItalicAsterisk(line: string): boolean {
 }
 
 /**
- * 檢查字元是否為 Unicode 標點符號。
+ * 檢查字元是否為 CommonMark / Unicode 標點或符號字元。
  *
- * 涵蓋標準 ASCII 標點符號以及全形/CJK 標點符號（如 「」『』【】《》〈〉（）“”‘’！？、。，；：… 等）。
+ * 對齊 `markdown-it` (`isPunctChar`: `ucmicro.P || ucmicro.S`) 與 CommonMark §2.1 規範，
+ * 涵蓋標準 ASCII 標點與符號（含反引號 `` ` ``、`+`、`$`、`~` 等 `\p{S}` 符號）以及全形/CJK 標點符號（如 「」『』【】《》〈〉（）“”‘’！？、。，；：… 等）。
  *
  * @param ch 待檢查之單一字元
- * @returns 若為標點符號則回傳 true，否則回傳 false
+ * @returns 若為標點或符號字元則回傳 true，否則回傳 false
  */
 function isUnicodePunctuation(ch: string): boolean {
   if (!ch) return false;
-  return /\p{P}/u.test(ch);
+  return /[\p{P}\p{S}]/u.test(ch);
 }
 
 /**
@@ -651,6 +825,7 @@ function fixBoldInLine(line: string): string {
     const leadingSpace = content.match(/^[ \t]+/)?.[0] || '';
     const trailingSpace = content.match(/[ \t]+$/)?.[0] || '';
     const trimmed = content.slice(leadingSpace.length, content.length - trailingSpace.length);
+    const restoredTrimmed = trimmed.replace(/\x00CODE_(\d+)\x00/g, (_, idx) => codeSpans[parseInt(idx, 10)]);
 
     // 取得相鄰的前後字元
     const prevChar = (result + outerOpen).length > 0 ? (result + outerOpen)[(result + outerOpen).length - 1] : '';
@@ -662,7 +837,7 @@ function fixBoldInLine(line: string): string {
     let suffixSpace = trailingSpace;
 
     // 1. 若粗體為純英數或技術名詞（如 Node.js、Vue.js、A+ 等），且相鄰字元為 CJK 中日文字，則於外側補入排版空格
-    const isAlphanumeric = /^[A-Za-z0-9_#+\-@./:&~%\s]+$/.test(trimmed.trim()) && /[A-Za-z0-9]/.test(trimmed);
+    const isAlphanumeric = /^[A-Za-z0-9_#+\-@./:&~%\s]+$/.test(restoredTrimmed.trim()) && /[A-Za-z0-9]/.test(restoredTrimmed);
     if (isAlphanumeric) {
       if (isCJK(prevChar) && !prefixSpace && !result.endsWith(' ')) {
         prefixSpace = ' ';
@@ -672,17 +847,17 @@ function fixBoldInLine(line: string): string {
       }
     }
 
-    // 2. CommonMark Delimiter Flanking 合規性修復（解決 CJK 字元與引號/括號交界處粗體未渲染問題）：
-    // (a) 若粗體以標點符號開頭（如 「【《（" 等），且前置字元為非空格非標點之 CJK/英數字元（如 "了**「"），
+    // 2. CommonMark Delimiter Flanking 合規性修復（解決 CJK 字元與引號/括號/行內反引號交界處粗體未渲染問題）：
+    // (a) 若粗體以標點或符號開頭（如 「【《（"` 等），且前置字元為非空格非標點之 CJK/英數字元（如 "了**「" 或 "選擇**`cmd`"），
     //     依 CommonMark §6.2 規範該 ** 不具備 left-flanking 特性，必須於左側補齊空格（"了 **「"）方可成功開啟粗體。
-    const startsWithPunctuation = isUnicodePunctuation(trimmed[0]);
+    const startsWithPunctuation = isUnicodePunctuation(restoredTrimmed[0]);
     if (startsWithPunctuation && isCJKOrAlphanumeric(prevChar) && !prefixSpace && !result.endsWith(' ')) {
       prefixSpace = ' ';
     }
 
-    // (b) 若粗體以標點符號結尾（如 」】》）" 等），且後續字元為非空格非標點之 CJK/英數字元（如 "）**是"），
+    // (b) 若粗體以標點或符號結尾（如 」】》）"` 等），且後續字元為非空格非標點之 CJK/英數字元（如 "）**是" 或 "`cmd`**是"），
     //     依 CommonMark §6.2 規範該 ** 不具備 right-flanking 特性，必須於右側補齊空格（"）** 是"）方可成功閉合粗體。
-    const endsWithPunctuation = isUnicodePunctuation(trimmed[trimmed.length - 1]);
+    const endsWithPunctuation = isUnicodePunctuation(restoredTrimmed[restoredTrimmed.length - 1]);
     if (endsWithPunctuation && isCJKOrAlphanumeric(nextChar) && !suffixSpace && !textWithoutCode.slice(closeRun.index + closeRun.length).startsWith(' ')) {
       suffixSpace = ' ';
     }

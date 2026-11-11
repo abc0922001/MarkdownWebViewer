@@ -5,6 +5,7 @@ import {
   fixMathSymbols,
   fixBoldFormatting,
   fixGeminiDoubleLinks,
+  fixMisplacedBoldInlineCode,
   fixMisplacedBoldLinks,
   fixInlinedLists,
   fixOrphanedNestedIndentation,
@@ -60,6 +61,12 @@ describe('Markdown Formatter 智慧修復引擎', () => {
       const input = '安排整天待在**海遊館（Kaiyukan）**是極為聰明的決定！海遊館是大阪最頂級的** A+ 級全室內避暑與雨備景點**';
       const output = fixBoldFormatting(input);
       expect(output).toBe('安排整天待在**海遊館（Kaiyukan）** 是極為聰明的決定！海遊館是大阪最頂級的 **A+ 級全室內避暑與雨備景點**');
+    });
+
+    it('應修復粗體包裹行內反引號程式碼（`...`）且緊鄰 CJK 字元時之 CommonMark 邊界空格', () => {
+      const input = '請務必只選擇**`Apply update from ADB`**，且**絕對不要點選 `Wipe data/factory reset`**是唯一重點。';
+      const output = fixBoldFormatting(input);
+      expect(output).toBe('請務必只選擇 **`Apply update from ADB`**，且**絕對不要點選 `Wipe data/factory reset`** 是唯一重點。');
     });
   });
 
@@ -734,6 +741,28 @@ def calculate(a, b):
         '* 項目 1 **粗體補充**'
       ].join('\n'));
     });
+
+    it('應正確修復 Issue #20 之真實逐字稿（含有行內程式碼之粗體標記錯位）並維持嚴格冪等性', () => {
+      const rawIssue20 = `⚠️ **WARNING: 保護個人資料的唯一防呆重點**
+進入手機的 Recovery 選單時，音量鍵操作請務必只選擇 **\`Apply update from ADB\`**，**絕對不要點選 \`Wipe data/factory reset**\` (這項才是清除資料)。另外請勿關閉電腦視窗或拔除傳輸線，即使進度卡在 \`47%\` 也是正常的系統寫入階段。`;
+
+      const { formatted, changed, fixesSummary } = fixMarkdownFormatting(rawIssue20);
+      expect(changed).toBe(true);
+      expect(fixesSummary).toContain('修正含有行內程式碼之粗體標記錯位');
+      expect(formatted).toBe(
+        `⚠️ **WARNING: 保護個人資料的唯一防呆重點**
+進入手機的 Recovery 選單時，音量鍵操作請務必只選擇 **\`Apply update from ADB\`**，**絕對不要點選 \`Wipe data/factory reset\`** (這項才是清除資料)。另外請勿關閉電腦視窗或拔除傳輸線，即使進度卡在 \`47%\` 也是正常的系統寫入階段。`
+      );
+
+      // 連續 5 次執行驗證嚴格冪等性
+      let current = formatted;
+      for (let i = 0; i < 5; i++) {
+        const next = fixMarkdownFormatting(current);
+        expect(next.changed).toBe(false);
+        expect(next.formatted).toBe(formatted);
+        current = next.formatted;
+      }
+    });
   });
 
   describe('fixMisplacedBoldLinks() — Gemini 含有超連結之粗體標記錯位修復 (Issue #18)', () => {
@@ -787,6 +816,49 @@ def calculate(a, b):
       const input = '**** **替代：[Notesnook**](https://affine.pro/) 以及 ***強調：[AFFiNE***](https://affine.pro/)';
       const output = fixMisplacedBoldLinks(input);
       expect(output).toBe('**** **替代：[Notesnook](https://affine.pro/)** 以及 ***強調：[AFFiNE](https://affine.pro/)***');
+    });
+  });
+
+  describe('fixMisplacedBoldInlineCode() — Gemini 含有行內程式碼之粗體標記錯位修復 (Issue #20)', () => {
+    it('應將行內程式碼末尾未配對的 ** 移至閉合反引號外側', () => {
+      const input = '**絕對不要點選 `Wipe data/factory reset**` (這項才是清除資料)';
+      expect(fixMisplacedBoldInlineCode(input)).toBe('**絕對不要點選 `Wipe data/factory reset`** (這項才是清除資料)');
+    });
+
+    it('應將行內程式碼開頭未配對的 ** 移至開啟反引號外側', () => {
+      const input = '請注意 `**Wipe data/factory reset` 絕對不要點選**！';
+      expect(fixMisplacedBoldInlineCode(input)).toBe('請注意 **`Wipe data/factory reset` 絕對不要點選**！');
+    });
+
+    it('應支援同行多組錯位粗體行內程式碼與三星號粗斜體（***）修復', () => {
+      const input = '請選擇**`Apply update from ADB**`，***絕對不要點選 `Wipe data/factory reset***`！';
+      expect(fixMisplacedBoldInlineCode(input)).toBe('請選擇**`Apply update from ADB`**，***絕對不要點選 `Wipe data/factory reset`***！');
+    });
+
+    it('不應誤改已閉合粗體內或獨立存在的合法程式碼星號（如 `char**`、`src/**`、`**kwargs`、`void **`、`**粗體**`）', () => {
+      const validCases = [
+        '**在 C 語言中使用 `char**` 來處理字串陣列**',
+        '**請檢查 `src/**` 目錄下的設定**',
+        '**在 Python 中使用 `**kwargs` 傳遞參數**',
+        '一般段落中的 `char**`、`src/**`、`**kwargs` 與 `**粗體語法**` 不應被改動。',
+        '**未閉合但含空白的指標 `void **`',
+        '```cpp\n// 圍欄程式碼區塊不應被修改\n**絕對不要點選 `Wipe data/factory reset**`\n```',
+      ].join('\n');
+      expect(fixMisplacedBoldInlineCode(validCases)).toBe(validCases);
+    });
+
+    it('當未閉合粗體同時包含合法 `char**` 與末尾錯位 `free**` 時，應僅修復末尾錯位標記', () => {
+      const input = '**請勿對 `char**` 直接呼叫 `free**`';
+      expect(fixMisplacedBoldInlineCode(input)).toBe('**請勿對 `char**` 直接呼叫 `free`**');
+    });
+
+    it('與 fixMisplacedBoldLinks 及 fixOrphanedNestedIndentation 串聯時，應支援超連結內嵌行內程式碼與純粗體父清單縮排', () => {
+      const input = `* **替代方案：[\`Notesnook**\`](https://notesnook.com)
+* 支援端到端加密與跨平台同步。`;
+      const { formatted, changed } = fixMarkdownFormatting(input);
+      expect(changed).toBe(true);
+      expect(formatted).toBe(`* **替代方案：[\`Notesnook\`](https://notesnook.com)**
+  * 支援端到端加密與跨平台同步。`);
     });
   });
 

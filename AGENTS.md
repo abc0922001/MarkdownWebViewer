@@ -150,7 +150,7 @@ MarkdownWebViewer/
   * 啟用 `svg: true, svgFilters: true, html: true`，並明確允許 MathML 標籤与 `data-raw`、`data-math`、`data-display`、`data-theme` 等自訂屬性。
 
 ### 4. AI / Gemini Markdown 智慧修復引擎 (`src/utils/formatter.ts`)
-`fixMarkdownFormatting(rawText)` 依序執行以下 **11 個嚴格有序的處理階段**（修改時切勿隨意調動順序，且必須維持**嚴格冪等性 Idempotency**）：
+`fixMarkdownFormatting(rawText)` 依序執行以下 **12 個嚴格有序的處理階段**（修改時切勿隨意調動順序，且必須維持**嚴格冪等性 Idempotency**）：
 1. **換行標準化**：將 `\r\n` 與 `\r` 統一轉為 `\n`。
 2. **隱形字元與非標準空格清理**：清除零寬字元（`[\u200B\u200C\u200D\uFEFF\u2060]`），並將 NBSP（`[\u00A0\u202F]`）轉為標準半形空格 `' '`。
 3. **Gemini 雙重超連結收斂 (`fixGeminiDoubleLinks`)**：
@@ -159,22 +159,25 @@ MarkdownWebViewer/
    * 遮罩程式碼後，將獨立符號（`$\le$`、`$\ge$`、`$\neq$`、`$\approx$`、`$\pm$`、`$\times$`、`$\div$`、`$\degree$`、`$\sim$`、`$\infty$`）、行內公式內部運算子（`$x \le y$` ➔ `$x ≤ y$`）及獨立巨集（`\le 35` ➔ `≤ 35`）轉為標準 Unicode 符號（`≤`、`≥`、`≠`、`≈`、`±`、`×`、`÷`、`°`、`~`、`∞`）。
 5. **行內黏合清單拆分 (`fixInlinedLists`)**：
    * 跳過表格行與標題行，偵測句尾標點（`。！？.!?`）、粗體閉合（`**`）或冒號（`:：`）後緊接空白與清單標記（`* **`、`- **`、`1. **`、`- [ ]`）之單行黏合情境，自動插入 `\n` 拆分。
-6. **粗體超連結邊界錯位修復 (`fixMisplacedBoldLinks`, Issue #18)**：
+6. **粗體行內程式碼邊界錯位修復 (`fixMisplacedBoldInlineCode`, Issue #20)**：
+   * 修復自 Gemini 複製時外層粗體星號錯置於行內反引號（`` `...` ``）內側之缺陷（如 `` **絕對不要點選 `Wipe data/factory reset**` `` ➔ `` **絕對不要點選 `Wipe data/factory reset`** ``，以及 `` `**Wipe data/factory reset` 絕對不要點選** `` ➔ `` **`Wipe data/factory reset` 絕對不要點選** ``）。
+   * 透過外層星號堆疊配對確認存在未閉合之外層粗體後才搬移，確保已成對外層粗體內部的合法程式碼（如 `` `char**` ``、`` `src/**` ``、`` `**kwargs` ``、`` `void **` ``、`` `**粗體**` ``）零誤傷；置於 `fixMisplacedBoldLinks` 與 `fixOrphanedNestedIndentation` 之前以支援超連結內嵌行內程式碼與純粗體父清單推導。
+7. **粗體超連結邊界錯位修復 (`fixMisplacedBoldLinks`, Issue #18)**：
    * 修復自 Gemini 複製時外層粗體星號錯置於超連結方括號內側之缺陷（如 `**替代 [Google Keep](URL1)：[Notesnook**](URL2)` ➔ `**替代 [Google Keep](URL1)：[Notesnook](URL2)**`，以及 `[**Google Keep](URL1) 替代方案**` ➔ `**[Google Keep](URL1) 替代方案**`）。
    * 必須注意：本階段必須在 `fixOrphanedNestedIndentation` 之前執行，因為修復粗體邊界後才能正確還原 `* **[標題](URL)**` 等純粗體父項特徵。
-7. **遺失縮排之巢狀子清單推導 (`fixOrphanedNestedIndentation`, Issue #17)**：
+8. **遺失縮排之巢狀子清單推導 (`fixOrphanedNestedIndentation`, Issue #17)**：
    * 當父清單項以冒號（`:` 或 `：`）結尾，或整行內容為純粗體標題（`* **標題**`，且下方緊鄰非純粗體子項）時，自動為下方未縮排之子清單項補齊 `  `（2 格半形空格）縮排。
    * 內建 6 大防線：連續子項目群組維護、遇新父項目重置同級、平行純粗體清單不縮排、Lazy Continuation 非清單行中斷、表格與程式碼隔離、已具備 `>= 2` 格縮排者直接跳過之冪等守衛。
-8. **粗體標記排版與 CommonMark Flanking 修復 (`fixBoldFormatting` / `fixBoldInLine`)**：
+9. **粗體標記排版與 CommonMark Flanking 修復 (`fixBoldFormatting` / `fixBoldInLine`)**：
    * 略過水平分隔線（`***`）並遮罩行內程式碼；清除四星號空粗體（`****`）與內部全空白粗體（`** **`）。
    * 將粗體內側首尾空白移至粗體外側；於純英數技術名詞粗體與 CJK 中文字元交界處自動補齊半形空格。
-   * **CommonMark §6.2 Flanking 合規性修補**：當粗體內容以標點符號（如 `「【《（"`）開頭且緊鄰前方的 CJK/英數字元，或以標點符號（如 `」】》）"`）結尾且緊鄰後方的 CJK/英數字元時，自動於外側補齊空格（如 `了 **「引號粗體」** 是`），解決 `markdown-it` 因不滿足 Left/Right-Flanking 條件而不渲染粗體的問題。
-9. **Markdown 表格智慧修復 (`repairMarkdownTables`)**：
+   * **CommonMark §6.2 Flanking 合規性修補**：對齊 `markdown-it` 將 `\p{P}` 與 `\p{S}`（含反引號 `` ` ``、`+`、`$` 等符號）納入標點判定，並先還原行內程式碼佔位符；當粗體內容以標點／符號開頭且緊鄰前方的 CJK/英數字元，或以標點／符號結尾且緊鄰後方的 CJK/英數字元時，自動於外側補齊空格（如 `了 **「引號粗體」** 是`、`` 選擇 **`Apply`** 是 ``），解決 `markdown-it` 因不滿足 Left/Right-Flanking 條件而不渲染粗體的問題。
+10. **Markdown 表格智慧修復 (`repairMarkdownTables`)**：
    * 剔除孤立管線行（如單獨一行的 `|`）；探查標頭與分隔線（`|---|---|`）欄位數，自動剔除表格內部夾雜的空行，將跨行斷裂的儲存格縫合回同一列，並為缺失首尾管線的資料行補齊 `| ` 與 ` |`。
-10. **標題、清單與核取方塊空格校正（含 Issue #19 斜體防護）**：
+11. **標題、清單與核取方塊空格校正（含 Issue #19 斜體防護）**：
     * 遮罩多行程式碼區塊後，將 `#標題` 修補為 `# 標題`；將 `1.項目` 修補為 `1. 項目`；將 `-[]`、`-[x]` 標準化為 `- [ ] `、`- [x] `。
     * **單星號斜體誤判防禦 (`isStartsWithItalicAsterisk`, Issue #19)**：當行首為 `*文字` 時，先檢查該行首單星號是否與同行後續的奇數星號構成合法 CommonMark 閉合斜體（如 `*斜體標題*：說明`）。若是合法斜體則原樣保留，絕不可誤插空格拆成無序清單 `* 斜體標題*：說明`。
-11. **未閉合程式碼區塊補齊與連續空行壓縮**：
+12. **未閉合程式碼區塊補齊與連續空行壓縮**：
     * 若全文行首 ` ``` ` 出現次數為奇數，自動於文末補齊 `\n```\n`；將 3 個以上連續換行（`\n{3,}`）壓縮為標準雙換行（`\n\n`）。
 
 ### 5. 版面狀態機、雙欄拖曳與雙向捲動同步 (`src/layout/`)
@@ -228,6 +231,7 @@ MarkdownWebViewer/
    * **Issue #17（遺失縮排之巢狀子清單）**：支援「冒號結尾父項」與「純粗體標題父項 (`* **標題**`)」兩種推導模式，但必須確保**平行純粗體清單**（如連續兩行 `* **項目 A**` 與 `* **項目 B**`）維持同級不縮排。
    * **Issue #18（粗體包裹超連結之星號錯位）**：Gemini 複製含有超連結的粗體段落時，常把閉合 `**` 塞進最後一個超連結的方括號內（如 `[Notesnook**](url)`）。`fixMisplacedBoldLinks` 會根據前後未配對星號奇偶數精準將星號移出方括號外，且絕不誤動合法的內部粗體（如 `[**完整粗體**](url)`）。
    * **Issue #19（行首單星號斜體遭誤判為無序清單）**：修復 `-項目` 補空格時，若遇到 `*斜體*` 開頭之段落，必須透過 `isStartsWithItalicAsterisk` 檢查 CommonMark 閉合性，防止將斜體拆壞為清單。
+   * **Issue #20（粗體包裹行內程式碼之星號錯位與反引號邊界渲染）**：Gemini 複製含有行內反引號程式碼（`` `...` ``）的粗體段落時，常把閉合或開啟 `**` 塞進反引號內側（如 `` **絕對不要點選 `Wipe data/factory reset**` ``）。`fixMisplacedBoldInlineCode` 會先透過堆疊配對確認行外確實存在未配對粗體標記後才將星號移出反引號外，絕不誤傷合法的 `` `char**` ``、`` `src/**` ``、`` `**kwargs` `` 與 `` `**粗體**` ``；同時 `fixBoldInLine` 將 `\p{S}`（含 `` ` ``）納入 CommonMark 標點判定以補齊 CJK 交界空格。
    * **鐵律**：任何對 `formatter.ts` 的修改，都必須在 `src/utils/formatter.test.ts` 新增對應回歸測試，且必須同時驗證**單次修復正確性**與**二次執行冪等性（Idempotency）**。
 3. **純瀏覽「閱讀模式」與「PNG 長圖匯出」1:1 視覺對齊**：
    * 純瀏覽模式下的「平板直式 (`834px`)」與「手機直式 (`412px`)」樣式（位於 `src/styles/preview.css`），其容器寬度、內距（Padding）、字級與表格/圖表防截斷規則，必須與 `src/exporter/png-exporter.ts` 離屏沙盒設定保持 100% 同步，確保使用者在純瀏覽模式看到的畫面與匯出的 PNG 長圖完全一致。
