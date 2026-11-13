@@ -192,9 +192,12 @@
   border: 1px solid var(--border-strong);
   border-radius: calc(var(--radius-md) - 2px);
   box-shadow: var(--shadow-sm);
-  transition: transform 180ms var(--ease-linear), width 180ms var(--ease-linear);
   pointer-events: none;
   z-index: 1;
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition: transform 180ms var(--ease-linear), width 180ms var(--ease-linear);
+  }
 }
 
 .segment-btn {
@@ -508,7 +511,10 @@
   left: 0;
   right: 0;
   transform: translateY(-100%);
-  transition: transform 220ms var(--ease-linear);
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition: transform 220ms var(--ease-linear);
+  }
 }
 
 /* 滑鼠移動至頂部邊緣或滑鼠暫留時臨時滑下頂欄 */

@@ -44,6 +44,7 @@ describe('HTML Exporter (exportHtml)', () => {
 
     const htmlText = await (createdBlob as Blob).text();
     expect(htmlText).toContain('<html lang="zh-TW" class="light">');
+    expect(htmlText).toContain('color-scheme: light;');
     expect(htmlText).toContain('--bg-app: #FFFFFF');
     expect(htmlText).toContain('--bg-surface: #F5F6F7');
     expect(htmlText).toContain('--text-primary: #08090A');
@@ -63,6 +64,7 @@ describe('HTML Exporter (exportHtml)', () => {
 
     const htmlText = await (createdBlob as Blob).text();
     expect(htmlText).toContain('<html lang="zh-TW" class="dark">');
+    expect(htmlText).toContain('color-scheme: dark;');
     expect(htmlText).toContain('--bg-app: #010102');
     expect(htmlText).toContain('--bg-surface: #0F1011');
     expect(htmlText).toContain('--text-primary: #F7F8F8');

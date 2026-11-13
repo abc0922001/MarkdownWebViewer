@@ -74,6 +74,9 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
     expect(app?.getAttribute('data-layout')).toBe('split');
     expect(workspace?.getAttribute('data-layout')).toBe('split');
     expect(document.getElementById('btn-layout-split')?.classList.contains('active')).toBe(true);
+    expect(document.getElementById('btn-layout-split')?.getAttribute('aria-pressed')).toBe('true');
+    expect(document.getElementById('btn-layout-editor')?.getAttribute('aria-pressed')).toBe('false');
+    expect(document.getElementById('btn-layout-preview')?.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('切換至純編輯模式（editor）時，應同步更新 DOM 屬性與按鈕 active 樣式', () => {
@@ -85,7 +88,9 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
     expect(app?.getAttribute('data-layout')).toBe('editor');
     expect(workspace?.getAttribute('data-layout')).toBe('editor');
     expect(document.getElementById('btn-layout-editor')?.classList.contains('active')).toBe(true);
+    expect(document.getElementById('btn-layout-editor')?.getAttribute('aria-pressed')).toBe('true');
     expect(document.getElementById('btn-layout-split')?.classList.contains('active')).toBe(false);
+    expect(document.getElementById('btn-layout-split')?.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('切換至純瀏覽模式（preview）時，app 根節點應具有 data-layout="preview"', () => {
@@ -190,6 +195,7 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
 
       const pill = document.getElementById('zen-floating-pill');
       expect(pill?.hidden).toBe(false);
+      expect(document.getElementById('btn-zen-mode')?.getAttribute('aria-pressed')).toBe('true');
     });
 
     it('點選專注模式懸浮膠囊中的「雙欄對照」應退出專注模式並返回雙欄', () => {
@@ -216,6 +222,7 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
 
       expect(switcher.isZenMode()).toBe(false);
       expect(switcher.getMode()).toBe('preview');
+      expect(document.getElementById('btn-zen-mode')?.getAttribute('aria-pressed')).toBe('false');
     });
 
     it('處於專注模式時按 Escape 應優先退出專注模式', () => {
@@ -226,6 +233,7 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
 
       expect(switcher.isZenMode()).toBe(false);
       expect(switcher.getMode()).toBe('preview');
+      expect(document.getElementById('btn-zen-mode')?.getAttribute('aria-pressed')).toBe('false');
     });
 
     it('按 Alt+Z 應能切換專注模式之開關狀態', () => {
@@ -253,6 +261,7 @@ describe('LayoutSwitcher (版面切換與純瀏覽極簡模式)', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: '3', altKey: true }));
       expect(switcher.isZenMode()).toBe(false);
       expect(switcher.getMode()).toBe('preview');
+      expect(document.getElementById('btn-zen-mode')?.getAttribute('aria-pressed')).toBe('false');
     });
 
     it('游標移至視窗頂部 14px 內應滑出頂欄，且頂欄內部有焦點或選單展開時不應誤收回', () => {

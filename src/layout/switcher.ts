@@ -319,6 +319,7 @@ export class LayoutSwitcher {
       const title = enabled ? '結束專注閱讀模式 (快速鍵: Alt+Z / Esc)' : '切換專注閱讀模式 (快速鍵: Alt+Z)';
       this.btnZenMode.title = title;
       this.btnZenMode.setAttribute('aria-label', title);
+      this.btnZenMode.setAttribute('aria-pressed', String(enabled));
     }
   }
 
@@ -444,11 +445,9 @@ export class LayoutSwitcher {
    */
   private updateUI(): void {
     this.buttons.forEach((btn, mode) => {
-      if (mode === this.currentMode) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
+      const isActive = mode === this.currentMode;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
     });
 
     // 更新分段控制器滑動指示條水平位移百分比

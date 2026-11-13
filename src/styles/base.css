@@ -28,7 +28,15 @@ button {
   cursor: pointer;
   border: none;
   background: transparent;
+}
+
+button:focus:not(:focus-visible) {
   outline: none;
+}
+
+:where(button, a, [role="button"]):focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 [hidden] {
@@ -36,22 +44,31 @@ button {
 }
 
 /* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+:root,
+.preview-scroll-container,
+.cm-scroller {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-pill);
-}
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: var(--radius-pill);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
 }
 
 /* Toast Notification Styles */
@@ -78,8 +95,11 @@ button {
   box-shadow: var(--shadow-md);
   font-size: 13px;
   pointer-events: auto;
-  animation: toast-in 180ms var(--ease-linear);
   transition: opacity 150ms ease, transform 150ms ease;
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: toast-in 180ms var(--ease-linear);
+  }
 }
 
 .toast.toast-success {

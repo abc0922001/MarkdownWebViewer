@@ -27,6 +27,7 @@ export function exportHtml(
   <title>${escapeHtml(title)}</title>
   ${hasKatex ? '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">\n  ' : ''}<style>
     :root {
+      color-scheme: ${isLight ? 'light' : 'dark'};
       --bg-app: ${isLight ? '#FFFFFF' : '#010102'};
       --bg-surface: ${isLight ? '#F5F6F7' : '#0F1011'};
       --bg-surface-elevated: ${isLight ? '#EBECEE' : '#141516'};
@@ -88,8 +89,8 @@ export function exportHtml(
       border-left: 3px solid var(--accent-primary);
       border-radius: 0 6px 6px 0;
     }
-    a { color: var(--accent-hover); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    a { color: var(--accent-hover); text-decoration-line: underline; text-decoration-color: transparent; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+    a:hover { text-decoration-color: var(--accent-hover); }
     hr { height: 1px; margin: 2em 0; background: var(--border-subtle); border: 0; }
     table {
       width: 100%;

@@ -34,6 +34,7 @@
   line-height: 1.35;
   color: var(--text-primary);
   letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .markdown-body h1 {
@@ -62,6 +63,7 @@
   margin-top: 0;
   margin-bottom: 1em;
   color: var(--text-primary);
+  text-wrap: pretty;
 }
 
 .markdown-body ul,
@@ -99,6 +101,7 @@
   background: var(--bg-surface);
   border-left: 3px solid var(--accent-primary);
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  text-wrap: pretty;
 }
 
 .markdown-body blockquote > *:last-child {
@@ -108,13 +111,15 @@
 /* Links */
 .markdown-body a {
   color: var(--accent-hover);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color var(--transition-fast);
+  text-decoration-line: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color var(--transition-fast);
 }
 
 .markdown-body a:hover {
-  border-bottom-color: var(--accent-hover);
+  text-decoration-color: var(--accent-hover);
 }
 
 /* Horizontal Rules */

@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (layoutSwitcher.getMode() === 'preview') {
       return;
     }
-    if (e.ctrlKey || e.altKey || e.metaKey) {
+    if (e.ctrlKey || e.altKey || e.metaKey || e.isComposing || e.keyCode === 229) {
       return;
     }
     if (e.key.length === 1) {
@@ -250,6 +250,9 @@ document.addEventListener('DOMContentLoaded', () => {
       editorInstance.insertText(e.key);
       editorInstance.focus();
     } else if (e.key === 'Enter') {
+      if (e.isComposing || e.keyCode === 229) {
+        return;
+      }
       e.preventDefault();
       editorInstance.insertText('\n');
       editorInstance.focus();
@@ -304,6 +307,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleTheme = () => {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.className = currentTheme;
+    const metaThemeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.content = currentTheme === 'light' ? '#FFFFFF' : '#0F1011';
+    }
     if (editorInstance) editorInstance.setTheme(currentTheme);
     import('./renderer/mermaid').then(({ setMermaidTheme }) => setMermaidTheme(currentTheme));
 
@@ -385,6 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editorInstance) {
       const isWrapped = editorInstance.toggleWrap();
       btnEditorWrap.classList.toggle('active', isWrapped);
+      btnEditorWrap.setAttribute('aria-pressed', String(isWrapped));
       btnEditorWrap.textContent = isWrapped ? '自動換行' : '不換行';
     }
   });

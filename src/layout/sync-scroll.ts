@@ -89,6 +89,7 @@ export class SyncScrollManager {
   public toggle(enabled?: boolean): boolean {
     this.isEnabled = enabled !== undefined ? enabled : !this.isEnabled;
     if (this.toggleButton) {
+      this.toggleButton.setAttribute('aria-pressed', String(this.isEnabled));
       if (this.isEnabled) {
         this.toggleButton.classList.add('active');
         this.toggleButton.querySelector('span')!.textContent = '捲動同步：開';

@@ -1,6 +1,8 @@
 /* Linear Design System Tokens (Aligned strictly with DESIGN.md) */
 
 :root, html.dark {
+  color-scheme: dark;
+
   /* Surface & Canvas Ladder (DESIGN.md Dark) */
   --bg-app: #010102;              /* {colors.canvas} - Near-pure black with faint blue tint */
   --bg-surface: #0F1011;          /* {colors.surface-1} - Feature cards, panels, editor */
@@ -82,10 +84,17 @@
   --ondine-font: var(--font-mono);
   --ondine-radius: 6px;
   --ondine-stroke: 1.75px;
+
+  /* Scrollbars (WCAG 1.4.11 >= 3:1 non-text contrast) */
+  --scrollbar-thumb: #62666D;
+  --scrollbar-thumb-hover: #8A8F98;
+  --scrollbar-track: transparent;
 }
 
 /* Light Theme Variables */
 html.light {
+  color-scheme: light;
+
   /* Surface & Canvas Ladder (DESIGN.md Light / Inverse) */
   --bg-app: #FFFFFF;              /* {colors.inverse-canvas} - Pure white */
   --bg-surface: #F5F6F7;          /* {colors.inverse-surface-1} - Subtle off-white surface */
@@ -145,4 +154,9 @@ html.light {
   --ondine-font: var(--font-mono);
   --ondine-radius: 6px;
   --ondine-stroke: 1.75px;
+
+  /* Scrollbars (WCAG 1.4.11 >= 3:1 non-text contrast) */
+  --scrollbar-thumb: #6B7280;
+  --scrollbar-thumb-hover: #4B5563;
+  --scrollbar-track: transparent;
 }
