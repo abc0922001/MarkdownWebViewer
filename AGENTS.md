@@ -219,7 +219,7 @@ MarkdownWebViewer/
 本節彙整專案目前的穩定狀態、歷次重大演進脈絡與標準作業程序（SOP），供接手開發之 AI Agent 快速進入狀況：
 
 ### 1. 目前專案狀態快照 (Current Project Snapshot)
-* **當前穩定版本**：`v1.3.3`（定義於 `package.json`）。
+* **當前穩定版本**：`v1.3.4`（定義於 `package.json`）。
 * **單元測試覆蓋**：共 **8 個測試檔案**（`formatter.test.ts`、`markdown.test.ts`、`mermaid.test.ts`、`katex.test.ts`、`html-exporter.test.ts`、`png-exporter.test.ts`、`switcher.test.ts`、`version.test.ts`），全數通過 Vitest 自動化驗證。
 * **預設主題與介面狀態**：`index.html` 預設掛載 `class="light"`（淺色紙張主題）與 `data-layout="split"`（雙欄對照模式）。
 
